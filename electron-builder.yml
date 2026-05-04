@@ -1,0 +1,18 @@
+appId: com.example.fromscratch
+productName: from-scratch-electron-angular
+
+asar: true
+
+directories:
+  output: dist/build
+
+files:
+  - dist/main/**
+  - dist/renderer/**
+  - package.json
+  - node_modules/**
+
+win:
+  target:
+    - nsis
+    - zip
