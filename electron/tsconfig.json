@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "noEmit": true,
+    "moduleResolution": "node16",
+    "esModuleInterop": true,
+    "module": "node16",
+    "target": "es2015",
+    "types": ["node"],
+    "lib": ["es2017"]
+  },
+  "include": [
+    "main.ts",
+    "preload.ts",
+    "ipc/**/*.ts",
+    "services/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/*.spec.ts"
+  ]
+}

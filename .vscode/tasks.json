@@ -1,0 +1,27 @@
+{
+  // For more information, visit: https://go.microsoft.com/fwlink/?LinkId=733558
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "npm",
+      "script": "predebug:angular",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "angular",
+        "pattern": {
+          "regexp": ".*"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Application",
+          "endsPattern": "bundle generation complete"
+        },
+      }
+    },
+    {
+      "label": "stop angular",
+      "type": "shell",
+      "command": "npx kill-port 4200"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "noEmit": false,
+    "sourceMap": true,
+    "moduleResolution": "node"
+  },
+  "include": [
+    "services/**/*.ts",
+    "ipc/**/*.ts",
+    "__tests__/**/*.ts"
+  ]
+}

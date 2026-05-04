@@ -1,0 +1,35 @@
+{
+  "name": "electron_test_project",
+  "version": "0.0.0",
+  "description": "Test angular-electron project to see how it all works",
+  "license": "ISC",
+  "author": "Ángel Marqués",
+  "type": "commonjs",
+  "main": "../dist/main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "start:local": "electron . --local",
+    "start:serve": "electron . --serve",
+    "build": "node esbuild.config.mjs",
+    "build:watch": "node esbuild.config.mjs --watch",
+    "type-check": "tsc -p tsconfig.json --noEmit",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^4.0.2",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/jest": "^29.5.8",
+    "@types/node": "^20.10.0",
+    "electron": "^40.2.1",
+    "esbuild": "^0.25.0",
+    "jest": "^30.3.0",
+    "ts-jest": "^29.1.1",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.6.2",
+    "from-scratch-angular-electron": "file:.."
+  }
+}

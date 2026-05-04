@@ -1,0 +1,39 @@
+name: Run Unit tests on commit
+
+on:
+  push:
+    branches-ignore:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test-and-bump:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install Angular dependencies
+        run: npm install --prefix angular
+
+      - name: Install Electron dependencies
+        run: npm ci --prefix electron
+
+      - name: Run Angular unit tests
+        run: npm --prefix angular run test:run
+
+      - name: Run Electron unit tests
+        run: npm --prefix electron run test

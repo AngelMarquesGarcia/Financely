@@ -1,0 +1,52 @@
+{
+  "name": "from-scratch-angular-electron",
+  "version": "0.0.0",
+  "main": "dist/main/main.js",
+  "scripts": {
+    "start": "npm run compile:electron && run-p start:angular start:electron-serve",
+    "start:local": "npm run compile && npm --prefix electron run start:local",
+    "compile": "npm run compile:angular && npm run compile:electron",
+    "compile:angular": "npm --prefix angular run build:dev",
+    "compile:electron": "npm --prefix electron run build",
+    "start:angular": "npm --prefix angular run start",
+    "start:electron-serve": "wait-on tcp:4200 && npm --prefix electron run start:serve",
+    "start:electron-local": "npm run compile:angular && npm --prefix electron run start:local",
+    "predebug": "npm run predebug:angular && npm run predebug:electron",
+    "predebug:angular": "npm --prefix angular run start:dev",
+    "predebug:electron": "npm --prefix electron run build",
+    "compile-and-build": "npm run compile && electron-builder",
+    "test": "npm --prefix angular run test:run && npm --prefix electron run test",
+    "test:all": "npm --prefix angular run test:run && npm --prefix electron run test && npm run e2e",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "e2e:debug": "playwright test --debug",
+    "format": "prettier --write \"angular/src/**/*.{ts,html,scss}\" \"electron/**/*.ts\" \"shared/**/*.ts\"",
+    "format:check": "prettier --check \"angular/src/**/*.{ts,html,scss}\" \"electron/**/*.ts\" \"shared/**/*.ts\"",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "lint:angular": "eslint angular/src",
+    "lint:electron": "eslint electron",
+    "rebuild": "npx @electron/rebuild --force",
+    "install:all": "npm install && npm --prefix angular install && npm --prefix electron install",
+    "prepare": "husky"
+  },
+  "private": true,
+  "dependencies": {
+    "better-sqlite3": "^12.6.2"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^4.0.4",
+    "@playwright/test": "^1.59.1",
+    "angular-eslint": "^21.3.1",
+    "electron": "^40.2.1",
+    "electron-builder": "^26.7.0",
+    "eslint": "^10.2.1",
+    "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
+    "kill-port": "^2.0.1",
+    "npm-run-all": "^4.1.5",
+    "prettier": "^3.8.3",
+    "typescript-eslint": "^8.59.1",
+    "wait-on": "^9.0.3"
+  }
+}

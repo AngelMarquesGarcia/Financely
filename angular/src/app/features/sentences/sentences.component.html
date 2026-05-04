@@ -1,0 +1,37 @@
+<div style="padding: 1rem; border: 1px solid #ccc; border-radius: 0.5rem; max-width: 400px">
+  <h3>Word and Character Counter</h3>
+
+  <textarea
+    [(ngModel)]="sentence"
+    placeholder="Enter a sentence..."
+    style="
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #999;
+      border-radius: 0.25rem;
+      font-family: monospace;
+      resize: vertical;
+      min-height: 80px;
+    "
+  ></textarea>
+
+  <button
+    (click)="calculate()"
+    style="
+      margin-top: 0.5rem;
+      padding: 0.5rem 1rem;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 0.25rem;
+      cursor: pointer;
+    "
+  >
+    Calculate
+  </button>
+
+  <div style="margin-top: 1rem">
+    <p><strong>Words:</strong> {{ wordCount !== null ? wordCount : '-' }}</p>
+    <p><strong>Chars:</strong> {{ charCount !== null ? charCount : '-' }}</p>
+  </div>
+</div>
