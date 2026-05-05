@@ -1,4 +1,4 @@
-name: Run E2E tests and lint on PR
+name: Run all tests and lint on PR
 
 on:
   pull_request:
@@ -32,6 +32,12 @@ jobs:
 
       - name: Install Playwright browsers
         run: npx playwright install chromium --with-deps
+
+      - name: Run Angular unit tests
+        run: npm --prefix angular run test:run
+
+      - name: Run Electron unit tests
+        run: npm --prefix electron run test
 
       - name: Run E2E tests
         run: npm run e2e
