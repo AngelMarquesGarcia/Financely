@@ -50,3 +50,7 @@ Thumbs.db
 **/target
 **/node_modules
 dist/
+
+# Test results
+playwright-report/
+test-results/
