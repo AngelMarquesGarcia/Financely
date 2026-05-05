@@ -9,7 +9,7 @@ Template funcional de punto de partida para proyectos desktop con Angular como r
 El proyecto sigue una estructura de **tres mini-proyectos**: un proyecto padre que orquesta dos hijos.
 
 ```
-from-scratch-angular-electron/
+financely/
 ├── angular/              # Proyecto hijo: frontend (renderer process)
 ├── electron/             # Proyecto hijo: backend (main process)
 ├── shared/               # Tipos e interfaces compartidos entre ambos hijos

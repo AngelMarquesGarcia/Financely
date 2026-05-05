@@ -11,7 +11,7 @@ import { ElectronService } from './core/services/electron.service';
 export class AppComponent {
   private electron = inject(ElectronService);
 
-  title = 'from-scratch-angular-electron';
+  title = 'Financely';
 
   addOne() {
     console.log('AppComponent - addOne called');

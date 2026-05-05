@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "from-scratch-angular-electron": {
+    "financely_renderer_process": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -72,10 +72,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "from-scratch-angular-electron:build:production"
+              "buildTarget": "financely:build:production"
             },
             "development": {
-              "buildTarget": "from-scratch-angular-electron:build:development"
+              "buildTarget": "financely:build:development"
             }
           },
           "defaultConfiguration": "development"

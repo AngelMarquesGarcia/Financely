@@ -11,7 +11,7 @@ Use this as the starting point for any project that fits the Angular + Electron 
 The project is organized as a **parent project orchestrating two child projects** that share a folder of common types:
 
 ```
-from-scratch-angular-electron/
+financely/
 ├── angular/              # Renderer (frontend) — its own package.json
 ├── electron/             # Main process (backend) — its own package.json
 ├── shared/               # Types and interfaces shared across both children

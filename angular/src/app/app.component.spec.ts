@@ -24,6 +24,6 @@ describe('AppComponent', () => {
   });
 
   it('should have the correct title', () => {
-    expect(component.title).toBe('from-scratch-angular-electron');
+    expect(component.title).toBe('Financely');
   });
 });
