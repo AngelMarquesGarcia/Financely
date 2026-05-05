@@ -1,6 +1,6 @@
 {
-  "name": "from-scratch-angular-electron",
-  "version": "0.1.1",
+  "name": "financely_orchestrator_projectd",
+  "version": "0.0.1",
   "main": "dist/main/main.js",
   "scripts": {
     "start": "npm run compile:electron && run-p start:angular start:electron-serve",
@@ -28,6 +28,7 @@
     "lint:electron": "eslint electron",
     "rebuild": "npx @electron/rebuild --force",
     "install:all": "npm install && npm --prefix angular install && npm --prefix electron install",
+    "audit-fix:all": "npm audit fix && npm --prefix angular audit fix && npm --prefix electron audit fix",
     "prepare": "husky"
   },
   "private": true,

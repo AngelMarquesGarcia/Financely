@@ -1,6 +1,6 @@
 {
   "name": "electron_test_project",
-  "version": "0.1.1",
+  "version": "0.0.1",
   "description": "Test angular-electron project to see how it all works",
   "license": "ISC",
   "author": "Ángel Marqués",
@@ -29,7 +29,6 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "better-sqlite3": "^12.6.2",
-    "from-scratch-angular-electron": "file:.."
+    "better-sqlite3": "^12.6.2"
   }
 }
