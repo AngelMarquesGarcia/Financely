@@ -1,4 +1,4 @@
-import { Operation, Operator, Sentence } from '../../shared/types';
+import { Operation, Operator, Sentence } from '@shared/types';
 import { app } from 'electron';
 import path from 'path';
 

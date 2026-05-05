@@ -10,6 +10,9 @@ const sharedOptions = {
     'electron',
     'better-sqlite3',
   ],
+  alias: {
+    '@shared': '../shared',
+  },
 };
 
 const isWatch = process.argv.includes('--watch');

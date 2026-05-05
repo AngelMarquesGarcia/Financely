@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable } from '@angular/core';
 import { from } from 'rxjs';
-import { Api, Ops, Sents } from '../../../../../shared/interfaces';
-import { Operator } from '../../../../../shared/types';
+import { Api, Ops, Sents } from '@shared/interfaces';
+import { Operator } from '@shared/types';
 
 @Injectable({
   providedIn: 'root',

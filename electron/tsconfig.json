@@ -1,6 +1,10 @@
 {
   "compilerOptions": {
     "noEmit": true,
+    "skipLibCheck": true,
+    "paths": {
+      "@shared/*": ["../shared/*"]
+    },
     "moduleResolution": "node16",
     "esModuleInterop": true,
     "module": "node16",

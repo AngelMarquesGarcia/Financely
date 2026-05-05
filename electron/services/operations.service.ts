@@ -1,4 +1,4 @@
-import { Operation, Operator } from '../../shared/types';
+import { Operation, Operator } from '@shared/types';
 import { DatabaseService } from './database.service';
 const databaseService = new DatabaseService();
 
