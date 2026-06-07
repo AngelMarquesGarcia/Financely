@@ -1,0 +1,40 @@
+<div class="entity-select">
+  @for (item of selectedItems; track item.id) {
+    <app-chip
+      [label]="labelFn(item)"
+      [color]="colorFn?.(item)"
+      [emoji]="emojiFn?.(item)"
+      variant="removable"
+      (click)="remove(item.id)"
+    />
+  }
+
+  <app-popover [open]="showAddPopover" (backdropClick)="showAddPopover = false">
+    <app-chip
+      popoverTrigger
+      [label]="addLabel"
+      variant="action"
+      [icon]="faChevronDown"
+      (click)="showAddPopover = true"
+    />
+    @if (availableItems.length === 0) {
+      <p class="popover-empty">{{ emptyMessage }}</p>
+    } @else {
+      @for (item of availableItems; track item.id) {
+        <button type="button" class="popover-option" (click)="add(item.id)">
+          @if (colorFn?.(item)) {
+            <span class="color-dot" [style.background]="colorFn!(item)"></span>
+          }
+          @if (emojiFn?.(item)) {
+            {{ emojiFn!(item) }}
+          }
+          {{ labelFn(item) }}
+        </button>
+      }
+    }
+  </app-popover>
+
+  @if (createNewTpl) {
+    <ng-container [ngTemplateOutlet]="createNewTpl" [ngTemplateOutletContext]="{ $implicit: this }" />
+  }
+</div>

@@ -7,6 +7,7 @@
     "moduleResolution": "node"
   },
   "include": [
+    "repository/**/*.ts",
     "services/**/*.ts",
     "ipc/**/*.ts",
     "__tests__/**/*.ts"

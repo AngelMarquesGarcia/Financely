@@ -1,0 +1,67 @@
+<div [class.settings-page]="!dialogRef">
+  <div class="card">
+    <div class="card__header">
+      <h2 class="card__title">Settings</h2>
+      @if (dialogRef) {
+        <button type="button" class="btn btn--ghost card__close" (click)="dialogRef.close()" aria-label="Close">
+          ✕
+        </button>
+      }
+    </div>
+
+    <div class="settings-section">
+      <h3 class="settings-section__title">Movements</h3>
+
+      <label class="toggle">
+        <input
+          type="checkbox"
+          [checked]="useDefaultDate"
+          (change)="onUseDefaultDateChange($any($event.target).checked)"
+        />
+        <span class="toggle__label">Use a custom default date for new movements</span>
+      </label>
+
+      @if (useDefaultDate) {
+        <div class="date-field">
+          <label class="date-field__label" for="defaultDate">Default date</label>
+          <input
+            id="defaultDate"
+            class="date-field__input"
+            type="date"
+            [value]="defaultDate"
+            (change)="onDefaultDateChange($any($event.target).value)"
+          />
+        </div>
+      }
+    </div>
+
+    <div class="settings-section">
+      <h3 class="settings-section__title">Categories</h3>
+
+      <div class="settings-subsection">
+        <span class="settings-subsection__label">Colors</span>
+        <app-color-swatches
+          [colors]="colorOrder"
+          [multiSelect]="true"
+          (reordered)="onColorReorder($event)"
+          (colorAdded)="onColorAdded($event)"
+          (deleteRequested)="onColorDeleteRequested($event)"
+          (resetRequested)="resetColors()"
+        />
+      </div>
+
+      <div class="settings-subsection">
+        <span class="settings-subsection__label">Icons</span>
+
+        <app-icon-picker
+          [icons]="categoryIcons"
+          [multiSelect]="true"
+          (reordered)="onIconReorder($event)"
+          (deleteRequested)="onDeleteRequested($event)"
+          (resetRequested)="resetIcons()"
+          (iconAdded)="onIconAdded($event)"
+        />
+      </div>
+    </div>
+  </div>
+</div>

@@ -37,20 +37,52 @@ angular/
 ├── src/
 │   ├── app/
 │   │   ├── core/                                 # App-wide singletons
+│   │   │   ├── defaults.ts                       # Shared default constants (color order, category icons)
 │   │   │   ├── guards/
 │   │   │   ├── interceptors/
 │   │   │   ├── models/
 │   │   │   └── services/
 │   │   │       ├── electron.service.ts           # RxJS wrapper over the IPC API
-│   │   │       └── electron.service.spec.ts
+│   │   │       ├── notification.service.ts       # Signal-based toast queue
+│   │   │       ├── confirm.service.ts            # Observable-based confirm modal (built on DialogService)
+│   │   │       ├── dialog.service.ts             # CDK Overlay-based imperative dialog opener
+│   │   │       ├── dialog-ref.ts                 # Dialog handle: close(), afterClosed()
+│   │   │       ├── dialog.tokens.ts              # DIALOG_DATA injection token
+│   │   │       ├── error-text.service.ts         # AppErrorCode → human-readable message resolver
+│   │   │       └── error-reporter.service.ts     # `.toast()` RxJS operator: catch + resolve + notify
 │   │   ├── features/                             # One folder per feature
-│   │   │   ├── operations/
-│   │   │   └── sentences/
+│   │   │   ├── accounts/                         # account-form/, accounts-list/, accounts.component.*
+│   │   │   ├── categories/                       # categories-list/, category-form/, categories.component.*
+│   │   │   ├── envelopes/                        # envelope-form/, envelopes-list/, envelopes.component.*
+│   │   │   ├── movements/                        # movement-form/, movements-list/, movements-filter/, movement-list-compact/, movement-detail-dialog/, movements.component.*
+│   │   │   ├── settings/                         # settings.component.*
+│   │   │   └── tags/                             # tag-form/, tags-list/, tags.component.*
 │   │   ├── shared/                               # Reusable UI atoms
 │   │   │   ├── components/
+│   │   │   │   ├── amount-input/                 # AmountInputComponent — decimal text ↔ integer cents
+│   │   │   │   ├── autocomplete-input/           # AutocompleteInputComponent — async prefix suggest + keyboard nav
+│   │   │   │   ├── button/                       # ButtonComponent — variant/type/disabled wrapper
+│   │   │   │   ├── chip/                         # ChipComponent — pill with color dot, emoji, removable/action variants
+│   │   │   │   ├── color-swatches/               # ColorSwatchesComponent — palette picker with reorder/add/delete
+│   │   │   │   ├── confirm-dialog/               # Service-driven confirm modal
+│   │   │   │   ├── empty-state/                  # EmptyStateComponent — message + optional icon + projected CTA
+│   │   │   │   ├── entity-select/                # EntitySelectComponent<T> — chips + popover multi-select
+│   │   │   │   ├── form-field/                   # FormFieldComponent — label + slot + error message
+│   │   │   │   ├── icon-picker/                  # IconPickerComponent — emoji grid with reorder/add/delete
+│   │   │   │   ├── modal/                        # ModalComponent — declarative overlay for windowed feature components
+│   │   │   │   ├── navbar/
+│   │   │   │   ├── popover/                      # PopoverComponent — backdrop + anchored panel shell
+│   │   │   │   ├── quick-create-movement-button/ # QuickCreateMovementButtonComponent — opens MovementForm in a dialog
+│   │   │   │   ├── stat-card/                    # StatCardComponent — title + big number + optional sublabel/icon
+│   │   │   │   ├── tag-picker/                   # TagPickerComponent — wraps EntitySelect + tag creation popover
+│   │   │   │   └── toast-host/                   # Service-driven toast stack
 │   │   │   ├── directives/
-│   │   │   └── pipes/
-│   │   ├── services/                             # Reserved for cross-feature services
+│   │   │   │   └── sortable.directive.ts         # Thin Angular wrapper over SortableJS (drag-reorder lists)
+│   │   │   ├── pipes/
+│   │   │   │   └── money.pipe.ts                 # Formats cents → "22.50 €"
+│   │   │   └── utils.ts                          # parseMoney, formatCents, contrastColor
+│   │   ├── types/
+│   │   │   └── global.d.ts                       # Window augmentation typing the contextBridge surface
 │   │   ├── app.component.*
 │   │   └── app.component.spec.ts
 │   ├── testing/
@@ -59,6 +91,7 @@ angular/
 │   │   ├── environment.ts                        # Local default
 │   │   ├── environment.dev.ts
 │   │   └── environment.prod.ts
+│   ├── styles.scss                               # Design tokens, global classes, CDK overlay styles
 │   └── vitest.setup.ts                           # Vitest environment bootstrap
 ├── angular.json                                  # Build outputs to ../dist/renderer
 ├── vitest.config.ts
@@ -86,22 +119,40 @@ Angular 19, **standalone components only** (no NgModule). Component specs live n
 electron/
 ├── ipc/
 │   ├── channels.ts                       # IPC channel name constants
-│   ├── api.handler.ts
-│   ├── operations.handler.ts
-│   └── sentences.handler.ts
+│   ├── movements.handler.ts
+│   ├── categories.handler.ts
+│   ├── accounts.handler.ts
+│   ├── envelopes.handler.ts
+│   ├── tags.handler.ts
+│   └── settings.handler.ts
+├── repository/
+│   ├── database.service.ts               # SQLite (better-sqlite3), migrate(), seed
+│   ├── movement-repository.service.ts
+│   ├── category-repository.service.ts
+│   ├── account-repository.service.ts
+│   ├── envelope-repository.service.ts
+│   └── tag-repository.service.ts
 ├── services/
-│   ├── api.service.ts
-│   ├── database.service.ts               # SQLite (better-sqlite3)
-│   ├── operations.service.ts
-│   └── sentences.service.ts
-├── __tests__/                            # Jest tests (mirrored layout)
-│   ├── jest.setup.ts                     # Mocks better-sqlite3
-│   ├── mocks/
+│   ├── movement.service.ts               # Validation + delegates to repository
+│   ├── category.service.ts
+│   ├── account.service.ts
+│   ├── envelope.service.ts
+│   ├── tag.service.ts
+│   └── settings.service.ts               # electron-store (AppSettings)
+├── __tests__/                            # Jest integration tests (real better-sqlite3)
+│   ├── jest.setup.ts                     # Global mock for better-sqlite3
 │   └── services/
+│       ├── account.service.test.ts       # Integration: auto-envelope, ACCOUNT_DELETE_DEFAULT, cascade
+│       ├── category.service.test.ts      # Integration: delete, setDefault behavior
+│       ├── envelope.service.test.ts      # Integration: delete, setDefault, createAccount side effect
+│       ├── movement.service.test.ts      # Integration: validation, CRUD, getAllMovements filters
+│       ├── settings.service.test.ts      # Unit: defaults, partial merge, persistence (electron-store mock)
+│       └── tag.service.test.ts           # Integration: CRUD, addTag idempotence, junction rows
 ├── main.ts                               # Entry point of the main process
 ├── preload.ts                            # Bridges IPC to the renderer (contextBridge)
 ├── esbuild.config.mjs                    # Bundles main + preload → dist/main/
 ├── tsconfig.json                         # noEmit: true (type-check only)
+├── tsconfig.test.json                    # tsconfig for Jest
 └── package.json
 ```
 
@@ -121,8 +172,9 @@ The main process is bundled by **esbuild**, not `tsc` — TypeScript here is typ
 
 ```
 shared/
-├── types.ts       # Operation, Sentence, Operator
-└── interfaces.ts  # Api, Ops, Sents — the IPC API contracts
+├── error-codes.ts  # AppErrorCode const + AppError class — backend throws, frontend resolves to text
+├── interfaces.ts   # Movements, Categories, Accounts, Envelopes, Tags, Settings — IPC contracts
+└── types.ts        # Movement, Category, Account, AccountStats, Envelope, Tag, AppSettings, MovementFilter
 ```
 
 Imported by both children: the renderer's `electron.service.ts` and the backend's services and handlers. Anything that crosses the IPC boundary should be typed here.
@@ -258,7 +310,7 @@ The renderer is sandboxed: it cannot touch Node.js or the filesystem directly. A
 [ ElectronService ]            angular/src/app/core/services/electron.service.ts
         │ wraps Promises into RxJS Observables
         ▼
-[ window.api / window.ops / window.sents ]   (exposed by contextBridge)
+[ window.movements / .categories / .accounts / .envelopes / .tags / .settings ]   (contextBridge)
         │ ipcRenderer.invoke(Channels.X, payload)
         ▼
 ─────────── IPC boundary (preload.ts → main.ts) ───────────
@@ -268,10 +320,13 @@ The renderer is sandboxed: it cannot touch Node.js or the filesystem directly. A
         │ delegates to a service
         ▼
 [ Service ]                    electron/services/<feature>.service.ts
-        │ business logic
+        │ validation + business logic
         ▼
-[ DatabaseService ]            electron/services/database.service.ts
+[ Repository ]                 electron/repository/<feature>-repository.service.ts
         │ prepared statements
+        ▼
+[ DatabaseService ]            electron/repository/database.service.ts
+        │ better-sqlite3 instance, migrate(), seed
         ▼
 [ SQLite (better-sqlite3) ]
 ```
@@ -279,11 +334,14 @@ The renderer is sandboxed: it cannot touch Node.js or the filesystem directly. A
 **The role of each piece:**
 
 - **`main.ts`** — The Electron entry point. Creates the `BrowserWindow`, registers IPC handlers (`registerXxxHandlers()`), bootstraps the database. Decides whether to load the dev server (`http://localhost:4200`) or the packaged `index.html` (based on `--local` / `app.isPackaged`).
-- **`preload.ts`** — Runs in a privileged context with access to both `ipcRenderer` and the renderer's `window`. Uses `contextBridge.exposeInMainWorld()` to publish a typed surface (`window.api`, `window.ops`, `window.sents`) and nothing else. The renderer cannot reach IPC any other way.
+- **`preload.ts`** — Runs in a privileged context with access to both `ipcRenderer` and the renderer's `window`. Uses `contextBridge.exposeInMainWorld()` to publish a typed surface (`window.movements`, `window.categories`, etc.) and nothing else. The renderer cannot reach IPC any other way.
 - **`ipc/channels.ts`** — Single source of truth for channel names. Both `preload.ts` and the handlers import from here, so there is no string typo class of bug.
 - **`ipc/*.handler.ts`** — Bind a channel to a service function. Each handler receives `IpcMainInvokeEvent` plus the typed payload, calls the service, returns the result. Handlers should remain thin — keep logic in services.
-- **`services/*.service.ts`** — All business logic (calculations, DB calls, side effects). Easy to unit-test because they have no Electron dependency.
-- **`shared/interfaces.ts`** — Defines the IPC contract (`Api`, `Ops`, `Sents`). The renderer imports these to type `window.*`; the backend imports them so handler signatures match.
+- **`ipc/ipc-utils.ts`** — `ipcHandle()` wrapper normalizes errors (native SQLite → `CONSTRAINT_VIOLATION`, everything else → `UNKNOWN`) before they cross the IPC boundary. Always wrap handler bodies with it.
+- **`services/*.service.ts`** — Validation and business logic (delete-with-reassign, default enforcement, input validation). No Electron dependency; easy to test.
+- **`repository/*.service.ts`** — SQL queries only. Services delegate all DB access here. The repository layer exposes typed methods; raw `Database` access is only needed for transactions.
+- **`shared/interfaces.ts`** — Defines the IPC contract (`Movements`, `Categories`, `Accounts`, `Envelopes`, `Tags`, `Settings`). The renderer imports these to type `window.*` (via `angular/src/app/types/global.d.ts`); the backend imports them so handler signatures match.
+- **`angular/.../core/services/error-reporter.service.ts`** — Caller-side companion of `ipcHandle()`. Inject `ErrorReporter` and pipe with `.toast()` to convert an IPC error stream into a user-visible toast (resolved via `ErrorTextService`) and silently complete the observable. Removes the per-component `error: e => notify.error(...)` boilerplate.
 
 **Adding a new IPC call:**
 
@@ -307,6 +365,7 @@ Three distinct test runners cover three layers. Each lives where its code lives.
 - **Setup**: `angular/src/vitest.setup.ts` initializes Angular's `TestBed` with the dynamic browser platform and pulls in `@testing-library/jest-dom` matchers.
 - **Convention**: tests are **co-located** alongside their source file, e.g. `app.component.spec.ts` next to `app.component.ts`.
 - **Shared fixtures / mocks**: `angular/src/testing/`. The current example, `mock-electron.service.ts`, implements `Partial<ElectronService>` and is provided in spec files via `{ provide: ElectronService, useClass: MockElectronService }`.
+- **What's covered today**: pipes (`MoneyPipe`), utils (`parseMoney`, `formatCents`, `contrastColor`), all shared "leaf" components with stable APIs (`button`, `chip`, `empty-state`, `modal`, `stat-card`, `form-field`, `amount-input`), the dialog plumbing (`DialogRef`), the error pipeline (`ErrorTextService`, `ErrorReporter`), the `MovementsListComponent` structural concerns (selection, grouping), and `SettingsComponent`. Container components and complex feature flows are intentionally untested while their shape is still in flux.
 
 Run them with:
 
@@ -322,8 +381,9 @@ npm --prefix angular run test:ui    # with the Vitest UI
 - **Environment**: `node`.
 - **Config**: `jest` key in `electron/package.json`.
 - **Setup**: `electron/__tests__/jest.setup.ts` — mocks `better-sqlite3` globally, since the native module cannot load in unit tests.
-- **Convention**: tests live under `electron/__tests__/`, mirroring the source structure (e.g. `__tests__/services/operations.service.test.ts`).
-- **Mocks**: `electron/__tests__/mocks/`. Module-level mocks for native deps (`electron`, `better-sqlite3`) belong in `jest.setup.ts`. Per-test mocks use `jest.mock()` with `@jest/globals` imports (ts-jest does not auto-inject Jest globals here — import them explicitly).
+- **Convention**: tests live under `electron/__tests__/`, mirroring the source structure (e.g. `__tests__/services/category.service.test.ts`).
+- **Integration tests**: service-level tests that need a real database use `jest.unmock('better-sqlite3')` at the top of the file to override the global mock, create a temp directory via `os.tmpdir()`, mock `electron`'s `app.getPath` to return it, and call `DatabaseService.getInstance().migrate()` in both `beforeAll` and `beforeEach` to reset state. This pattern is used by `category.service.test.ts` and `envelope.service.test.ts`.
+- **Mocks**: Module-level mocks for native deps (`electron`, `better-sqlite3`) belong in `jest.setup.ts`. Per-test mocks use `jest.mock()` with `@jest/globals` imports (ts-jest does not auto-inject Jest globals here — import them explicitly).
 
 Run them with:
 

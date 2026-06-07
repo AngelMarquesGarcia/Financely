@@ -72,10 +72,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "financely:build:production"
+              "buildTarget": "financely_renderer_process:build:production"
             },
             "development": {
-              "buildTarget": "financely:build:development"
+              "buildTarget": "financely_renderer_process:build:development"
             }
           },
           "defaultConfiguration": "development"

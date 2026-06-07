@@ -1,24 +1,14 @@
-import { Component, inject } from '@angular/core';
-import { RouterOutlet, RouterLink } from '@angular/router';
-import { ElectronService } from './core/services/electron.service';
+import { Component } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+import { NavbarComponent } from './shared/components/navbar/navbar.component';
+import { ToastHostComponent } from './shared/components/toast-host/toast-host.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink],
+  imports: [RouterOutlet, NavbarComponent, ToastHostComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })
 export class AppComponent {
-  private electron = inject(ElectronService);
-
   title = 'Financely';
-
-  addOne() {
-    console.log('AppComponent - addOne called');
-    //this.electron.chrome();
-    //this.electron.electron();
-    //this.electron.node();
-
-    this.electron.addOne();
-  }
 }

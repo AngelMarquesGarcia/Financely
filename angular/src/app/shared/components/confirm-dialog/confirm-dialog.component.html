@@ -1,0 +1,21 @@
+<div class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+  <h3 id="confirm-title" class="confirm-dialog__title">{{ req.title }}</h3>
+  <p class="confirm-dialog__message">{{ req.message }}</p>
+  <div class="confirm-dialog__actions">
+    <button type="button" class="btn btn--ghost" (click)="cancel()">
+      {{ req.cancelLabel ?? 'Cancel' }}
+    </button>
+    <!-- eslint-disable @angular-eslint/template/no-autofocus -->
+    <button
+      type="button"
+      class="btn"
+      [class.btn--danger]="req.danger"
+      [class.btn--primary]="!req.danger"
+      (click)="accept()"
+      autofocus
+    >
+      {{ req.confirmLabel ?? 'Confirm' }}
+    </button>
+    <!-- eslint-enable @angular-eslint/template/no-autofocus -->
+  </div>
+</div>

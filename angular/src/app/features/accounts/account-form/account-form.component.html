@@ -1,0 +1,40 @@
+<div class="card">
+  <h2 class="card__title">
+    {{ isEditing ? 'Edit Account #' + editingAccount!.id : 'New Account' }}
+  </h2>
+
+  <div class="form">
+    <app-form-field
+      label="Name"
+      forId="name"
+      [error]="showErrors && !name.trim() ? 'Name is required.' : null"
+    >
+      <input
+        id="name"
+        class="form__input"
+        [class.form__input--error]="showErrors && !name.trim()"
+        [(ngModel)]="name"
+        placeholder="e.g. Main Bank"
+      />
+    </app-form-field>
+
+    <app-form-field label="Description" forId="description" [optional]="true">
+      <textarea
+        id="description"
+        class="form__input form__textarea"
+        [(ngModel)]="description"
+        placeholder="Optional notes about this account…"
+        rows="2"
+      ></textarea>
+    </app-form-field>
+
+    <div class="form__actions">
+      <button class="btn btn--primary" (click)="save()">
+        {{ isEditing ? 'Update' : 'Create' }}
+      </button>
+      @if (isEditing) {
+        <button class="btn btn--ghost" (click)="cancel()">Cancel</button>
+      }
+    </div>
+  </div>
+</div>

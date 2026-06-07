@@ -1,0 +1,48 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(npm show *)",
+      "Bash(npm install *)",
+      "Bash(ls \"C:\\\\Users\\\\burak\\\\iCloudDrive\\\\iCloud~md~obsidian\\\\Synced vault\\\\TFG\\\\Finally\" 2>&1)",
+      "Read(//c/Users/burak/iCloudDrive/iCloud~md~obsidian/Synced vault/TFG/Finally/**)",
+      "Bash(npm --prefix electron run type-check)",
+      "Bash(xargs grep -l \"FormBuilder\\\\|Validator\")",
+      "Bash(npm --prefix electron test)",
+      "Bash(Get-ChildItem -Path \"d:\\\\Universidad\\\\TFG\\\\Financely\" -Recurse -Force)",
+      "Bash(Select-Object FullName)",
+      "Bash(grep -E '\\\\.\\(ts|html\\)$')",
+      "Bash(ls -la \"d:\\\\Universidad\\\\TFG\\\\Financely\\\\\" | head -30)",
+      "Read(//d/Universidad/TFG/**)",
+      "Bash(npm --prefix angular run test:run)",
+      "Bash(npm test *)",
+      "Bash(npm --prefix angular list @angular/cdk)",
+      "Bash(Get-ChildItem -Path \"d:\\\\Universidad\\\\TFG\\\\Financely\\\\angular\\\\src\\\\app\" -Directory)",
+      "Bash(Select-Object Name)",
+      "Bash(npm --prefix electron list electron-store)",
+      "Bash(New-Item -ItemType Directory -Force \"d:\\\\Universidad\\\\TFG\\\\Financely\\\\angular\\\\src\\\\app\\\\features\\\\movements\\\\movement-detail-dialog\")",
+      "Bash(Out-Null)",
+      "Bash(New-Item -ItemType Directory -Force \"d:\\\\Universidad\\\\TFG\\\\Financely\\\\angular\\\\src\\\\app\\\\features\\\\movements\\\\movement-list-compact\")",
+      "Bash(Write-Output \"done\")",
+      "Bash(npx tsc *)",
+      "Bash(Get-Content \"d:\\\\Universidad\\\\TFG\\\\Financely\\\\.husky\\\\pre-commit\")",
+      "PowerShell(npm show @fortawesome/angular-fontawesome versions --json 2>&1)",
+      "PowerShell(npm show @fortawesome/angular-fontawesome@5.0.0 peerDependencies 2>&1)",
+      "PowerShell(npm show @fortawesome/angular-fontawesome@1.0.0 peerDependencies)",
+      "PowerShell(npm show @fortawesome/angular-fontawesome@2.0.1 peerDependencies)",
+      "PowerShell(npm show @fortawesome/angular-fontawesome@3.0.0 peerDependencies)"
+    ]
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -c \"[Console]::Beep(880,200)\""
+          }
+        ]
+      }
+    ]
+  }
+}

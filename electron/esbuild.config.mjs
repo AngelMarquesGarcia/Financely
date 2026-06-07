@@ -9,6 +9,7 @@ const sharedOptions = {
   external: [
     'electron',
     'better-sqlite3',
+    'electron-store',
   ],
   alias: {
     '@shared': '../shared',

@@ -1,0 +1,27 @@
+@if (movements.length === 0) {
+  <app-empty-state message="No movements recorded yet." />
+} @else {
+  <div class="compact-list">
+    @for (row of groupedRows; track row.key) {
+      @if (row.kind === 'header') {
+        <div class="month-header">{{ row.label }}</div>
+      } @else {
+        @let m = row.movement;
+        <button
+          type="button"
+          class="compact-row"
+          [class.compact-row--income]="m.isPositive"
+          [class.compact-row--expense]="!m.isPositive"
+          (click)="openDetail(m)"
+        >
+          <span class="compact-row__name">{{ m.name }}</span>
+          <span
+            class="compact-row__amount"
+            [class.amount--income]="m.isPositive"
+            [class.amount--expense]="!m.isPositive"
+          >{{ signedCents(m) | money }}</span>
+        </button>
+      }
+    }
+  </div>
+}

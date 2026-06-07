@@ -1,0 +1,120 @@
+<div class="card">
+  <div class="card__header">
+    <h2 class="card__title">Movements</h2>
+    <div class="card__actions">
+      @if (selected.size > 0) {
+        <button class="btn btn--delete" type="button" (click)="emitBulkDelete()">
+          Delete selected ({{ selected.size }})
+        </button>
+      }
+      <app-movements-filter
+        [categories]="categories"
+        [envelopes]="envelopes"
+        [tags]="tags"
+        (filterChanged)="onFilterChanged($event)"
+      />
+    </div>
+  </div>
+
+  @if (movements.length === 0) {
+    @if (filterActive) {
+      <app-empty-state icon="🔍" message="No movements match the current filters." />
+    } @else {
+      <app-empty-state icon="💸" message="No movements recorded yet.">
+        <app-quick-create-movement-button label="Create your first movement" (created)="filterChanged.emit({})" />
+      </app-empty-state>
+    }
+  } @else {
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th class="select-col">
+              <input
+                type="checkbox"
+                [checked]="allSelected"
+                [indeterminate]="someSelected"
+                (change)="toggleAll($any($event.target).checked)"
+                aria-label="Select all"
+              />
+            </th>
+            <th>Name</th>
+            <th>Amount</th>
+            <th>Category</th>
+            <th>Envelope</th>
+            <th>Date</th>
+            <th>Tags</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of groupedRows; track row.key) {
+            @if (row.kind === 'header') {
+              <tr class="month-separator">
+                <td colspan="8">{{ row.label }}</td>
+              </tr>
+            } @else {
+              @let m = row.movement;
+              @let cat = getCategory(m.categoryId);
+              <tr [class.row--income]="m.isPositive" [class.row--expense]="!m.isPositive" [class.row--selected]="isRowSelected(m.id)">
+                <td class="select-col">
+                  <input
+                    type="checkbox"
+                    [checked]="isRowSelected(m.id)"
+                    (change)="toggleRow(m.id, $any($event.target).checked)"
+                    [attr.aria-label]="'Select movement ' + m.name"
+                  />
+                </td>
+                <td>{{ m.name }}</td>
+                <td class="amount">{{ signedCents(m) | money }}</td>
+                <td>
+                  @if (cat) {
+                    <span
+                      class="badge"
+                      [style.background]="cat.color ?? '#64748b'"
+                      [style.color]="contrastColor(cat.color ?? '#64748b')"
+                    >@if (cat.emoji) { {{ cat.emoji }} } {{ cat.name }}</span>
+                  } @else {
+                    <span class="badge badge--none">—</span>
+                  }
+                </td>
+                <td>{{ getEnvelope(m.envelopeId)?.name ?? '—' }}</td>
+                <td>{{ formatDate(m.date) }}</td>
+                <td class="tags-cell">
+                  @let tags = getMovementTags(m.id);
+                  @if (tags.length > 0) {
+                    <div class="tag-summary">
+                      <span class="color-dot" [style.background]="tags[0].color"></span>
+                      <span class="tag-summary__name">{{ tags[0].name }}</span>
+                      @if (tags.length > 1) {
+                        <span class="tag-more">+{{ tags.length - 1 }}</span>
+                      }
+                      @if (tags.length > 1) {
+                        <div class="tag-popup">
+                          @for (t of tags; track t.id) {
+                            <div class="tag-popup__item">
+                              <span class="color-dot" [style.background]="t.color"></span>
+                              {{ t.name }}
+                            </div>
+                          }
+                        </div>
+                      }
+                    </div>
+                  } @else {
+                    <span class="badge badge--none">—</span>
+                  }
+                </td>
+                <td>
+                  <div class="actions">
+                    <button class="btn btn--edit" (click)="editRequested.emit(m)">Edit</button>
+                    <button class="btn btn--delete" (click)="deleteRequested.emit(m.id)">Delete</button>
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

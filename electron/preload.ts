@@ -1,15 +1,86 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { Channels } from './ipc/channels';
+import { Movement, Category, MovementFilter, AppSettings, Account, Envelope, Tag } from '../shared/types';
 
-contextBridge.exposeInMainWorld('api', {
-  addOne: () => ipcRenderer.invoke(Channels.ADD_ONE),
+contextBridge.exposeInMainWorld('movements', {
+  create: (
+    name: string,
+    concept: string | null,
+    quantityCents: number,
+    isPositive: boolean,
+    date: Date,
+    categoryId: number,
+    envelopeId: number,
+    additionalNotes: string | null,
+  ) =>
+    ipcRenderer.invoke(Channels.MOVEMENT_CREATE, {
+      name,
+      concept,
+      quantityCents,
+      isPositive,
+      date,
+      categoryId,
+      envelopeId,
+      additionalNotes,
+    }),
+  getAll: (filter?: MovementFilter) => ipcRenderer.invoke(Channels.MOVEMENT_GET_ALL, filter),
+  getById: (id: number) => ipcRenderer.invoke(Channels.MOVEMENT_GET_BY_ID, id),
+  update: (movement: Movement) => ipcRenderer.invoke(Channels.MOVEMENT_UPDATE, movement),
+  delete: (id: number) => ipcRenderer.invoke(Channels.MOVEMENT_DELETE, id),
+  deleteMany: (ids: number[]) => ipcRenderer.invoke(Channels.MOVEMENT_DELETE_MANY, ids),
+  suggestNames: (prefix: string, limit?: number) =>
+    ipcRenderer.invoke(Channels.MOVEMENT_SUGGEST_NAMES, { prefix, limit }),
 });
 
-contextBridge.exposeInMainWorld('ops', {
-  runOperation: (n1: number, n2: number, op: string) =>
-    ipcRenderer.invoke(Channels.RUN_OPERATION, { n1, n2, op }),
+contextBridge.exposeInMainWorld('categories', {
+  create: (name: string, color?: string, emoji?: string, envelopeId: number | null = null) =>
+    ipcRenderer.invoke(Channels.CATEGORY_CREATE, { name, color, emoji, envelopeId }),
+  getAll: () => ipcRenderer.invoke(Channels.CATEGORY_GET_ALL),
+  getById: (id: number) => ipcRenderer.invoke(Channels.CATEGORY_GET_BY_ID, id),
+  update: (category: Category) => ipcRenderer.invoke(Channels.CATEGORY_UPDATE, category),
+  delete: (id: number) => ipcRenderer.invoke(Channels.CATEGORY_DELETE, id),
+  setDefault: (id: number) => ipcRenderer.invoke(Channels.CATEGORY_SET_DEFAULT, id),
 });
 
-contextBridge.exposeInMainWorld('sents', {
-  count: (sent: string) => ipcRenderer.invoke(Channels.COUNT_WORDS, sent),
+contextBridge.exposeInMainWorld('accounts', {
+  create: (name: string, description?: string) => ipcRenderer.invoke(Channels.ACCOUNT_CREATE, { name, description }),
+  getAll: () => ipcRenderer.invoke(Channels.ACCOUNT_GET_ALL),
+  getById: (id: number) => ipcRenderer.invoke(Channels.ACCOUNT_GET_BY_ID, id),
+  update: (account: Account) => ipcRenderer.invoke(Channels.ACCOUNT_UPDATE, account),
+  delete: (id: number) => ipcRenderer.invoke(Channels.ACCOUNT_DELETE, id),
+  setDefault: (id: number) => ipcRenderer.invoke(Channels.ACCOUNT_SET_DEFAULT, id),
+  getStats: () => ipcRenderer.invoke(Channels.ACCOUNT_GET_STATS),
+});
+
+contextBridge.exposeInMainWorld('envelopes', {
+  create: (name: string, accountId: number) =>
+    ipcRenderer.invoke(Channels.ENVELOPE_CREATE, { name, accountId }),
+  getAll: () => ipcRenderer.invoke(Channels.ENVELOPE_GET_ALL),
+  getById: (id: number) => ipcRenderer.invoke(Channels.ENVELOPE_GET_BY_ID, id),
+  update: (envelope: Envelope) => ipcRenderer.invoke(Channels.ENVELOPE_UPDATE, envelope),
+  delete: (id: number) => ipcRenderer.invoke(Channels.ENVELOPE_DELETE, id),
+  setDefault: (id: number) => ipcRenderer.invoke(Channels.ENVELOPE_SET_DEFAULT, id),
+});
+
+contextBridge.exposeInMainWorld('tags', {
+  create: (type: string, name: string, color: string) =>
+    ipcRenderer.invoke(Channels.TAG_CREATE, { type, name, color }),
+  getAll: () => ipcRenderer.invoke(Channels.TAG_GET_ALL),
+  getById: (id: number) => ipcRenderer.invoke(Channels.TAG_GET_BY_ID, id),
+  update: (tag: Tag) => ipcRenderer.invoke(Channels.TAG_UPDATE, tag),
+  delete: (id: number) => ipcRenderer.invoke(Channels.TAG_DELETE, id),
+  addToMovement: (tagId: number, movementId: number) =>
+    ipcRenderer.invoke(Channels.TAG_ADD_TO_MOVEMENT, { tagId, movementId }),
+  removeFromMovement: (tagId: number, movementId: number) =>
+    ipcRenderer.invoke(Channels.TAG_REMOVE_FROM_MOVEMENT, { tagId, movementId }),
+  getForMovement: (movementId: number) =>
+    ipcRenderer.invoke(Channels.TAG_GET_FOR_MOVEMENT, movementId),
+  getForMovements: (movementIds: number[]) =>
+    ipcRenderer.invoke(Channels.TAG_GET_FOR_MOVEMENTS, movementIds),
+});
+
+contextBridge.exposeInMainWorld('settings', {
+  getAll: (): Promise<AppSettings> => ipcRenderer.invoke(Channels.SETTINGS_GET),
+  save: (partial: Partial<AppSettings>): Promise<void> =>
+    ipcRenderer.invoke(Channels.SETTINGS_SET, partial),
 });

@@ -1,0 +1,41 @@
+<div class="card">
+  <h2 class="card__title">Envelopes</h2>
+
+  @if (envelopes.length === 0) {
+    <app-empty-state icon="📦" message="No envelopes yet. Use the form above to add your first one." />
+  } @else {
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Account</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (e of envelopes; track e.id) {
+            <tr>
+              <td>{{ e.id }}</td>
+              <td>
+                {{ e.name }}
+                @if (e.isDefault) { <span class="default-badge">default</span> }
+              </td>
+              <td class="account-cell">{{ accountName(e.accountId) }}</td>
+              <td>
+                <div class="actions">
+                  <button class="btn btn--edit" (click)="editRequested.emit(e)">Edit</button>
+                  @if (!e.isDefault) {
+                    <button class="btn btn--ghost" (click)="setDefaultRequested.emit(e.id)">Set default</button>
+                    <button class="btn btn--delete" (click)="deleteRequested.emit(e.id)">Delete</button>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

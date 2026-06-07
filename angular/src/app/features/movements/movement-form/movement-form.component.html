@@ -1,0 +1,143 @@
+<div class="card">
+  <div class="card__header">
+    <h2 class="card__title">
+      {{ isEditing ? 'Edit Movement #' + editingMovement!.id : 'New Movement' }}
+    </h2>
+    @if (!isEditing) {
+      <button type="button" class="card__gear btn btn--ghost" (click)="onGearClick()" title="Date settings">
+        <fa-icon [icon]="faGear" />
+      </button>
+    }
+  </div>
+
+  <div class="form">
+    <div class="form__group">
+      <label class="form__label" for="mov-name">Name</label>
+      <app-autocomplete-input
+        inputId="mov-name"
+        [inputClass]="(showErrors && !name.trim()) ? 'form__input form__input--error' : 'form__input'"
+        placeholder="e.g. February rent"
+        [value]="name"
+        (valueChange)="name = $event"
+        [suggestFn]="suggestNames"
+      />
+      @if (showErrors && !name.trim()) {
+        <span class="form__error">Name is required.</span>
+      }
+    </div>
+
+    <div class="form__group">
+      <label class="form__label" for="mov-date">Date</label>
+      <input
+        id="mov-date"
+        class="form__input"
+        [class.form__input--error]="showErrors && date > todayString()"
+        [(ngModel)]="date"
+        type="date"
+      />
+      @if (showErrors && date > todayString()) {
+        <span class="form__error">Date cannot be in the future.</span>
+      }
+    </div>
+
+    <div class="form__group">
+      <label class="form__label" for="mov-amount">Amount</label>
+      <app-amount-input
+        inputId="mov-amount"
+        [inputClass]="showErrors && validationErrors.includes('Amount must be positive and non-zero.') ? 'form__input form__input--error' : 'form__input'"
+        [amountCents]="amountCents"
+        (amountCentsChange)="amountCents = $event"
+      />
+      @if (showErrors && validationErrors.includes('Amount must be positive and non-zero.')) {
+        <span class="form__error">Must be positive and non-zero.</span>
+      }
+    </div>
+
+    <div class="form__group">
+      <label class="form__label" for="mov-type">Type</label>
+      <select id="mov-type" class="form__input" [(ngModel)]="type">
+        <option value="expense">Expense</option>
+        <option value="income">Income</option>
+      </select>
+    </div>
+
+    <div class="form__group">
+      <label class="form__label" for="mov-category">Category</label>
+      <input
+        id="mov-category"
+        class="form__input"
+        [class.form__input--error]="showErrors && !selectedCategoryId"
+        list="categories-list"
+        [(ngModel)]="selectedCategoryName"
+        (change)="onCategorySelected()"
+        placeholder="Search category…"
+        autocomplete="off"
+      />
+      <datalist id="categories-list">
+        @for (cat of categories; track cat.id) {
+          <option [value]="cat.name"></option>
+        }
+      </datalist>
+      @if (showErrors && !selectedCategoryId) {
+        <span class="form__error">A category must be selected.</span>
+      }
+    </div>
+
+    <div class="form__group">
+      <label class="form__label" for="mov-envelope">Envelope</label>
+      <select
+        id="mov-envelope"
+        class="form__input"
+        [class.form__input--error]="showErrors && !selectedEnvelopeId"
+        [(ngModel)]="selectedEnvelopeId"
+      >
+        <option [ngValue]="null" disabled>Select envelope…</option>
+        @for (e of envelopes; track e.id) {
+          <option [ngValue]="e.id">{{ e.name }}</option>
+        }
+      </select>
+      @if (showErrors && !selectedEnvelopeId) {
+        <span class="form__error">An envelope must be selected.</span>
+      }
+    </div>
+
+    <div class="form__group form__group--full">
+      <span class="form__label">Tags</span>
+      <app-tag-picker [tags]="tags" [(selectedTagIds)]="selectedTagIds" (tagCreated)="onTagPickerTagCreated()" />
+    </div>
+
+    <details class="extras form__group--full">
+      <summary class="extras__toggle">Optional details</summary>
+      <div class="extras__body">
+        <div class="form__group">
+          <label class="form__label" for="mov-concept">Concept</label>
+          <input
+            id="mov-concept"
+            class="form__input"
+            [(ngModel)]="concept"
+            placeholder="Concept as it appears on your banking app"
+          />
+        </div>
+        <div class="form__group">
+          <label class="form__label" for="mov-notes">Notes</label>
+          <textarea
+            id="mov-notes"
+            class="form__input form__textarea"
+            [(ngModel)]="additionalNotes"
+            placeholder="Any additional notes…"
+            rows="3"
+          ></textarea>
+        </div>
+      </div>
+    </details>
+
+    <div class="form__actions form__group--full">
+      <button class="btn btn--primary" (click)="save()">
+        {{ isEditing ? 'Update' : 'Create' }}
+      </button>
+      @if (isEditing) {
+        <button class="btn btn--ghost" (click)="cancel()">Cancel</button>
+      }
+    </div>
+  </div>
+</div>

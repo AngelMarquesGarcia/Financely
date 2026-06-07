@@ -16,7 +16,8 @@
     "main.ts",
     "preload.ts",
     "ipc/**/*.ts",
-    "services/**/*.ts"
+    "services/**/*.ts",
+    "repository/**/*.ts"
   ],
   "exclude": [
     "node_modules",

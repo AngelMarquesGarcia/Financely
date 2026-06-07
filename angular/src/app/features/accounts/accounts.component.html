@@ -1,0 +1,35 @@
+<div class="accounts-page">
+  <div class="stats-strip">
+    <app-stat-card
+      title="Total income"
+      [value]="stats.totalIncomeCents | money"
+      [icon]="faArrowUp"
+      tone="positive"
+    />
+    <app-stat-card
+      title="Total expense"
+      [value]="stats.totalExpenseCents | money"
+      [icon]="faArrowDown"
+      tone="negative"
+    />
+    <app-stat-card
+      title="Current balance"
+      [value]="stats.balanceCents | money"
+      [icon]="faScaleBalanced"
+      [tone]="stats.balanceCents >= 0 ? 'positive' : 'negative'"
+    />
+    <app-stat-card
+      title="Envelopes"
+      [value]="stats.envelopeCount.toString()"
+      [icon]="faBoxArchive"
+    />
+  </div>
+
+  <app-account-form [editingAccount]="editingAccount" (saved)="onSaved()" (cancelled)="onCancelled()" />
+  <app-accounts-list
+    [accounts]="accounts"
+    (editRequested)="onEditRequested($event)"
+    (deleteRequested)="onDeleteRequested($event)"
+    (setDefaultRequested)="onSetDefaultRequested($event)"
+  />
+</div>

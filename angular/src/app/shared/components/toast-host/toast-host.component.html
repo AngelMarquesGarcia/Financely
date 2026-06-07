@@ -1,0 +1,8 @@
+<div class="toast-host" aria-live="polite" aria-atomic="true">
+  @for (n of notify.notifications(); track n.id) {
+    <div class="toast toast--{{ n.type }}">
+      <span class="toast__message">{{ n.message }}</span>
+      <button type="button" class="toast__close" (click)="notify.dismiss(n.id)" aria-label="Dismiss">×</button>
+    </div>
+  }
+</div>

@@ -1,0 +1,54 @@
+:host {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.popover-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-popover) - 1);
+  background: none;
+  border: none;
+  cursor: default;
+  padding: 0;
+}
+
+.popover-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  z-index: var(--z-popover);
+  padding: 0.875rem;
+
+  &--right {
+    left: auto;
+    right: 0;
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -5px;
+    left: 9px;
+    width: 10px;
+    height: 10px;
+    background: var(--c-surface);
+    border-top: 1px solid var(--c-border);
+    border-left: 1px solid var(--c-border);
+    transform: rotate(45deg);
+  }
+
+  &--right::before {
+    left: auto;
+    right: 9px;
+  }
+
+  &--no-arrow::before {
+    display: none;
+  }
+}

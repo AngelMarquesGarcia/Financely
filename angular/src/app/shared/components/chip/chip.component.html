@@ -1,0 +1,20 @@
+<button
+  type="button"
+  class="chip"
+  [class.chip--removable]="variant === 'removable'"
+  [class.chip--action]="variant === 'action'"
+>
+  @if (icon) {
+    <fa-icon [icon]="icon" class="chip__icon" />
+  }
+  @if (color) {
+    <span class="chip__dot" [style.background]="color"></span>
+  }
+  @if (emoji) {
+    <span>{{ emoji }}</span>
+  }
+  {{ label }}
+  @if (variant === 'removable') {
+    <span class="chip__overlay"><fa-icon [icon]="faTrash" /></span>
+  }
+</button>

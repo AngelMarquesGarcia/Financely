@@ -1,0 +1,28 @@
+<div class="ac-host">
+  <input
+    #inputEl
+    [class]="inputClass"
+    [attr.id]="inputId"
+    [placeholder]="placeholder"
+    [ngModel]="value"
+    (ngModelChange)="onInput($event)"
+    (focus)="onFocus()"
+    (keydown)="onKeydown($event)"
+    autocomplete="off"
+  />
+  @if (open) {
+    <div class="ac-panel" role="listbox">
+      @for (s of suggestions; track s; let i = $index) {
+        <button
+          type="button"
+          class="ac-option"
+          [class.ac-option--active]="i === highlight"
+          role="option"
+          [attr.aria-selected]="i === highlight"
+          (mousedown)="select(s); $event.preventDefault()"
+          (mouseenter)="highlight = i"
+        >{{ s }}</button>
+      }
+    </div>
+  }
+</div>

@@ -1,0 +1,45 @@
+<div class="swatches-wrap">
+  <div class="swatches" appSortable (sorted)="onSorted($event)">
+    @for (c of colors; track c) {
+      <button
+        type="button"
+        class="swatch"
+        [style.background]="c"
+        [class.swatch--selected]="multiSelect ? selected.has(c) : value === c"
+        (click)="onSwatchClick(c)"
+        [attr.aria-label]="c"
+      ></button>
+    }
+  </div>
+
+  <ng-content></ng-content>
+
+  <div class="swatch-add-anchor">
+    <button
+      type="button"
+      class="swatch swatch--add"
+      (click)="addOpen = !addOpen; addValue = '#3b82f6'"
+      title="Add color"
+    >
+      +
+    </button>
+    @if (addOpen) {
+      <button type="button" class="swatch-add-backdrop" (click)="addOpen = false" aria-label="Close"></button>
+      <div class="swatch-add-popover">
+        <label class="swatch-add-popover__preview" [style.background]="addValue" aria-label="Pick color">
+          <input type="color" [(ngModel)]="addValue" />
+        </label>
+        <button type="button" class="btn btn--primary" (click)="submitAdd()">Add</button>
+      </div>
+    }
+  </div>
+</div>
+
+@if (multiSelect) {
+  <div class="color-swatches__actions">
+    <button type="button" class="btn-link" (click)="resetRequested.emit()">Reset to defaults</button>
+    @if (selectedCount > 0) {
+      <button type="button" class="btn-delete" (click)="onDeleteSelected()">Delete ({{ selectedCount }})</button>
+    }
+  </div>
+}

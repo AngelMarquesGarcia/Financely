@@ -1,0 +1,16 @@
+<div class="envelopes-page">
+  <app-envelope-form
+    [editingEnvelope]="editingEnvelope"
+    [accounts]="accounts"
+    [categories]="categories"
+    (saved)="onSaved()"
+    (cancelled)="onCancelled()"
+  />
+  <app-envelopes-list
+    [envelopes]="envelopes"
+    [accounts]="accounts"
+    (editRequested)="onEditRequested($event)"
+    (deleteRequested)="onDeleteRequested($event)"
+    (setDefaultRequested)="onSetDefaultRequested($event)"
+  />
+</div>

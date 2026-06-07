@@ -1,5 +1,7 @@
 # Angular + Electron + SQLite Template
 
+> **IMPORTANT — schema version:** `electron/repository/schema.ts`, `electron/repository/database.service.ts`, and SQL in repository files can be modified freely. However, do NOT increment the schema version — it must remain at 1.
+
 Template funcional de punto de partida para proyectos desktop con Angular como renderer, Electron como main process, y SQLite como base de datos local. Incluye lógica mínima de ejemplo (operaciones matemáticas y contador de palabras) que demuestra la comunicación frontend↔backend y la persistencia en base de datos.
 
 ---
@@ -34,32 +36,57 @@ angular/
 ├── src/
 │   ├── app/
 │   │   ├── core/
+│   │   │   ├── defaults.ts                   # Constantes compartidas (color order, category icons)
 │   │   │   ├── guards/
 │   │   │   ├── interceptors/
 │   │   │   ├── models/
 │   │   │   └── services/
 │   │   │       ├── electron.service.ts       # Wrapper RxJS sobre la IPC API
-│   │   │       └── electron.service.spec.ts
+│   │   │       ├── notification.service.ts   # Cola de toasts (signal-based)
+│   │   │       ├── confirm.service.ts        # Modal de confirmación (Observable-based, sobre DialogService)
+│   │   │       ├── dialog.service.ts         # Abridor imperativo de diálogos (CDK Overlay)
+│   │   │       ├── dialog-ref.ts             # Handle del diálogo: close(), afterClosed()
+│   │   │       ├── dialog.tokens.ts          # InjectionToken DIALOG_DATA
+│   │   │       ├── error-text.service.ts     # AppErrorCode → texto human-readable
+│   │   │       └── error-reporter.service.ts # Operador `.toast()`: catch + resolve + notify
 │   │   ├── features/
-│   │   │   ├── operations/
-│   │   │   │   ├── operations.component.ts
-│   │   │   │   ├── operations.component.html
-│   │   │   │   ├── operations.component.scss
-│   │   │   │   └── operations.component.spec.ts
-│   │   │   └── sentences/
-│   │   │       ├── sentences.component.ts
-│   │   │       ├── sentences.component.html
-│   │   │       ├── sentences.component.scss
-│   │   │       └── sentences.component.spec.ts
-│   │   ├── services/                         # Reservado para servicios comunes futuros
+│   │   │   ├── accounts/                     # account-form/, accounts-list/, accounts.component.*
+│   │   │   ├── categories/                   # categories-list/, category-form/, categories.component.*
+│   │   │   ├── envelopes/                    # envelope-form/, envelopes-list/, envelopes.component.*
+│   │   │   ├── movements/                    # movement-form/, movements-list/, movements-filter/, movement-list-compact/, movement-detail-dialog/, movements.component.*
+│   │   │   ├── settings/                     # settings.component.*
+│   │   │   └── tags/                         # tag-form/, tags-list/, tags.component.*
 │   │   ├── shared/
 │   │   │   ├── components/
+│   │   │   │   ├── amount-input/             # AmountInputComponent — decimal text ↔ integer cents
+│   │   │   │   ├── autocomplete-input/       # AutocompleteInputComponent — async prefix suggest + keyboard nav
+│   │   │   │   ├── button/                   # ButtonComponent
+│   │   │   │   ├── chip/                     # ChipComponent — color dot, emoji, variantes removable/action
+│   │   │   │   ├── color-swatches/           # ColorSwatchesComponent — paleta con reorder/add/delete
+│   │   │   │   ├── confirm-dialog/           # Modal de confirmación
+│   │   │   │   ├── empty-state/              # EmptyStateComponent — message + icon? + slot proyectado para CTA
+│   │   │   │   ├── entity-select/            # EntitySelectComponent<T> — chips + popover multi-select
+│   │   │   │   ├── form-field/               # FormFieldComponent — label + slot + error
+│   │   │   │   ├── icon-picker/              # IconPickerComponent — grid de emojis con reorder/add/delete
+│   │   │   │   ├── modal/                    # ModalComponent — overlay declarativo para componentes "ventana"
+│   │   │   │   ├── navbar/
+│   │   │   │   ├── popover/                  # PopoverComponent — backdrop + panel anclado
+│   │   │   │   ├── quick-create-movement-button/ # Abre MovementForm en un diálogo
+│   │   │   │   ├── stat-card/                # StatCardComponent — title + valor + sublabel/icon opcionales
+│   │   │   │   ├── tag-picker/               # TagPickerComponent — wrapper sobre EntitySelect + popover de creación
+│   │   │   │   └── toast-host/               # Host de toasts
 │   │   │   ├── directives/
-│   │   │   └── pipes/
+│   │   │   │   └── sortable.directive.ts     # Wrapper Angular sobre SortableJS
+│   │   │   ├── pipes/
+│   │   │   │   └── money.pipe.ts             # Formatea céntimos → "22.50 €"
+│   │   │   └── utils.ts                      # parseMoney, formatCents, contrastColor
+│   │   ├── types/
+│   │   │   └── global.d.ts                   # Augmentation del Window para tipar el contextBridge
 │   │   ├── app.component.*
 │   │   └── app.component.spec.ts
 │   ├── testing/
 │   │   └── mock-electron.service.ts          # Fixture compartido entre tests
+│   ├── styles.scss                           # Design tokens, clases globales, estilos CDK overlay
 │   ├── vitest.setup.ts                       # Setup del entorno de test Angular
 │   └── environments/
 │       ├── environment.ts                    # LOCAL
@@ -81,32 +108,57 @@ Angular 19, standalone components (sin NgModule). El output de build va a `dist/
 electron/
 ├── ipc/
 │   ├── channels.ts                       # Constantes de nombres de canal IPC
-│   ├── api.handler.ts
-│   ├── operations.handler.ts
-│   └── sentences.handler.ts
+│   ├── ipc-utils.ts                      # ipcHandle() — normaliza errores a AppErrorCode antes del IPC
+│   ├── movements.handler.ts
+│   ├── categories.handler.ts
+│   ├── accounts.handler.ts
+│   ├── envelopes.handler.ts
+│   ├── tags.handler.ts
+│   └── settings.handler.ts
+├── repository/
+│   ├── database.service.ts               # SQLite con better-sqlite3, migrate(), seed
+│   ├── schema.ts                         # DDL + migraciones declarativas
+│   ├── movement-repository.service.ts
+│   ├── category-repository.service.ts
+│   ├── account-repository.service.ts
+│   ├── envelope-repository.service.ts
+│   └── tag-repository.service.ts
 ├── services/
-│   ├── database.service.ts               # SQLite con better-sqlite3
-│   ├── operations.service.ts
-│   ├── sentences.service.ts
-│   └── api.service.ts
+│   ├── movement.service.ts               # Validación + delega al repositorio
+│   ├── category.service.ts
+│   ├── account.service.ts                # Incluye getAccountStats() (agregados SUM/COUNT)
+│   ├── envelope.service.ts
+│   ├── tag.service.ts
+│   └── settings.service.ts               # electron-store (AppSettings)
+├── __tests__/
+│   ├── jest.setup.ts                     # Mock global de better-sqlite3
+│   └── services/
+│       ├── account.service.test.ts
+│       ├── category.service.test.ts
+│       ├── envelope.service.test.ts
+│       ├── movement.service.test.ts
+│       ├── settings.service.test.ts
+│       └── tag.service.test.ts
 ├── main.ts                               # Entry point del main process
 ├── preload.ts                            # Expone la API al renderer vía contextBridge
 ├── esbuild.config.mjs                    # Config de bundling (main + preload → dist/main/)
 ├── tsconfig.json                         # Solo type-check (noEmit: true)
+├── tsconfig.test.json                    # tsconfig para Jest
 └── package.json
 ```
 
-El output de esbuild va a `dist/main/` (dos archivos: `main.js` y `preload.js`).
+El output de esbuild va a `dist/main/` (dos archivos: `main.js` y `preload.js`). Los tests de integración usan `jest.unmock('better-sqlite3')` localmente y un directorio temporal en `os.tmpdir()`, llamando a `migrate()` entre tests para garantizar estado limpio.
 
 ### `shared/` — Tipos compartidos
 
 ```
 shared/
-├── types.ts       # operation, sentence, operator
-└── interfaces.ts  # api, ops, sents (contratos de la IPC API)
+├── types.ts       # Movement, Category, Account, AccountStats, Envelope, Tag, AppSettings, MovementFilter
+├── interfaces.ts  # Movements, Categories, Accounts, Envelopes, Tags, Settings (contratos IPC)
+└── error-codes.ts # AppErrorCode + AppError — usado por backend (throw) y frontend (resolve a texto)
 ```
 
-Importado tanto por el frontend (`electron.service.ts`) como por el backend (`database.service.ts`, handlers).
+Importado tanto por el frontend (`electron.service.ts`) como por el backend (servicios y handlers).
 
 ### `dist/` — Output (gitignored)
 
@@ -126,7 +178,7 @@ Angular Component
     ↓
 ElectronService (RxJS wrapper sobre Promises)
     ↓
-window.api / window.ops / window.sents  (contextBridge)
+window.movements / .categories / .accounts / .envelopes / .tags / .settings  (contextBridge)
     ↓
 ipcRenderer.invoke(Channels.X)
     ↓
@@ -134,7 +186,7 @@ ipcMain.handle(Channels.X)  →  Handler (electron/ipc/)
     ↓
 Service (electron/services/)
     ↓
-DatabaseService / lógica de negocio
+Repository (electron/repository/)
     ↓
 SQLite (better-sqlite3)
 ```
@@ -234,90 +286,16 @@ npx @electron/rebuild --force
 | Packaging          | electron-builder                       | 26.x    |
 | Lenguaje           | TypeScript                             | 5.x     |
 | Tests frontend     | Vitest + @analogjs/vite-plugin-angular | 3.x     |
-| Tests backend      | Jest + ts-jest                         | 29.x    |
+| Tests backend      | Jest + ts-jest                         | 30.x    |
 | Tests E2E          | Playwright                             | 1.x     |
 | Linter             | ESLint (flat config)                   | 10.x    |
 | Formatter          | Prettier                               | 3.x     |
 
 ---
 
-## Historial de cambios
+## User requests
 
-### 30/04/2026
+> These are persistent preferences the user has explicitly asked for. Follow them in every session.
 
-**Punto de partida:** template funcional pero con estructura desorganizada (outputs mezclados con fuentes, sin separación de responsabilidades, naming inconsistente).
-
-**Restructuración del proyecto:**
-
-- `common/` renombrado a `shared/`
-- Servicios de electron renombrados a kebab-case
-- Componentes Angular movidos a `features/`, `ElectronService` a `core/services/`
-- Toda la salida de compilación consolidada en `dist/` (antes dispersa en `electron/target/`)
-- Handlers IPC extraídos de `main.ts` a `electron/ipc/` con constantes de canal en `channels.ts`
-
-**Bundler:**
-
-- Añadido esbuild como bundler para el main process de Electron
-- `tsc` conservado únicamente para type-checking (`noEmit: true`)
-- tsconfig de electron limpiado (eliminadas opciones de emisión)
-
-**Testing:**
-
-- Vitest (v3) + `@analogjs/vite-plugin-angular` como test runner del frontend, sustituyendo Karma/Jasmine
-- Jest + `ts-jest` configurado como test runner del backend (Electron)
-- Playwright instalado para tests E2E (scripts en raíz, tests pendientes)
-- Tests de Angular ubicados según el patrón de co-localización (`.spec.ts` junto al fuente, convención Angular)
-- Fixture compartida de test en `src/testing/mock-electron.service.ts`
-- Tests de electron en la carpeta /electron/**tests**, vacía por ahora (tests pendientes).
-
-**Calidad de código:**
-
-- Prettier configurado en raíz (`.prettierrc`, `.prettierignore`), con scripts `format` y `format:check`
-- ESLint con flat config (`eslint.config.mjs`): cubre Angular (TS + HTML), Electron y shared con reglas recomendadas de `typescript-eslint` y `angular-eslint`, integrado con Prettier via `eslint-config-prettier`
-
----
-
-### 01/05/2026
-
-**Calidad de código:**
-
-- Corregidas las violaciones de ESLint existentes; las no corregibles suprimidas puntualmente con `eslint-disable`
-- Corregidos naming y tipado en `shared/`: interfaces renombradas a PascalCase (`Api`, `Ops`, `Sents`), parámetro `op` tipado como `Operator` en lugar de `string`
-- Corregidas configuraciones de debug de VSCode: rutas a los binarios de Electron actualizadas a `dist/main/main.js` (antes apuntaban a la ruta antigua `electron/target/electron/`)
-
-**Testing:**
-
-- Escritos los primeros tests de Electron con Jest: `electron/__tests__/services/api.service.test.ts` (básico, sin mocks) y `electron/__tests__/services/operations.service.test.ts` (con mock de `DatabaseService` vía `jest.mock()`)
-- Escritos tests E2E con Playwright: `e2e/tests/smoke.spec.ts` (verifica título, `app-root`, y navegación principal) y `e2e/tests/basic-interaction.spec.ts` (navega a las features)
-- Confirmado el correcto funcionamiento de Jest y Playwright; corregidos errores de configuración detectados durante la puesta en marcha
-
-**CI/CD:**
-
-- Implementados tres workflows de GitHub Actions:
-  - `on_commit_lint_test_update_patch.yml` — tests unitarios (Angular + Electron) en cada push a ramas no-main
-  - `on_pr_e2e_update_minor.yml` — E2E + ESLint + bump minor en cada PR a main
-  - `on_push_main_from_feature_build.yml` — compilación, empaquetado Windows (electron-builder) y publicación de GitHub Release en cada push a main
-- Implementado pre-commit hook con Husky: ejecuta tests unitarios y hace bump de patch en cada commit local; el bump queda incluido en el propio commit, sin commits extra de "chore: bump version"
-
-**Documentación:**
-
-- Redactado `README.md` con estructura del proyecto, stack tecnológico, testing, QA, workflows, scripts, debugging e IPC
-
----
-
-### 02/05/2026
-
-**CI/CD:**
-
-- Verificando el correcto funcionamiento de los workflows se ha encontrado un problema: al hacer `npm ci --prefix angular` los workflows fallan porque se ejecutan en una máquina Linux. El error lo causa Vitest, que tiene dependencias de plataforma distintas en Linux y en Windows (`@rollup/rollup-linux-x64-gnu` y sus transitivas `@emnapi/core`, `@emnapi/runtime`), y no hay manera de incluirlas todas en el lock file generando desde Windows. El error se ha resuelto usando `npm install` en lugar de `npm ci` en ese paso en los tres workflows, aunque esto elimina la verificación estricta de consistencia del lock file que ofrecía `npm ci`.
-- Tras la corrección, confirmado el correcto funcionamiento de los tres workflows en el repositorio remoto.
-
-**Base de datos:**
-
-- Añadida lógica de migraciones en `DatabaseService`: `createTables()` renombrado a `migrate()`, que ahora lee la versión actual del schema desde la tabla `meta` y aplica únicamente los bloques de migración pendientes. La estructura queda lista para incorporar migraciones futuras sin tocar el código existente.
-
----
-
-## Pasos siguientes
-
-El template está completo. El siguiente paso natural es **hacer un fork del repositorio y utilizarlo como base para un proyecto real**.
+- **Notification sound on completion:** Play a beep when each response finishes. Configured via the `Stop` hook in `.claude/settings.local.json` using `powershell -c "[Console]::Beep(880,200)"` (Windows). Do not remove or disable this hook.
+- **Change summary with file links:** After every response that modifies files, include a summary of what changed. Reference each file as a markdown link (e.g. `[filename.ts](path/to/filename.ts)`) so they are clickable in the IDE.

@@ -1,0 +1,9 @@
+<div class="categories-page">
+  <app-category-form [editingCategory]="editingCategory" (saved)="onSaved()" (cancelled)="onCancelled()" />
+  <app-categories-list
+    [categories]="categories"
+    (editRequested)="onEditRequested($event)"
+    (deleteRequested)="onDeleteRequested($event)"
+    (setDefaultRequested)="onSetDefaultRequested($event)"
+  />
+</div>
