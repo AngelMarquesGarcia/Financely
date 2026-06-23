@@ -292,6 +292,73 @@ Sesión de revisión integral + ejecución de un plan de saneamiento y nuevas ex
 
 ---
 
+## En progreso (junio 2026)
+
+### PeriodSummary — implementación inicial
+
+Primer paso del dashboard de resumen mensual. Los tipos están definidos; la lógica del servicio está siendo escrita manualmente por el usuario.
+
+**Archivos nuevos:**
+
+- [electron/constants.ts](electron/constants.ts): centraliza los nombres de tabla en un objeto `tables` (antes estaban inline en cada repositorio).
+- [shared/types.ts](shared/types.ts): añadidos `Period` (accountId + envelopeId + year + month), `BasicSummary` (cash flow, totales, medias, count de movimientos), y `PeriodSummary` (snapshot mensual completo: campos de BasicSummary + endingBalanceCents, availableBudgetCents, notes, isDirty).
+- [electron/repository/period-summary-repository.service.ts](electron/repository/period-summary-repository.service.ts): CRUD + `getByPeriod`.
+- [electron/services/period-summary.service.ts](electron/services/period-summary.service.ts): creación, recalculación y propagación del flag `isDirty` a lo largo de la cadena de periodos.
+- [electron/ipc/period-summaries.handler.ts](electron/ipc/period-summaries.handler.ts): handlers IPC (pendiente de registrar en `main.ts` y exponer en `preload.ts`).
+- `angular/src/app/features/month-overview/`: componente de vista mensual.
+- `angular/src/app/shared/components/period-summary-card/`: tarjeta de visualización de un PeriodSummary.
+- `angular/src/testing/sample-summaries.ts`: fixtures de test.
+
+**Diseño del ending balance:** los PeriodSummaries forman una cadena mensual por (account, envelope). `ending_balance(P) = ending_balance(P-1) + cashFlow(P)`. El primer periodo se ancla en `startingBalance` de la cuenta o del envelope. Ediciones en periodos pasados marcan `isDirty = true` en ese periodo y en todos los posteriores; el getter recalcula lazily desde el periodo dirtied más antiguo hacia adelante.
+
+### Cambios próximos planificados
+
+- **Eliminar `id` de `PeriodSummary`**: usar los cuatro campos de `Period` (accountId, envelopeId, year, month) como clave primaria compuesta en lugar de un `id` autoincremental. Requiere:
+  - Cambiar el `UPDATE` y `DELETE` del repositorio para usar `Period` en lugar de `id`.
+  - Añadir dos índices `UNIQUE` parciales en el schema: uno para filas con `envelope_id IS NOT NULL` y otro `WHERE envelope_id IS NULL` para filas de nivel de cuenta (SQLite trata los `NULL` como distintos en constraints `UNIQUE` normales, por lo que se necesita el mismo patrón de índice parcial que ya usan los defaults de `is_default`).
+  - Eliminar el campo `id` de la interfaz `PeriodSummary` en `shared/types.ts` y actualizar todos los callers.
+
+- **Cambio de `type` a `class`**: reemplazar los tipos planos de `shared/types.ts` por clases TypeScript con métodos de dominio (e.g. `Period.previous()`, `Period.next()`). TypeScript no impone un archivo por clase — múltiples clases pueden exportarse desde un mismo `.ts`. La transición requerirá actualizar las deserializaciones en los repositorios (ya que `better-sqlite3` devuelve plain objects que habrá que mapear a instancias de clase).
+
+---
+
+## junio 2026 (continuación)
+
+### Completado de la capa PeriodSummary; incorporación de `startingBalance` y `accountId`
+
+**Capa IPC de PeriodSummary — completada y corregida:**
+
+- `isDirty: boolean` reemplazado por `dirtyState: DirtyState` (`'CLEAN' | 'MODIFIED' | 'DIRTY'`) en `shared/types.ts`, schema, repositorio y servicio. La distinción permite separar "recalcular agregados desde movimientos" (MODIFIED) de "solo actualizar endingBalance en la cadena" (DIRTY), lo que hace posible la evaluación lazy correcta cuando varios periodos están sucios.
+- Convención de mes: `month` se almacena como `0–11` (igual que `Date.getMonth()`), no `1–12`. Constraint de schema actualizado a `CHECK(month >= 0 AND month <= 11)`. En frontend, el +1 solo se aplica al renderizar.
+- `getMovementsByPeriod` completado en el repositorio: usa `CAST(strftime('%m', date) AS INTEGER) - 1` para comparar meses 0-indexados contra fechas ISO almacenadas como texto.
+- Corregido el método `delete` del repositorio: nombres de columna erróneos (`accountId`/`envelopeId` → `account_id`/`envelope_id`) y paso incorrecto del objeto `Period` a parámetros posicionales `?`.
+- Añadido `updatePeriodSummary` al servicio y su handler `PERIOD_SUMMARY_UPDATE`; el canal existía en `channels.ts` pero no tenía handler ni función de servicio.
+- Eliminado `getPeriodSummaryById` del handler, import y `channels.ts` — innecesario antes de eliminar el `id` de `PeriodSummary`, y coherente con el plan de usar `Period` como clave compuesta.
+- `delete` en preload e interface migrado de `(id: number)` a los cuatro campos de `Period`.
+- Handlers registrados en `main.ts`; superficie expuesta en `preload.ts`; `global.d.ts` tipado con la nueva interface `PeriodSummaries` de `shared/interfaces.ts`.
+
+**`accountId` añadido a `Movement`:**
+
+- Columna `account_id INTEGER NOT NULL REFERENCES accounts(id)` ya existía en el schema; ahora se persiste y se lee correctamente en todas las queries del repositorio (SELECT cols, INSERT, UPDATE).
+- `createMovement` obtiene el `accountId` del account por defecto via `accountRepository.getDefaultId()`.
+- `MovementFormComponent`: el objeto `Movement` en el path de edición incluye `accountId: this.editingMovement!.accountId`.
+- `movement.service.test.ts`: objeto `Movement` de la prueba de validación de nombre corregido con `accountId: 1`.
+
+**`startingBalance` añadido a `Account` y `Envelope`:**
+
+- Schema: `starting_balance INTEGER NOT NULL DEFAULT 0` en ambas tablas.
+- Repositorios: `selectCols`, INSERT y UPDATE actualizados; `RawAccount`/`RawEnvelope` y sus mappers incluyen el campo.
+- Servicios: `createAccount` y `createEnvelope` aceptan `startingBalance = 0` como tercer parámetro con default. En `createAccount`, el envelope por defecto creado automáticamente recibe `startingBalance: 0`.
+- Cadena IPC completa: handlers, interfaces (`Accounts.create`, `Envelopes.create`), preload y `ElectronService` actualizados.
+- Formularios: `AccountFormComponent` y `EnvelopeFormComponent` añaden campo `<app-amount-input>` para `startingBalance`; `ngOnChanges` restaura el valor al editar; ambos paths (create y update) lo envían.
+
+**Tests E2E:**
+
+- `smoke.spec.ts`: `getByText('Movements')` reemplazado por `getByRole('link', { name: 'Movements' })` — el texto coincidía también con el `<h2>` de la página y Playwright lanzaba strict mode violation.
+- `smoke-crud.spec.ts`: test de creación de categoría + movimiento marcado como `test.fixme` con comentario explicativo — requiere la capa IPC de Electron; en el contexto `ng serve` de Playwright, `window.categories` es `undefined`.
+
+---
+
 ## Pasos siguientes
 
 ### Pendientes arrastrados de auditorías previas
@@ -309,6 +376,12 @@ Generados directamente por el trabajo de esta iteración.
 - **`MovementFormComponent` y `MovementsComponent` aún cargan datos por separado**: el form re-pide categories/envelopes/tags en su `ngOnInit`, duplicando los fetches que ya hace el container. Un futuro pass podría aceptar esos datos como `@Input()` cuando se usa embebido y solo auto-cargarlos cuando se abre como dialog.
 - **Decisión `ModalComponent` vs `DialogService`**: documentada esta sesión pero no resuelta. Reevaluar tras la adopción del quick-create launcher en más sitios; si el patrón "abrir form en modal vía service" cubre todos los casos, retirar `ModalComponent`.
 - **`Movement.date` sigue cruzando el IPC como string**: las defensas `m.date instanceof Date ? ... : new Date(String(m.date))` en `movements-list` y `movement-form` indican que la deserialización no es completamente confiable. Considerar normalizar a string en el tipo compartido y convertir a `Date` solo donde haga falta.
+
+### Pendientes surgidos en junio 2026 (continuación)
+
+- **Eliminar `id` de `PeriodSummary`**: usar los cuatro campos de `Period` como clave primaria compuesta. Requiere cambiar UPDATE y DELETE del repositorio para usar Period, añadir dos índices UNIQUE parciales en el schema (mismo patrón que `is_default`), y eliminar `id` de la interface y todos los callers.
+- **ESLint `!= null` en `period-summary-card.component.html`**: `@angular-eslint/template/eqeqeq` prohíbe `!= null`. Reemplazar por `!== undefined` o configurar `"allowNullOrUndefined": true`.
+- **Playwright CRUD test con IPC**: `smoke-crud.spec.ts` está marcado como `test.fixme`. La solución real sería correr Playwright contra la app Electron completa, o añadir un mock de contextBridge en el setup de Playwright para el contexto `ng serve`.
 
 ### Recomendaciones de mayor alcance (fuera de la iteración actual)
 

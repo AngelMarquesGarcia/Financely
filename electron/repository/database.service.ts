@@ -8,22 +8,15 @@ import {
   EnvelopeSchema,
   MovementSchema,
   MovementTagSchema,
+  PeriodSummarySchema,
   TagSchema,
 } from './schema';
+import { tables } from '../constants';
 
 export class DatabaseService {
   private static instance: DatabaseService;
 
   private readonly SCHEMA_VERSION = 1;
-  private readonly tables = {
-    accounts: 'accounts',
-    envelopes: 'envelopes',
-    categories: 'categories',
-    movements: 'movements',
-    tags: 'tags',
-    movementTags: 'movement_tags',
-    metadata: 'meta',
-  };
 
   readonly db: InstanceType<typeof Database>;
 
@@ -40,7 +33,7 @@ export class DatabaseService {
 
   private initDatabase(): void {
     const insertCat = this.db.prepare(
-      `INSERT OR IGNORE INTO ${this.tables.categories} (name, color, emoji) VALUES (:name, :color, :emoji)`,
+      `INSERT OR IGNORE INTO ${tables.categories} (name, color, emoji) VALUES (:name, :color, :emoji)`,
     );
     for (const cat of [
       { name: 'Salary', color: '#22c55e', emoji: '💼' },
@@ -53,11 +46,11 @@ export class DatabaseService {
 
     // Seed a default category (Salary) so reassign-on-delete has a target out of the box.
     this.db
-      .prepare(`UPDATE ${this.tables.categories} SET is_default = 1 WHERE name = 'Salary'`)
+      .prepare(`UPDATE ${tables.categories} SET is_default = 1 WHERE name = 'Salary'`)
       .run();
 
     const insertTag = this.db.prepare(
-      `INSERT OR IGNORE INTO ${this.tables.tags} (type, name, color) VALUES (:type, :name, :color)`,
+      `INSERT OR IGNORE INTO ${tables.tags} (type, name, color) VALUES (:type, :name, :color)`,
     );
     for (const tag of [
       { type: 'frequency', name: 'Recurring', color: '#22c55e' },
@@ -68,12 +61,12 @@ export class DatabaseService {
 
     const defaultAccountId = (
       this.db
-        .prepare(`SELECT id FROM ${this.tables.accounts} WHERE is_default = 1 LIMIT 1`)
+        .prepare(`SELECT id FROM ${tables.accounts} WHERE is_default = 1 LIMIT 1`)
         .get() as { id: number }
     ).id;
 
     const insertEnv = this.db.prepare(
-      `INSERT OR IGNORE INTO ${this.tables.envelopes} (name, account_id) VALUES (?, ?)`,
+      `INSERT OR IGNORE INTO ${tables.envelopes} (name, account_id) VALUES (?, ?)`,
     );
     insertEnv.run('Monthly Expenses', defaultAccountId);
     insertEnv.run('Savings', defaultAccountId);
@@ -81,18 +74,18 @@ export class DatabaseService {
     const catId = (name: string) =>
       (
         this.db
-          .prepare(`SELECT id FROM ${this.tables.categories} WHERE name = ?`)
+          .prepare(`SELECT id FROM ${tables.categories} WHERE name = ?`)
           .get(name) as { id: number }
       ).id;
     const envId = (name: string) =>
       (
         this.db
-          .prepare(`SELECT id FROM ${this.tables.envelopes} WHERE name = ?`)
+          .prepare(`SELECT id FROM ${tables.envelopes} WHERE name = ?`)
           .get(name) as { id: number }
       ).id;
     const tagId = (name: string) =>
       (
-        this.db.prepare(`SELECT id FROM ${this.tables.tags} WHERE name = ?`).get(name) as {
+        this.db.prepare(`SELECT id FROM ${tables.tags} WHERE name = ?`).get(name) as {
           id: number;
         }
       ).id;
@@ -105,11 +98,11 @@ export class DatabaseService {
     const urgent = tagId('Urgent');
 
     const insertMov = this.db.prepare(
-      `INSERT INTO ${this.tables.movements} (name, concept, quantity_cents, isPositive, date, category_id, envelope_id, additional_notes)
-       VALUES (:name, :concept, :quantityCents, :isPositive, :date, :categoryId, :envelopeId, :notes)`,
+      `INSERT INTO ${tables.movements} (account_id, name, concept, quantity_cents, isPositive, date, category_id, envelope_id, additional_notes)
+       VALUES (:accountId, :name, :concept, :quantityCents, :isPositive, :date, :categoryId, :envelopeId, :notes)`,
     );
     const insertMovTag = this.db.prepare(
-      `INSERT OR IGNORE INTO ${this.tables.movementTags} (movement_id, tag_id) VALUES (?, ?)`,
+      `INSERT OR IGNORE INTO ${tables.movementTags} (movement_id, tag_id) VALUES (?, ?)`,
     );
 
     const addMov = (
@@ -120,60 +113,62 @@ export class DatabaseService {
       for (const t of tags) insertMovTag.run(id, t);
     };
 
-    addMov({ name: 'April salary', concept: 'NOMINA ABRIL', quantityCents: 220000, isPositive: 1, date: '2026-04-28', categoryId: catId('Salary'), envelopeId: savings, notes: null }, [recurring]);
-    addMov({ name: 'April rent', concept: 'ALQUILER ABR', quantityCents: 80000, isPositive: 0, date: '2026-04-01', categoryId: catId('Housing'), envelopeId: monthly, notes: null }, [recurring, urgent]);
-    addMov({ name: 'Grocery run', concept: 'MERCADONA', quantityCents: 6700, isPositive: 0, date: '2026-04-04', categoryId: catId('Food'), envelopeId: monthly, notes: null }, [recurring]);
-    addMov({ name: 'Bus monthly pass', concept: null, quantityCents: 4000, isPositive: 0, date: '2026-04-02', categoryId: catId('Transport'), envelopeId: monthly, notes: null }, [recurring]);
-    addMov({ name: 'Cinema tickets', concept: 'CINESA', quantityCents: 2200, isPositive: 0, date: '2026-04-12', categoryId: catId('Entertainment'), envelopeId: monthly, notes: null }, [oneTime]);
-    addMov({ name: 'Pharmacy', concept: null, quantityCents: 1800, isPositive: 0, date: '2026-04-15', categoryId: catId('Health'), envelopeId: monthly, notes: 'Ibuprofen and vitamins' }, [oneTime]);
-    addMov({ name: 'May salary', concept: 'NOMINA MAYO', quantityCents: 220000, isPositive: 1, date: '2026-05-28', categoryId: catId('Salary'), envelopeId: savings, notes: null }, [recurring]);
-    addMov({ name: 'May rent', concept: 'ALQUILER MAY', quantityCents: 80000, isPositive: 0, date: '2026-05-01', categoryId: catId('Housing'), envelopeId: monthly, notes: null }, [recurring, urgent]);
-    addMov({ name: 'Grocery run', concept: 'MERCADONA', quantityCents: 5400, isPositive: 0, date: '2026-05-06', categoryId: catId('Food'), envelopeId: monthly, notes: null }, [recurring]);
-    addMov({ name: 'Freelance payment', concept: null, quantityCents: 35000, isPositive: 1, date: '2026-05-10', categoryId: catId('Salary'), envelopeId: unassigned, notes: 'Logo design project' }, [oneTime]);
+    addMov({ accountId: defaultAccountId, name: 'April salary', concept: 'NOMINA ABRIL', quantityCents: 220000, isPositive: 1, date: '2026-04-28', categoryId: catId('Salary'), envelopeId: savings, notes: null }, [recurring]);
+    addMov({ accountId: defaultAccountId, name: 'April rent', concept: 'ALQUILER ABR', quantityCents: 80000, isPositive: 0, date: '2026-04-01', categoryId: catId('Housing'), envelopeId: monthly, notes: null }, [recurring, urgent]);
+    addMov({ accountId: defaultAccountId, name: 'Grocery run', concept: 'MERCADONA', quantityCents: 6700, isPositive: 0, date: '2026-04-04', categoryId: catId('Food'), envelopeId: monthly, notes: null }, [recurring]);
+    addMov({ accountId: defaultAccountId, name: 'Bus monthly pass', concept: null, quantityCents: 4000, isPositive: 0, date: '2026-04-02', categoryId: catId('Transport'), envelopeId: monthly, notes: null }, [recurring]);
+    addMov({ accountId: defaultAccountId, name: 'Cinema tickets', concept: 'CINESA', quantityCents: 2200, isPositive: 0, date: '2026-04-12', categoryId: catId('Entertainment'), envelopeId: monthly, notes: null }, [oneTime]);
+    addMov({ accountId: defaultAccountId, name: 'Pharmacy', concept: null, quantityCents: 1800, isPositive: 0, date: '2026-04-15', categoryId: catId('Health'), envelopeId: monthly, notes: 'Ibuprofen and vitamins' }, [oneTime]);
+    addMov({ accountId: defaultAccountId, name: 'May salary', concept: 'NOMINA MAYO', quantityCents: 220000, isPositive: 1, date: '2026-05-28', categoryId: catId('Salary'), envelopeId: savings, notes: null }, [recurring]);
+    addMov({ accountId: defaultAccountId, name: 'May rent', concept: 'ALQUILER MAY', quantityCents: 80000, isPositive: 0, date: '2026-05-01', categoryId: catId('Housing'), envelopeId: monthly, notes: null }, [recurring, urgent]);
+    addMov({ accountId: defaultAccountId, name: 'Grocery run', concept: 'MERCADONA', quantityCents: 5400, isPositive: 0, date: '2026-05-06', categoryId: catId('Food'), envelopeId: monthly, notes: null }, [recurring]);
+    addMov({ accountId: defaultAccountId, name: 'Freelance payment', concept: null, quantityCents: 35000, isPositive: 1, date: '2026-05-10', categoryId: catId('Salary'), envelopeId: unassigned, notes: 'Logo design project' }, [oneTime]);
   }
 
   migrate(): void {
     //#region Drop data tables (temporary — remove once schema stabilises)
     // Drop in reverse FK dependency order: junction → child → parent
     // Meta table is intentionally preserved so persisted settings survive restarts
-    this.db.prepare(`DROP TABLE IF EXISTS ${this.tables.movementTags}`).run();
-    this.db.prepare(`DROP TABLE IF EXISTS ${this.tables.movements}`).run();
-    this.db.prepare(`DROP TABLE IF EXISTS ${this.tables.categories}`).run();
-    this.db.prepare(`DROP TABLE IF EXISTS ${this.tables.envelopes}`).run();
-    this.db.prepare(`DROP TABLE IF EXISTS ${this.tables.accounts}`).run();
-    this.db.prepare(`DROP TABLE IF EXISTS ${this.tables.tags}`).run();
+    this.db.prepare(`DROP TABLE IF EXISTS ${tables.periodSummaries}`).run();
+    this.db.prepare(`DROP TABLE IF EXISTS ${tables.movementTags}`).run();
+    this.db.prepare(`DROP TABLE IF EXISTS ${tables.movements}`).run();
+    this.db.prepare(`DROP TABLE IF EXISTS ${tables.categories}`).run();
+    this.db.prepare(`DROP TABLE IF EXISTS ${tables.envelopes}`).run();
+    this.db.prepare(`DROP TABLE IF EXISTS ${tables.accounts}`).run();
+    this.db.prepare(`DROP TABLE IF EXISTS ${tables.tags}`).run();
     //#endregion
 
     //#region Create Tables
     // Create in FK dependency order: parent → child → junction
     this.db
       .prepare(
-        `CREATE TABLE IF NOT EXISTS ${this.tables.metadata} (key TEXT PRIMARY KEY, value TEXT)`,
+        `CREATE TABLE IF NOT EXISTS ${tables.metadata} (key TEXT PRIMARY KEY, value TEXT)`,
       )
       .run();
 
-    this.db.prepare(`CREATE TABLE ${this.tables.accounts} (${AccountSchema})`).run();
-    this.db.prepare(`CREATE TABLE ${this.tables.tags} (${TagSchema})`).run();
-    this.db.prepare(`CREATE TABLE ${this.tables.envelopes} (${EnvelopeSchema})`).run();
-    this.db.prepare(`CREATE TABLE ${this.tables.categories} (${CategorySchema})`).run();
-    this.db.prepare(`CREATE TABLE ${this.tables.movements} (${MovementSchema})`).run();
-    this.db.prepare(`CREATE TABLE ${this.tables.movementTags} (${MovementTagSchema})`).run();
+    this.db.prepare(`CREATE TABLE ${tables.accounts} (${AccountSchema})`).run();
+    this.db.prepare(`CREATE TABLE ${tables.tags} (${TagSchema})`).run();
+    this.db.prepare(`CREATE TABLE ${tables.envelopes} (${EnvelopeSchema})`).run();
+    this.db.prepare(`CREATE TABLE ${tables.categories} (${CategorySchema})`).run();
+    this.db.prepare(`CREATE TABLE ${tables.movements} (${MovementSchema})`).run();
+    this.db.prepare(`CREATE TABLE ${tables.movementTags} (${MovementTagSchema})`).run();
+    this.db.prepare(`CREATE TABLE ${tables.periodSummaries} (${PeriodSummarySchema})`).run();
     //#endregion
 
     //#region Partial unique indexes (enforce single default per scope)
     this.db
       .prepare(
-        `CREATE UNIQUE INDEX IF NOT EXISTS uq_account_default ON ${this.tables.accounts}(is_default) WHERE is_default = 1`,
+        `CREATE UNIQUE INDEX IF NOT EXISTS uq_account_default ON ${tables.accounts}(is_default) WHERE is_default = 1`,
       )
       .run();
     this.db
       .prepare(
-        `CREATE UNIQUE INDEX IF NOT EXISTS uq_envelope_default ON ${this.tables.envelopes}(account_id) WHERE is_default = 1`,
+        `CREATE UNIQUE INDEX IF NOT EXISTS uq_envelope_default ON ${tables.envelopes}(account_id) WHERE is_default = 1`,
       )
       .run();
     this.db
       .prepare(
-        `CREATE UNIQUE INDEX IF NOT EXISTS uq_category_default ON ${this.tables.categories}(is_default) WHERE is_default = 1`,
+        `CREATE UNIQUE INDEX IF NOT EXISTS uq_category_default ON ${tables.categories}(is_default) WHERE is_default = 1`,
       )
       .run();
     //#endregion
@@ -181,16 +176,16 @@ export class DatabaseService {
     //#region Seed defaults
     this.db
       .prepare(
-        `INSERT OR IGNORE INTO ${this.tables.accounts} (name, is_default) VALUES ('Default', 1)`,
+        `INSERT OR IGNORE INTO ${tables.accounts} (name, is_default) VALUES ('Default', 1)`,
       )
       .run();
     const defaultAccount = this.db
-      .prepare(`SELECT id FROM ${this.tables.accounts} WHERE is_default = 1 LIMIT 1`)
+      .prepare(`SELECT id FROM ${tables.accounts} WHERE is_default = 1 LIMIT 1`)
       .get() as { id: number } | undefined;
     if (defaultAccount) {
       this.db
         .prepare(
-          `INSERT OR IGNORE INTO ${this.tables.envelopes} (name, account_id, is_default) VALUES ('Unassigned', ?, 1)`,
+          `INSERT OR IGNORE INTO ${tables.envelopes} (name, account_id, is_default) VALUES ('Unassigned', ?, 1)`,
         )
         .run(defaultAccount.id);
     }
@@ -199,7 +194,7 @@ export class DatabaseService {
     this.initDatabase();
 
     //#region Handle Schema version
-    const row = this.db.prepare(`SELECT value FROM meta WHERE key = 'schema_version'`).get() as
+    const row = this.db.prepare(`SELECT value FROM ${tables.metadata} WHERE key = 'schema_version'`).get() as
       | { value: string }
       | undefined;
     const currentSchemaVersion = row ? parseInt(row.value) : 0;
@@ -207,7 +202,7 @@ export class DatabaseService {
     if (currentSchemaVersion < this.SCHEMA_VERSION) {
       this.db
         .prepare(
-          `INSERT OR REPLACE INTO meta (key, value) VALUES ('schema_version', '${this.SCHEMA_VERSION}')`,
+          `INSERT OR REPLACE INTO ${tables.metadata} (key, value) VALUES ('schema_version', '${this.SCHEMA_VERSION}')`,
         )
         .run();
     }

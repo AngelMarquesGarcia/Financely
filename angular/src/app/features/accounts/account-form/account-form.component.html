@@ -28,6 +28,14 @@
       ></textarea>
     </app-form-field>
 
+    <app-form-field label="Starting balance" forId="startingBalance" [optional]="true">
+      <app-amount-input
+        inputId="startingBalance"
+        [amountCents]="startingBalance"
+        (amountCentsChange)="startingBalance = $event ?? 0"
+      />
+    </app-form-field>
+
     <div class="form__actions">
       <button class="btn btn--primary" (click)="save()">
         {{ isEditing ? 'Update' : 'Create' }}

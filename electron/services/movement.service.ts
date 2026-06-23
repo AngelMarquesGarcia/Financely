@@ -1,5 +1,6 @@
 import { movementRepository } from '../repository/movement-repository.service';
-import { Movement, MovementFilter } from '@shared/types';
+import { accountRepository } from '../repository/account-repository.service';
+import { Movement, MovementFilter, Period } from '@shared/types';
 import { AppError, AppErrorCode } from '@shared/error-codes';
 
 export function createMovement(
@@ -25,7 +26,9 @@ export function createMovement(
   if (!Number.isInteger(envelopeId) || envelopeId <= 0) {
     throw new AppError(AppErrorCode.MOVEMENT_ENVELOPE_REQUIRED);
   }
+  const accountId = accountRepository.getDefaultId()!;
   return movementRepository.insertMovement({
+    accountId,
     name,
     concept,
     quantityCents,
@@ -43,6 +46,10 @@ export function getAllMovements(filter?: MovementFilter): Movement[] {
 
 export function getMovementById(id: number): Movement | undefined {
   return movementRepository.getMovementById(id);
+}
+
+export function getMovementsByPeriod(period: Period): Movement[] {
+  return movementRepository.getMovementsByPeriod(period);
 }
 
 export function updateMovement(movement: Movement): boolean {

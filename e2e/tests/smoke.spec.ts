@@ -12,6 +12,6 @@ test('renders the root component', async ({ page }) => {
 
 test('shows main navigation', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByText('Movements')).toBeVisible();
-  await expect(page.getByText('Categories')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Movements' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Categories' })).toBeVisible();
 });

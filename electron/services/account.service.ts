@@ -6,17 +6,17 @@ import { AppError, AppErrorCode } from '@shared/error-codes';
 
 const db = DatabaseService.getInstance().db;
 
-export function createAccount(name: string, description?: string): number | bigint {
+export function createAccount(name: string, description?: string, startingBalance = 0): number | bigint {
   if (!name.trim()) throw new AppError(AppErrorCode.ACCOUNT_NAME_REQUIRED);
 
   // Transaction: insert account, then create + flag a default envelope for it.
-  const tx = db.transaction((n: string, d: string | undefined) => {
-    const accountId = Number(accountRepository.insertAccount({ name: n, description: d }));
-    const envelopeId = Number(envelopeRepository.insertEnvelope({ name: n, accountId }));
+  const tx = db.transaction((n: string, d: string | undefined, sb: number) => {
+    const accountId = Number(accountRepository.insertAccount({ name: n, description: d, startingBalance: sb }));
+    const envelopeId = Number(envelopeRepository.insertEnvelope({ name: n, accountId, startingBalance: 0 }));
     envelopeRepository.setDefault(envelopeId);
     return accountId;
   });
-  return tx(name, description);
+  return tx(name, description, startingBalance);
 }
 
 export function getAllAccounts(): Account[] {

@@ -54,6 +54,7 @@ angular/
 │   │   │   ├── accounts/                         # account-form/, accounts-list/, accounts.component.*
 │   │   │   ├── categories/                       # categories-list/, category-form/, categories.component.*
 │   │   │   ├── envelopes/                        # envelope-form/, envelopes-list/, envelopes.component.*
+│   │   │   ├── month-overview/                   # MonthOverviewComponent — account + envelope PeriodSummaries for a given month
 │   │   │   ├── movements/                        # movement-form/, movements-list/, movements-filter/, movement-list-compact/, movement-detail-dialog/, movements.component.*
 │   │   │   ├── settings/                         # settings.component.*
 │   │   │   └── tags/                             # tag-form/, tags-list/, tags.component.*
@@ -73,6 +74,7 @@ angular/
 │   │   │   │   ├── navbar/
 │   │   │   │   ├── popover/                      # PopoverComponent — backdrop + anchored panel shell
 │   │   │   │   ├── quick-create-movement-button/ # QuickCreateMovementButtonComponent — opens MovementForm in a dialog
+│   │   │   │   ├── period-summary-card/          # PeriodSummaryCardComponent — displays a single-period financial summary
 │   │   │   │   ├── stat-card/                    # StatCardComponent — title + big number + optional sublabel/icon
 │   │   │   │   ├── tag-picker/                   # TagPickerComponent — wraps EntitySelect + tag creation popover
 │   │   │   │   └── toast-host/                   # Service-driven toast stack
@@ -86,7 +88,8 @@ angular/
 │   │   ├── app.component.*
 │   │   └── app.component.spec.ts
 │   ├── testing/
-│   │   └── mock-electron.service.ts              # Shared test fixture
+│   │   ├── mock-electron.service.ts              # Shared test fixture
+│   │   └── sample-summaries.ts                   # PeriodSummary sample fixtures for tests
 │   ├── environments/
 │   │   ├── environment.ts                        # Local default
 │   │   ├── environment.dev.ts
@@ -123,6 +126,7 @@ electron/
 │   ├── categories.handler.ts
 │   ├── accounts.handler.ts
 │   ├── envelopes.handler.ts
+│   ├── period-summaries.handler.ts
 │   ├── tags.handler.ts
 │   └── settings.handler.ts
 ├── repository/
@@ -131,12 +135,14 @@ electron/
 │   ├── category-repository.service.ts
 │   ├── account-repository.service.ts
 │   ├── envelope-repository.service.ts
+│   ├── period-summary-repository.service.ts
 │   └── tag-repository.service.ts
 ├── services/
 │   ├── movement.service.ts               # Validation + delegates to repository
 │   ├── category.service.ts
 │   ├── account.service.ts
 │   ├── envelope.service.ts
+│   ├── period-summary.service.ts         # PeriodSummary creation, recalculation, dirty-chain propagation
 │   ├── tag.service.ts
 │   └── settings.service.ts               # electron-store (AppSettings)
 ├── __tests__/                            # Jest integration tests (real better-sqlite3)
@@ -148,6 +154,7 @@ electron/
 │       ├── movement.service.test.ts      # Integration: validation, CRUD, getAllMovements filters
 │       ├── settings.service.test.ts      # Unit: defaults, partial merge, persistence (electron-store mock)
 │       └── tag.service.test.ts           # Integration: CRUD, addTag idempotence, junction rows
+├── constants.ts                          # Table name constants (tables object)
 ├── main.ts                               # Entry point of the main process
 ├── preload.ts                            # Bridges IPC to the renderer (contextBridge)
 ├── esbuild.config.mjs                    # Bundles main + preload → dist/main/
@@ -173,11 +180,13 @@ The main process is bundled by **esbuild**, not `tsc` — TypeScript here is typ
 ```
 shared/
 ├── error-codes.ts  # AppErrorCode const + AppError class — backend throws, frontend resolves to text
-├── interfaces.ts   # Movements, Categories, Accounts, Envelopes, Tags, Settings — IPC contracts
-└── types.ts        # Movement, Category, Account, AccountStats, Envelope, Tag, AppSettings, MovementFilter
+├── interfaces.ts   # Movements, Categories, Accounts, Envelopes, Tags, Settings, PeriodSummaries — IPC contracts
+└── types.ts        # Movement, Category, Account, AccountStats, Envelope, Tag, AppSettings, MovementFilter, Period, BasicSummary, PeriodSummary, DirtyState
 ```
 
 Imported by both children: the renderer's `electron.service.ts` and the backend's services and handlers. Anything that crosses the IPC boundary should be typed here.
+
+**Key domain type — `PeriodSummary`:** a stored snapshot of financial activity for a single `(accountId, envelopeId, year, month)` combination (`null` `envelopeId` = account-level). The `month` field is **0-indexed** (JavaScript `Date.getMonth()` convention); display layers add 1. Fields include all `BasicSummary` aggregates (cash flow, income/expense totals, averages, movement count) plus: `endingBalanceCents` — a running chain where `ending_balance(P) = ending_balance(P-1) + cashFlow(P)`, anchored by the account's or envelope's `startingBalance` on the first period; `availableBudgetCents` — remaining budget for envelope-level summaries with a fixed budget; `notes` — the only user-editable field; `dirtyState: DirtyState` (`'CLEAN' | 'MODIFIED' | 'DIRTY'`) — `MODIFIED` triggers full recomputation of aggregates from movements; `DIRTY` propagates the ending-balance chain forward without re-reading movements. Multi-period (multi-month) views are assembled on the fly from stored single-month entries. The `PeriodSummary` lifecycle is automatic: created on the first movement in a period, updated on any movement change, deleted when the last movement is removed.
 
 ### `e2e/` — End-to-end tests
 
@@ -310,7 +319,7 @@ The renderer is sandboxed: it cannot touch Node.js or the filesystem directly. A
 [ ElectronService ]            angular/src/app/core/services/electron.service.ts
         │ wraps Promises into RxJS Observables
         ▼
-[ window.movements / .categories / .accounts / .envelopes / .tags / .settings ]   (contextBridge)
+[ window.movements / .categories / .accounts / .envelopes / .tags / .settings / .periodSummaries ]   (contextBridge)
         │ ipcRenderer.invoke(Channels.X, payload)
         ▼
 ─────────── IPC boundary (preload.ts → main.ts) ───────────

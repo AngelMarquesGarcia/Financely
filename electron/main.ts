@@ -5,6 +5,7 @@ import { registerAccountHandlers } from './ipc/accounts.handler';
 import { registerEnvelopeHandlers } from './ipc/envelopes.handler';
 import { registerTagHandlers } from './ipc/tags.handler';
 import { registerSettingsHandlers } from './ipc/settings.handler';
+import { registerPeriodSummaryHandlers } from './ipc/period-summaries.handler';
 import { PATHS } from './config/paths';
 import { getStartURL } from './config/environment';
 
@@ -33,5 +34,6 @@ app.whenReady().then(() => {
   registerEnvelopeHandlers();
   registerTagHandlers();
   registerSettingsHandlers();
+  registerPeriodSummaryHandlers();
   createWindow();
 });

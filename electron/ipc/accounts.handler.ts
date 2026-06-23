@@ -15,8 +15,8 @@ import { Account } from '@shared/types';
 export function registerAccountHandlers(): void {
   ipcMain.handle(
     Channels.ACCOUNT_CREATE,
-    ipcHandle((_event: IpcMainInvokeEvent, arg: { name: string; description?: string }) =>
-      createAccount(arg.name, arg.description),
+    ipcHandle((_event: IpcMainInvokeEvent, arg: { name: string; description?: string; startingBalance?: number }) =>
+      createAccount(arg.name, arg.description, arg.startingBalance),
     ),
   );
 

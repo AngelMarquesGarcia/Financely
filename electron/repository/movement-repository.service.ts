@@ -1,5 +1,6 @@
-import { Movement, MovementFilter } from '@shared/types';
+import { Movement, MovementFilter, Period } from '@shared/types';
 import { DatabaseService } from './database.service';
+import { tables } from '../constants';
 
 /** Converts a Date (or ISO string) to a local YYYY-MM-DD string (timezone-stable). */
 function dateToISO(d: Date | unknown): string {
@@ -20,6 +21,7 @@ function isoToDate(s: string): Date {
 
 type RawMovement = {
   id: number;
+  accountId: number;
   name: string;
   concept: string | null;
   quantityCents: number;
@@ -33,6 +35,7 @@ type RawMovement = {
 function toMovement(r: RawMovement): Movement {
   return {
     id: r.id,
+    accountId: r.accountId,
     name: r.name,
     concept: r.concept,
     quantityCents: r.quantityCents,
@@ -45,20 +48,20 @@ function toMovement(r: RawMovement): Movement {
 }
 
 export class MovementRepository {
-  private readonly table = 'movements';
   private readonly db = DatabaseService.getInstance().db;
 
-  private readonly selectCols = `id, name, concept, quantity_cents as quantityCents,
+  private readonly selectCols = `id, account_id as accountId, name, concept, quantity_cents as quantityCents,
     isPositive, date, category_id as categoryId, envelope_id as envelopeId,
     additional_notes as additionalNotes`;
 
   insertMovement(mov: Omit<Movement, 'id'>): number | bigint {
     const stmt = this.db.prepare(
-      `INSERT INTO ${this.table}
-         (name, concept, quantity_cents, isPositive, date, category_id, envelope_id, additional_notes)
-       VALUES (:name, :concept, :quantityCents, :isPositive, :date, :categoryId, :envelopeId, :additionalNotes)`,
+      `INSERT INTO ${tables.movements}
+         (account_id, name, concept, quantity_cents, isPositive, date, category_id, envelope_id, additional_notes)
+       VALUES (:accountId, :name, :concept, :quantityCents, :isPositive, :date, :categoryId, :envelopeId, :additionalNotes)`,
     );
     return stmt.run({
+      accountId: mov.accountId,
       name: mov.name,
       concept: mov.concept ?? null,
       quantityCents: mov.quantityCents,
@@ -136,31 +139,45 @@ export class MovementRepository {
     const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
     return (
       this.db
-        .prepare(`SELECT ${this.selectCols} FROM ${this.table} ${where}`)
+        .prepare(`SELECT ${this.selectCols} FROM ${tables.movements} ${where}`)
         .all(params) as RawMovement[]
+    ).map(toMovement);
+  }
+
+  getMovementsByPeriod(period: Period): Movement[] {
+    return (
+      this.db
+        .prepare(
+          `SELECT ${this.selectCols} FROM ${tables.movements}
+           WHERE account_id = ?
+             AND envelope_id IS ?
+             AND CAST(strftime('%Y', date) AS INTEGER) = ?
+             AND CAST(strftime('%m', date) AS INTEGER) - 1 = ?`,
+        )
+        .all(period.accountId, period.envelopeId, period.year, period.month) as RawMovement[]
     ).map(toMovement);
   }
 
   private getMovementIdsByTags(tagIds: number[], matchAll: boolean): number[] {
     const inClause = tagIds.join(',');
     const sql = matchAll
-      ? `SELECT movement_id FROM movement_tags WHERE tag_id IN (${inClause})
+      ? `SELECT movement_id FROM ${tables.movementTags} WHERE tag_id IN (${inClause})
          GROUP BY movement_id HAVING COUNT(DISTINCT tag_id) = ${tagIds.length}`
-      : `SELECT DISTINCT movement_id FROM movement_tags WHERE tag_id IN (${inClause})`;
+      : `SELECT DISTINCT movement_id FROM ${tables.movementTags} WHERE tag_id IN (${inClause})`;
     return (this.db.prepare(sql).all() as { movement_id: number }[]).map((r) => r.movement_id);
   }
 
   getMovementById(id: number): Movement | undefined {
     const row = this.db
-      .prepare(`SELECT ${this.selectCols} FROM ${this.table} WHERE id = ?`)
+      .prepare(`SELECT ${this.selectCols} FROM ${tables.movements} WHERE id = ?`)
       .get(id) as RawMovement | undefined;
     return row ? toMovement(row) : undefined;
   }
 
   updateMovement(mov: Movement): boolean {
     const stmt = this.db.prepare(`
-      UPDATE ${this.table}
-      SET name = :name, concept = :concept, quantity_cents = :quantityCents,
+      UPDATE ${tables.movements}
+      SET account_id = :accountId, name = :name, concept = :concept, quantity_cents = :quantityCents,
           isPositive = :isPositive, date = :date,
           category_id = :categoryId, envelope_id = :envelopeId,
           additional_notes = :additionalNotes
@@ -169,6 +186,7 @@ export class MovementRepository {
     return (
       stmt.run({
         id: mov.id,
+        accountId: mov.accountId,
         name: mov.name,
         concept: mov.concept ?? null,
         quantityCents: mov.quantityCents,
@@ -182,13 +200,13 @@ export class MovementRepository {
   }
 
   deleteMovement(id: number): boolean {
-    return this.db.prepare(`DELETE FROM ${this.table} WHERE id = ?`).run(id).changes === 1;
+    return this.db.prepare(`DELETE FROM ${tables.movements} WHERE id = ?`).run(id).changes === 1;
   }
 
   deleteManyMovements(ids: number[]): number {
     if (ids.length === 0) return 0;
     const placeholders = ids.map(() => '?').join(',');
-    const stmt = this.db.prepare(`DELETE FROM ${this.table} WHERE id IN (${placeholders})`);
+    const stmt = this.db.prepare(`DELETE FROM ${tables.movements} WHERE id IN (${placeholders})`);
     return this.db.transaction((rowIds: number[]) => stmt.run(...rowIds).changes)(ids);
   }
 
@@ -198,7 +216,7 @@ export class MovementRepository {
     const escaped = trimmed.replace(/[%_\\]/g, '\\$&');
     const rows = this.db
       .prepare(
-        `SELECT DISTINCT name FROM ${this.table}
+        `SELECT DISTINCT name FROM ${tables.movements}
          WHERE name LIKE ? ESCAPE '\\' ORDER BY name LIMIT ?`,
       )
       .all(`%${escaped}%`, limit) as { name: string }[];

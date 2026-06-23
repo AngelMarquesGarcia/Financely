@@ -1,8 +1,8 @@
 import { Category } from '@shared/types';
 import { DatabaseService } from './database.service';
+import { tables } from '../constants';
 
 export class CategoryRepository {
-  private readonly table = 'categories';
   private readonly db = DatabaseService.getInstance().db;
 
   private readonly selectCols = `id, name, color, emoji, envelope_id as envelopeId, is_default as isDefault`;
@@ -10,7 +10,7 @@ export class CategoryRepository {
 
   insertCategory(cat: Omit<Category, 'id' | 'isDefault'>): number | bigint {
     const stmt = this.db.prepare(
-      `INSERT INTO ${this.table} (name, color, emoji, envelope_id)
+      `INSERT INTO ${tables.categories} (name, color, emoji, envelope_id)
        VALUES (:name, :color, :emoji, :envelopeId)`,
     );
     return stmt.run({ emoji: null, ...cat }).lastInsertRowid;
@@ -20,8 +20,8 @@ export class CategoryRepository {
     return (
       this.db
         .prepare(
-          `SELECT ${this.selectColsWithCount} FROM ${this.table} c
-           LEFT JOIN movements m ON m.category_id = c.id
+          `SELECT ${this.selectColsWithCount} FROM ${tables.categories} c
+           LEFT JOIN ${tables.movements} m ON m.category_id = c.id
            GROUP BY c.id`,
         )
         .all() as RawCategory[]
@@ -30,7 +30,7 @@ export class CategoryRepository {
 
   getCategoryById(id: number): Category | undefined {
     const row = this.db
-      .prepare(`SELECT ${this.selectCols} FROM ${this.table} WHERE id = ?`)
+      .prepare(`SELECT ${this.selectCols} FROM ${tables.categories} WHERE id = ?`)
       .get(id) as RawCategory | undefined;
     return row ? toCategory(row) : undefined;
   }
@@ -39,7 +39,7 @@ export class CategoryRepository {
     return (
       this.db
         .prepare(
-          `UPDATE ${this.table}
+          `UPDATE ${tables.categories}
            SET name = :name, color = :color, emoji = :emoji, envelope_id = :envelopeId
            WHERE id = :id`,
         )
@@ -48,12 +48,12 @@ export class CategoryRepository {
   }
 
   deleteCategory(id: number): boolean {
-    return this.db.prepare(`DELETE FROM ${this.table} WHERE id = ?`).run(id).changes === 1;
+    return this.db.prepare(`DELETE FROM ${tables.categories} WHERE id = ?`).run(id).changes === 1;
   }
 
   isDefault(id: number): boolean {
     const row = this.db
-      .prepare(`SELECT is_default as isDefault FROM ${this.table} WHERE id = ?`)
+      .prepare(`SELECT is_default as isDefault FROM ${tables.categories} WHERE id = ?`)
       .get(id) as { isDefault: number } | undefined;
     return row?.isDefault === 1;
   }
@@ -61,7 +61,7 @@ export class CategoryRepository {
   /** Returns the id of the default category, or undefined if none is set. */
   getDefault(): number | undefined {
     const row = this.db
-      .prepare(`SELECT id FROM ${this.table} WHERE is_default = 1 LIMIT 1`)
+      .prepare(`SELECT id FROM ${tables.categories} WHERE is_default = 1 LIMIT 1`)
       .get() as { id: number } | undefined;
     return row?.id;
   }
@@ -69,8 +69,8 @@ export class CategoryRepository {
   /** Sets the given category as the only default. Transactional. */
   setDefault(id: number): void {
     const tx = this.db.transaction((targetId: number) => {
-      this.db.prepare(`UPDATE ${this.table} SET is_default = 0 WHERE is_default = 1`).run();
-      this.db.prepare(`UPDATE ${this.table} SET is_default = 1 WHERE id = ?`).run(targetId);
+      this.db.prepare(`UPDATE ${tables.categories} SET is_default = 0 WHERE is_default = 1`).run();
+      this.db.prepare(`UPDATE ${tables.categories} SET is_default = 1 WHERE id = ?`).run(targetId);
     });
     tx(id);
   }
@@ -78,7 +78,7 @@ export class CategoryRepository {
   /** Reassigns all movements from one category to another. */
   reassignMovements(fromId: number, toId: number): void {
     this.db
-      .prepare(`UPDATE movements SET category_id = ? WHERE category_id = ?`)
+      .prepare(`UPDATE ${tables.movements} SET category_id = ? WHERE category_id = ?`)
       .run(toId, fromId);
   }
 }

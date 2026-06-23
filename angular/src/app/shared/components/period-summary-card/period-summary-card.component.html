@@ -1,0 +1,64 @@
+<div class="psc card">
+  <button class="psc__header" type="button" (click)="toggle()">
+    <span class="psc__label">{{ label }}</span>
+    <span
+      class="psc__cashflow"
+      [class.psc__cashflow--positive]="summary.cashFlowCents >= 0"
+      [class.psc__cashflow--negative]="summary.cashFlowCents < 0"
+      >{{ summary.cashFlowCents >= 0 ? '+' : '' }}{{ summary.cashFlowCents | money }}</span
+    >
+    <fa-icon class="psc__chevron" [icon]="expanded() ? faChevronDown : faChevronRight" />
+  </button>
+
+  @if (expanded()) {
+    <div class="psc__body">
+      <div class="psc__row">
+        <span class="psc__row-label">Income</span>
+        <span class="psc__row-value psc__row-value--positive">{{ summary.totalIncomeCents | money }}</span>
+      </div>
+      <div class="psc__row">
+        <span class="psc__row-label">Expenses</span>
+        <span class="psc__row-value psc__row-value--negative">{{ summary.totalExpenseCents | money }}</span>
+      </div>
+      <div class="psc__row">
+        <span class="psc__row-label">Avg expense</span>
+        <span class="psc__row-value">{{ summary.avgExpenseCents | money }}</span>
+      </div>
+      <div class="psc__row">
+        <span class="psc__row-label">Avg income</span>
+        <span class="psc__row-value">{{ summary.avgIncomeCents | money }}</span>
+      </div>
+      <div class="psc__row">
+        <span class="psc__row-label">Ending balance</span>
+        <span
+          class="psc__row-value"
+          [class.psc__row-value--positive]="summary.endingBalanceCents >= 0"
+          [class.psc__row-value--negative]="summary.endingBalanceCents < 0"
+          >{{ summary.endingBalanceCents | money }}</span
+        >
+      </div>
+      <div class="psc__row">
+        <span class="psc__row-label">Movements</span>
+        <span class="psc__row-value">{{ summary.movementCount }}</span>
+      </div>
+      @if (summary.budgetCents !== null) {
+        <div class="psc__row">
+          <span class="psc__row-label">Budget</span>
+          <span class="psc__row-value">{{ summary.budgetCents | money }}</span>
+        </div>
+      }
+      @if (summary.title) {
+        <div class="psc__row">
+          <span class="psc__row-label">Title</span>
+          <span class="psc__row-value">{{ summary.title }}</span>
+        </div>
+      }
+      @if (summary.notes) {
+        <div class="psc__row psc__row--notes">
+          <span class="psc__row-label">Notes</span>
+          <span class="psc__row-value">{{ summary.notes }}</span>
+        </div>
+      }
+    </div>
+  }
+</div>

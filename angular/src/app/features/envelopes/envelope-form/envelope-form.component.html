@@ -51,6 +51,15 @@
       />
     </div>
 
+    <div class="form__group">
+      <label class="form__label" for="startingBalance">Starting balance</label>
+      <app-amount-input
+        inputId="startingBalance"
+        [amountCents]="startingBalance"
+        (amountCentsChange)="startingBalance = $event ?? 0"
+      />
+    </div>
+
     <div class="form__actions">
       <button class="btn btn--primary" (click)="save()">
         {{ isEditing ? 'Update' : 'Create' }}

@@ -5,10 +5,10 @@ import { AppError, AppErrorCode } from '@shared/error-codes';
 
 const db = DatabaseService.getInstance().db;
 
-export function createEnvelope(name: string, accountId: number): number | bigint {
+export function createEnvelope(name: string, accountId: number, startingBalance = 0): number | bigint {
   if (!name.trim()) throw new AppError(AppErrorCode.ENVELOPE_NAME_REQUIRED);
   if (!accountId) throw new AppError(AppErrorCode.ENVELOPE_ACCOUNT_REQUIRED);
-  return envelopeRepository.insertEnvelope({ name, accountId });
+  return envelopeRepository.insertEnvelope({ name, accountId, startingBalance });
 }
 
 export function getAllEnvelopes(): Envelope[] {
@@ -21,6 +21,7 @@ export function getEnvelopeById(id: number): Envelope | undefined {
 
 export function updateEnvelope(envelope: Envelope): boolean {
   if (!envelope.name.trim()) throw new AppError(AppErrorCode.ENVELOPE_NAME_REQUIRED);
+  if (envelope.isDefault) throw new AppError(AppErrorCode.ENVELOPE_UPDATE_DEFAULT);
   return envelopeRepository.updateEnvelope(envelope);
 }
 

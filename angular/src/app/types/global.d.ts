@@ -5,6 +5,7 @@ import type {
   Envelopes,
   Tags,
   Settings,
+  PeriodSummaries,
 } from '@shared/interfaces';
 
 declare global {
@@ -15,6 +16,7 @@ declare global {
     envelopes: Envelopes;
     tags: Tags;
     settings: Settings;
+    periodSummaries: PeriodSummaries;
   }
 }
 

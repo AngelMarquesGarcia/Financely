@@ -41,7 +41,9 @@ export function registerMovementHandlers(): void {
 
   ipcMain.handle(
     Channels.MOVEMENT_UPDATE,
-    ipcHandle((_event: IpcMainInvokeEvent, movement: Movement) => updateMovement(movement)),
+    ipcHandle((_event: IpcMainInvokeEvent, movement: Movement) => {
+      updateMovement(movement);
+    }),
   );
 
   ipcMain.handle(

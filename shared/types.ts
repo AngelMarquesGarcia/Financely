@@ -1,5 +1,6 @@
 export type Movement = {
   id: number;
+  accountId: number;
   name: string;
   concept: string | null;
   /** Amount in integer cents (e.g. 2250 = €22.50). */
@@ -26,6 +27,7 @@ export type Account = {
   name: string;
   description?: string;
   isDefault: boolean;
+  startingBalance: number;
 };
 
 /** Aggregate stats across all accounts. All amounts in integer cents. */
@@ -41,6 +43,7 @@ export type Envelope = {
   name: string;
   accountId: number | null;
   isDefault: boolean;
+  startingBalance: number;
 };
 
 export type Tag = {
@@ -81,4 +84,47 @@ export type MovementFilter = {
   categoryId?: number;
   envelopeId?: number;
   isPositive?: boolean;
+};
+
+export type BasicSummary = {
+  cashFlowCents: number; // income - expenses; positive = surplus
+  totalIncomeCents: number;
+  totalExpenseCents: number;
+  avgExpenseCents: number;
+  avgIncomeCents: number;
+  avgMovementAmountCents: number; // average ignoring sign
+  movementCount: number;
+  filters?: MovementFilter; // cache/deduplication key
+};
+
+export type DirtyState = 'CLEAN' | 'MODIFIED' | 'DIRTY';
+
+export type PeriodSummary = {
+  id: number;
+  accountId: number;
+  envelopeId: number | null; // null = account-level summary
+  accountName: string;
+  envelopeName: string | null;
+  year: number;
+  month: number; // 0-11
+  // BasicSummary fields inlined
+  cashFlowCents: number;
+  totalIncomeCents: number;
+  totalExpenseCents: number;
+  avgExpenseCents: number;
+  avgIncomeCents: number;
+  avgMovementAmountCents: number;
+  movementCount: number;
+  // Period-specific
+  endingBalanceCents: number;
+  availableBudgetCents?: number;
+  notes?: string;
+  dirtyState: DirtyState;
+};
+
+export type Period = {
+  accountId: number;
+  envelopeId: number | null; // null = account-level summary
+  year: number;
+  month: number;
 };

@@ -5,6 +5,7 @@ import { AccountsComponent } from './features/accounts/accounts.component';
 import { EnvelopesComponent } from './features/envelopes/envelopes.component';
 import { TagsComponent } from './features/tags/tags.component';
 import { SettingsComponent } from './features/settings/settings.component';
+import { MonthOverviewComponent } from './features/month-overview/month-overview.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'movements', pathMatch: 'full' },
@@ -14,5 +15,6 @@ export const routes: Routes = [
   { path: 'envelopes', component: EnvelopesComponent },
   { path: 'tags', component: TagsComponent },
   { path: 'settings', component: SettingsComponent },
+  { path: 'month-overview', component: MonthOverviewComponent },
   { path: '**', redirectTo: 'movements' },
 ];

@@ -14,8 +14,8 @@ import { Envelope } from '@shared/types';
 export function registerEnvelopeHandlers(): void {
   ipcMain.handle(
     Channels.ENVELOPE_CREATE,
-    ipcHandle((_event: IpcMainInvokeEvent, arg: { name: string; accountId: number }) =>
-      createEnvelope(arg.name, arg.accountId),
+    ipcHandle((_event: IpcMainInvokeEvent, arg: { name: string; accountId: number; startingBalance?: number }) =>
+      createEnvelope(arg.name, arg.accountId, arg.startingBalance),
     ),
   );
 

@@ -11,6 +11,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { EntitySelectComponent } from '../../../shared/components/entity-select/entity-select.component';
+import { AmountInputComponent } from '../../../shared/components/amount-input/amount-input.component';
 import { forkJoin, of, switchMap } from 'rxjs';
 import { ElectronService } from '../../../core/services/electron.service';
 import { NotificationService } from '../../../core/services/notification.service';
@@ -19,7 +20,7 @@ import { Account, Category, Envelope } from '@shared/types';
 
 @Component({
   selector: 'app-envelope-form',
-  imports: [FormsModule, EntitySelectComponent],
+  imports: [FormsModule, EntitySelectComponent, AmountInputComponent],
   templateUrl: './envelope-form.component.html',
   styleUrl: './envelope-form.component.scss',
 })
@@ -37,6 +38,7 @@ export class EnvelopeFormComponent implements OnChanges {
 
   name = '';
   accountId: number | null = null;
+  startingBalance = 0;
   selectedCategoryIds: number[] = [];
   showErrors = false;
 
@@ -55,6 +57,7 @@ export class EnvelopeFormComponent implements OnChanges {
     if (changes['editingEnvelope'] || changes['categories']) {
       this.name = this.editingEnvelope?.name ?? '';
       this.accountId = this.editingEnvelope?.accountId ?? null;
+      this.startingBalance = this.editingEnvelope?.startingBalance ?? 0;
       this.selectedCategoryIds = this.editingEnvelope
         ? this.categories.filter((c) => c.envelopeId === this.editingEnvelope!.id).map((c) => c.id)
         : [];
@@ -87,7 +90,7 @@ export class EnvelopeFormComponent implements OnChanges {
     if (this.isEditing) {
       const envelopeId = this.editingEnvelope!.id;
       this.electron
-        .updateEnvelope({ id: envelopeId, name: this.name, accountId: this.accountId, isDefault: this.editingEnvelope!.isDefault })
+        .updateEnvelope({ id: envelopeId, name: this.name, accountId: this.accountId, isDefault: this.editingEnvelope!.isDefault, startingBalance: this.startingBalance })
         .pipe(
           switchMap(() => this.syncCategories(envelopeId)),
           takeUntilDestroyed(this.destroyRef),
@@ -97,7 +100,7 @@ export class EnvelopeFormComponent implements OnChanges {
           error: (e: Error) => this.notify.error(this.errorText.resolve(e.message)),
         });
     } else {
-      this.electron.createEnvelope(this.name, this.accountId)
+      this.electron.createEnvelope(this.name, this.accountId, this.startingBalance || undefined)
         .pipe(
           switchMap((newId) => {
             const envelopeId = Number(newId);
@@ -114,6 +117,7 @@ export class EnvelopeFormComponent implements OnChanges {
             this.saved.emit();
             this.name = '';
             this.accountId = null;
+            this.startingBalance = 0;
             this.selectedCategoryIds = [];
             this.showErrors = false;
           },

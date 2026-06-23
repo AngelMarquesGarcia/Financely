@@ -14,11 +14,12 @@ import { ElectronService } from '../../../core/services/electron.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { ErrorTextService } from '../../../core/services/error-text.service';
 import { FormFieldComponent } from '../../../shared/components/form-field/form-field.component';
+import { AmountInputComponent } from '../../../shared/components/amount-input/amount-input.component';
 import { Account } from '@shared/types';
 
 @Component({
   selector: 'app-account-form',
-  imports: [FormsModule, FormFieldComponent],
+  imports: [FormsModule, FormFieldComponent, AmountInputComponent],
   templateUrl: './account-form.component.html',
   styleUrl: './account-form.component.scss',
 })
@@ -34,6 +35,7 @@ export class AccountFormComponent implements OnChanges {
 
   name = '';
   description = '';
+  startingBalance = 0;
   showErrors = false;
 
   get isEditing() {
@@ -44,6 +46,7 @@ export class AccountFormComponent implements OnChanges {
     if (changes['editingAccount']) {
       this.name = this.editingAccount?.name ?? '';
       this.description = this.editingAccount?.description ?? '';
+      this.startingBalance = this.editingAccount?.startingBalance ?? 0;
     }
   }
 
@@ -58,6 +61,7 @@ export class AccountFormComponent implements OnChanges {
           name: this.name,
           description: this.description || undefined,
           isDefault: this.editingAccount!.isDefault,
+          startingBalance: this.startingBalance,
         })
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
@@ -66,13 +70,14 @@ export class AccountFormComponent implements OnChanges {
         });
     } else {
       this.electron
-        .createAccount(this.name, this.description || undefined)
+        .createAccount(this.name, this.description || undefined, this.startingBalance || undefined)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
           next: () => {
             this.saved.emit();
             this.name = '';
             this.description = '';
+            this.startingBalance = 0;
             this.showErrors = false;
           },
           error: (e: Error) => this.notify.error(this.errorText.resolve(e.message)),

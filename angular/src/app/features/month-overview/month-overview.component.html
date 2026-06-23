@@ -1,0 +1,17 @@
+<div class="month-overview">
+  <header class="month-overview__header">
+    <h1 class="month-overview__title">{{ monthLabel }}</h1>
+  </header>
+
+  <section class="month-overview__section">
+    <h2 class="month-overview__section-title">Account</h2>
+    <app-period-summary-card [summary]="accountSummary" />
+  </section>
+
+  <section class="month-overview__section">
+    <h2 class="month-overview__section-title">Envelopes</h2>
+    @for (s of envelopeSummaries; track s.id) {
+      <app-period-summary-card [summary]="s" />
+    }
+  </section>
+</div>

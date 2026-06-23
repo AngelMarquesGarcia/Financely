@@ -238,6 +238,7 @@ export class MovementFormComponent implements OnInit, OnChanges {
     if (this.isEditing) {
       const movement: Movement = {
         id: this.editingMovement!.id,
+        accountId: this.editingMovement!.accountId,
         name: this.name,
         concept: this.concept || null,
         quantityCents,

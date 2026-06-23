@@ -1,0 +1,87 @@
+import { PeriodSummary } from '@shared/types';
+
+export const SAMPLE_ACCOUNT_SUMMARY: PeriodSummary = {
+  id: 1,
+  accountId: 1,
+  envelopeId: null,
+  accountName: 'Main Account',
+  envelopeName: null,
+  year: 2025,
+  month: 6,
+  cashFlowCents: 7000,
+  totalIncomeCents: 350000,
+  totalExpenseCents: 343000,
+  avgExpenseCents: 24500,
+  avgIncomeCents: 175000,
+  avgMovementAmountCents: 19056,
+  movementCount: 18,
+  endingBalanceCents: 312500,
+  notes: 'Good month overall. Big grocery run mid-month skewed food expenses.',
+  dirtyState: 'CLEAN',
+};
+
+export const SAMPLE_FOOD_SUMMARY: PeriodSummary = {
+  id: 2,
+  accountId: 1,
+  envelopeId: 1,
+  accountName: 'Main Account',
+  envelopeName: 'Food',
+  year: 2025,
+  month: 6,
+  cashFlowCents: -95000,
+  totalIncomeCents: 0,
+  totalExpenseCents: 95000,
+  avgExpenseCents: 7917,
+  avgIncomeCents: 0,
+  avgMovementAmountCents: 7917,
+  movementCount: 12,
+  endingBalanceCents: -95000,
+  availableBudgetCents: 100000,
+  dirtyState: 'CLEAN',
+};
+
+export const SAMPLE_TRANSPORT_SUMMARY: PeriodSummary = {
+  id: 3,
+  accountId: 1,
+  envelopeId: 2,
+  accountName: 'Main Account',
+  envelopeName: 'Transport',
+  year: 2025,
+  month: 6,
+  cashFlowCents: -42000,
+  totalIncomeCents: 0,
+  totalExpenseCents: 42000,
+  avgExpenseCents: 8400,
+  avgIncomeCents: 0,
+  avgMovementAmountCents: 8400,
+  movementCount: 5,
+  endingBalanceCents: -42000,
+  dirtyState: 'CLEAN',
+};
+
+export const SAMPLE_SAVINGS_SUMMARY: PeriodSummary = {
+  id: 4,
+  accountId: 1,
+  envelopeId: 3,
+  accountName: 'Main Account',
+  envelopeName: 'Savings',
+  year: 2025,
+  month: 6,
+  cashFlowCents: 200000,
+  totalIncomeCents: 200000,
+  totalExpenseCents: 0,
+  avgExpenseCents: 0,
+  avgIncomeCents: 200000,
+  avgMovementAmountCents: 200000,
+  movementCount: 1,
+  endingBalanceCents: 1500000,
+  notes: 'Monthly transfer in.',
+  dirtyState: 'CLEAN',
+};
+
+export const SAMPLE_SUMMARIES: PeriodSummary[] = [
+  SAMPLE_ACCOUNT_SUMMARY,
+  SAMPLE_FOOD_SUMMARY,
+  SAMPLE_TRANSPORT_SUMMARY,
+  SAMPLE_SAVINGS_SUMMARY,
+];

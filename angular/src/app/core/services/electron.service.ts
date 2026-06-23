@@ -96,8 +96,8 @@ export class ElectronService {
   }
 
   // Accounts
-  createAccount(name: string, description?: string) {
-    return from(this.accounts.create(name, description));
+  createAccount(name: string, description?: string, startingBalance?: number) {
+    return from(this.accounts.create(name, description, startingBalance));
   }
 
   getAllAccounts() {
@@ -125,8 +125,8 @@ export class ElectronService {
   }
 
   // Envelopes
-  createEnvelope(name: string, accountId: number) {
-    return from(this.envelopes.create(name, accountId));
+  createEnvelope(name: string, accountId: number, startingBalance?: number) {
+    return from(this.envelopes.create(name, accountId, startingBalance));
   }
 
   getAllEnvelopes() {

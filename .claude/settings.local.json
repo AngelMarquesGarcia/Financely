@@ -30,10 +30,23 @@
       "PowerShell(npm show @fortawesome/angular-fontawesome@5.0.0 peerDependencies 2>&1)",
       "PowerShell(npm show @fortawesome/angular-fontawesome@1.0.0 peerDependencies)",
       "PowerShell(npm show @fortawesome/angular-fontawesome@2.0.1 peerDependencies)",
-      "PowerShell(npm show @fortawesome/angular-fontawesome@3.0.0 peerDependencies)"
+      "PowerShell(npm show @fortawesome/angular-fontawesome@3.0.0 peerDependencies)",
+      "Bash(cat playwright.config.ts)",
+      "Bash(cat playwright.config.js)"
     ]
   },
   "hooks": {
+    "Notification": [
+      {
+        "matcher": "permission_prompt|idle_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -c \"[Console]::Beep(880,200)\""
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [

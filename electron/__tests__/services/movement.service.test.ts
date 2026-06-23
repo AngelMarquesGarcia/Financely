@@ -90,7 +90,7 @@ describe('MovementService — validation and CRUD', () => {
     const row = db.prepare('SELECT * FROM movements LIMIT 1').get() as { id: number } | undefined;
     if (!row) return;
     expect(() =>
-      updateMovement({ id: row.id, name: '  ', concept: null, quantityCents: 100, isPositive: true, date: new Date(), categoryId: 1, envelopeId: 1, additionalNotes: null }),
+      updateMovement({ id: row.id, accountId: 1, name: '  ', concept: null, quantityCents: 100, isPositive: true, date: new Date(), categoryId: 1, envelopeId: 1, additionalNotes: null }),
     ).toThrow(AppErrorCode.MOVEMENT_NAME_REQUIRED);
   });
 

@@ -15,6 +15,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   [AppErrorCode.ACCOUNT_DELETE_DEFAULT]: 'Cannot delete the default account.',
   [AppErrorCode.ENVELOPE_NAME_REQUIRED]: 'Envelope name cannot be empty.',
   [AppErrorCode.ENVELOPE_ACCOUNT_REQUIRED]: 'An envelope must belong to an account.',
+  [AppErrorCode.ENVELOPE_UPDATE_DEFAULT]: 'Use the "Set as default" action to change the default envelope.',
   [AppErrorCode.ENVELOPE_DELETE_DEFAULT]: 'Cannot delete the default envelope.',
   [AppErrorCode.ENVELOPE_NO_ACCOUNT]: 'Cannot delete an envelope with no account.',
   [AppErrorCode.ENVELOPE_ACCOUNT_NO_DEFAULT]:

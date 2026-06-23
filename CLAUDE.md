@@ -53,6 +53,7 @@ angular/
 │   │   │   ├── accounts/                     # account-form/, accounts-list/, accounts.component.*
 │   │   │   ├── categories/                   # categories-list/, category-form/, categories.component.*
 │   │   │   ├── envelopes/                    # envelope-form/, envelopes-list/, envelopes.component.*
+│   │   │   ├── month-overview/               # MonthOverviewComponent — resumen mensual de account + envelopes
 │   │   │   ├── movements/                    # movement-form/, movements-list/, movements-filter/, movement-list-compact/, movement-detail-dialog/, movements.component.*
 │   │   │   ├── settings/                     # settings.component.*
 │   │   │   └── tags/                         # tag-form/, tags-list/, tags.component.*
@@ -72,6 +73,7 @@ angular/
 │   │   │   │   ├── navbar/
 │   │   │   │   ├── popover/                  # PopoverComponent — backdrop + panel anclado
 │   │   │   │   ├── quick-create-movement-button/ # Abre MovementForm en un diálogo
+│   │   │   │   ├── period-summary-card/      # PeriodSummaryCardComponent — muestra un PeriodSummary de un mes
 │   │   │   │   ├── stat-card/                # StatCardComponent — title + valor + sublabel/icon opcionales
 │   │   │   │   ├── tag-picker/               # TagPickerComponent — wrapper sobre EntitySelect + popover de creación
 │   │   │   │   └── toast-host/               # Host de toasts
@@ -85,7 +87,8 @@ angular/
 │   │   ├── app.component.*
 │   │   └── app.component.spec.ts
 │   ├── testing/
-│   │   └── mock-electron.service.ts          # Fixture compartido entre tests
+│   │   ├── mock-electron.service.ts          # Fixture compartido entre tests
+│   │   └── sample-summaries.ts               # Fixtures de PeriodSummary para tests
 │   ├── styles.scss                           # Design tokens, clases globales, estilos CDK overlay
 │   ├── vitest.setup.ts                       # Setup del entorno de test Angular
 │   └── environments/
@@ -113,6 +116,7 @@ electron/
 │   ├── categories.handler.ts
 │   ├── accounts.handler.ts
 │   ├── envelopes.handler.ts
+│   ├── period-summaries.handler.ts
 │   ├── tags.handler.ts
 │   └── settings.handler.ts
 ├── repository/
@@ -122,12 +126,14 @@ electron/
 │   ├── category-repository.service.ts
 │   ├── account-repository.service.ts
 │   ├── envelope-repository.service.ts
+│   ├── period-summary-repository.service.ts
 │   └── tag-repository.service.ts
 ├── services/
 │   ├── movement.service.ts               # Validación + delega al repositorio
 │   ├── category.service.ts
 │   ├── account.service.ts                # Incluye getAccountStats() (agregados SUM/COUNT)
 │   ├── envelope.service.ts
+│   ├── period-summary.service.ts         # Creación, recálculo y propagación dirty de PeriodSummary
 │   ├── tag.service.ts
 │   └── settings.service.ts               # electron-store (AppSettings)
 ├── __tests__/
@@ -139,6 +145,7 @@ electron/
 │       ├── movement.service.test.ts
 │       ├── settings.service.test.ts
 │       └── tag.service.test.ts
+├── constants.ts                          # Constantes de nombres de tabla (objeto tables)
 ├── main.ts                               # Entry point del main process
 ├── preload.ts                            # Expone la API al renderer vía contextBridge
 ├── esbuild.config.mjs                    # Config de bundling (main + preload → dist/main/)
@@ -153,12 +160,14 @@ El output de esbuild va a `dist/main/` (dos archivos: `main.js` y `preload.js`).
 
 ```
 shared/
-├── types.ts       # Movement, Category, Account, AccountStats, Envelope, Tag, AppSettings, MovementFilter
-├── interfaces.ts  # Movements, Categories, Accounts, Envelopes, Tags, Settings (contratos IPC)
+├── types.ts       # Movement, Category, Account, AccountStats, Envelope, Tag, AppSettings, MovementFilter, Period, BasicSummary, PeriodSummary, DirtyState
+├── interfaces.ts  # Movements, Categories, Accounts, Envelopes, Tags, Settings, PeriodSummaries (contratos IPC)
 └── error-codes.ts # AppErrorCode + AppError — usado por backend (throw) y frontend (resolve a texto)
 ```
 
 Importado tanto por el frontend (`electron.service.ts`) como por el backend (servicios y handlers).
+
+**Tipo de dominio clave — `PeriodSummary`:** snapshot mensual de actividad financiera para una combinación `(accountId, envelopeId, year, month)` (`envelopeId = null` → resumen a nivel de cuenta). El campo `month` es **0-indexado** (convenio `Date.getMonth()` de JavaScript); la capa de presentación suma 1 al renderizar. Incluye todos los campos de `BasicSummary` (cash flow, totales income/expense, medias, count) más: `endingBalanceCents` — cadena acumulativa `ending_balance(P) = ending_balance(P-1) + cashFlow(P)`, anclada en `startingBalance` del account o envelope en el primer periodo; `availableBudgetCents` — presupuesto restante para summaries de envelope con budget fijo; `notes` — único campo editable por el usuario; `dirtyState: DirtyState` (`'CLEAN' | 'MODIFIED' | 'DIRTY'`) — `MODIFIED` desencadena recálculo completo de agregados desde los movimientos; `DIRTY` propaga únicamente el endingBalance en la cadena sin releer movimientos. Las vistas multi-mes se ensamblan al vuelo a partir de los datos mensuales almacenados.
 
 ### `dist/` — Output (gitignored)
 
@@ -178,7 +187,7 @@ Angular Component
     ↓
 ElectronService (RxJS wrapper sobre Promises)
     ↓
-window.movements / .categories / .accounts / .envelopes / .tags / .settings  (contextBridge)
+window.movements / .categories / .accounts / .envelopes / .tags / .settings / .periodSummaries  (contextBridge)
     ↓
 ipcRenderer.invoke(Channels.X)
     ↓

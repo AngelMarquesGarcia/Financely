@@ -1,4 +1,4 @@
-import { Movement, Category, MovementFilter, AppSettings, Account, AccountStats, Envelope, Tag } from './types';
+import { Movement, Category, MovementFilter, AppSettings, Account, AccountStats, Envelope, Tag, PeriodSummary } from './types';
 
 export interface Movements {
   create(
@@ -36,7 +36,7 @@ export interface Categories {
 }
 
 export interface Accounts {
-  create(name: string, description?: string): Promise<number | bigint>;
+  create(name: string, description?: string, startingBalance?: number): Promise<number | bigint>;
   getAll(): Promise<Account[]>;
   getById(id: number): Promise<Account | undefined>;
   update(account: Account): Promise<boolean>;
@@ -47,7 +47,7 @@ export interface Accounts {
 }
 
 export interface Envelopes {
-  create(name: string, accountId: number): Promise<number | bigint>;
+  create(name: string, accountId: number, startingBalance?: number): Promise<number | bigint>;
   getAll(): Promise<Envelope[]>;
   getById(id: number): Promise<Envelope | undefined>;
   update(envelope: Envelope): Promise<boolean>;
@@ -71,4 +71,13 @@ export interface Tags {
 export interface Settings {
   getAll(): Promise<AppSettings>;
   save(partial: Partial<AppSettings>): Promise<void>;
+}
+
+export interface PeriodSummaries {
+  create(summary: Omit<PeriodSummary, 'id'>): Promise<number | bigint>;
+  upsert(summary: Omit<PeriodSummary, 'id'>): Promise<number | bigint>;
+  getAll(): Promise<PeriodSummary[]>;
+  getByPeriod(accountId: number, envelopeId: number | null, year: number, month: number): Promise<PeriodSummary | undefined>;
+  update(summary: PeriodSummary): Promise<boolean>;
+  delete(accountId: number, envelopeId: number | null, year: number, month: number): Promise<boolean>;
 }
