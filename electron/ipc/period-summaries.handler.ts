@@ -1,61 +1,48 @@
 import { ipcMain, IpcMainInvokeEvent } from 'electron';
 import { Channels } from './channels';
 import { ipcHandle } from './ipc-utils';
-import {
-  createPeriodSummary,
-  upsertPeriodSummary,
-  getAllPeriodSummaries,
-  getPeriodSummaryByPeriod,
-  updatePeriodSummary,
-  deletePeriodSummary,
-} from '../services/period-summary.service';
-import { Period, PeriodSummary } from '@shared/types';
+import { periodSummaryService } from '../services/period-summary.service';
+import { PeriodT, PeriodSummaryT } from '@shared/types';
+import { Period, PeriodSummary } from '@shared/domain';
 
 export function registerPeriodSummaryHandlers(): void {
   ipcMain.handle(
     Channels.PERIOD_SUMMARY_CREATE,
-    ipcHandle((_event: IpcMainInvokeEvent, summary: Omit<PeriodSummary, 'id'>) =>
-      createPeriodSummary(summary),
+    ipcHandle((_event: IpcMainInvokeEvent, period: PeriodT) =>
+      periodSummaryService.create(Period.from(period)),
     ),
   );
 
   ipcMain.handle(
     Channels.PERIOD_SUMMARY_UPSERT,
-    ipcHandle((_event: IpcMainInvokeEvent, summary: Omit<PeriodSummary, 'id'>) =>
-      upsertPeriodSummary(summary),
+    ipcHandle((_event: IpcMainInvokeEvent, summary: Omit<PeriodSummaryT, 'id'>) =>
+      periodSummaryService.upsert(summary),
     ),
   );
 
   ipcMain.handle(
     Channels.PERIOD_SUMMARY_GET_ALL,
-    ipcHandle(() => getAllPeriodSummaries()),
+    ipcHandle(() => periodSummaryService.getAll()),
   );
 
   ipcMain.handle(
     Channels.PERIOD_SUMMARY_GET_BY_PERIOD,
-    ipcHandle(
-      (
-        _event: IpcMainInvokeEvent,
-        arg: { accountId: number; envelopeId: number | null; year: number; month: number },
-      ) =>
-        getPeriodSummaryByPeriod({
-          accountId: arg.accountId,
-          envelopeId: arg.envelopeId,
-          year: arg.year,
-          month: arg.month,
-        }),
+    ipcHandle((_event: IpcMainInvokeEvent, period: PeriodT) =>
+      periodSummaryService.getByPeriod(Period.from(period)),
     ),
   );
 
   ipcMain.handle(
     Channels.PERIOD_SUMMARY_UPDATE,
-    ipcHandle((_event: IpcMainInvokeEvent, summary: PeriodSummary) =>
-      updatePeriodSummary(summary),
+    ipcHandle((_event: IpcMainInvokeEvent, summary: PeriodSummaryT) =>
+      periodSummaryService.update(PeriodSummary.from(summary)),
     ),
   );
 
   ipcMain.handle(
     Channels.PERIOD_SUMMARY_DELETE,
-    ipcHandle((_event: IpcMainInvokeEvent, period: Period) => deletePeriodSummary(period)),
+    ipcHandle((_event: IpcMainInvokeEvent, period: PeriodT) =>
+      periodSummaryService.delete(Period.from(period)),
+    ),
   );
 }

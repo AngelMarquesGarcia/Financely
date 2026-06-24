@@ -1,6 +1,6 @@
 import { Component, DestroyRef, EventEmitter, inject, Input, Output } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Category, Envelope, Movement, Tag } from '@shared/types';
+import { CategoryT, EnvelopeT, MovementT, TagT } from '@shared/types';
 import { MoneyPipe } from '../../../shared/pipes/money.pipe';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 import { DialogService } from '../../../core/services/dialog.service';
@@ -10,7 +10,7 @@ import {
 } from '../movement-detail-dialog/movement-detail-dialog.component';
 
 type HeaderRow = { kind: 'header'; key: string; label: string };
-type MovementRow = { kind: 'movement'; key: string; movement: Movement };
+type MovementRow = { kind: 'movement'; key: string; movement: MovementT };
 type RowItem = HeaderRow | MovementRow;
 
 @Component({
@@ -23,11 +23,11 @@ export class MovementListCompactComponent {
   private readonly dialog = inject(DialogService);
   private readonly destroyRef = inject(DestroyRef);
 
-  @Input() movements: Movement[] = [];
-  @Input() categories: Category[] = [];
-  @Input() envelopes: Envelope[] = [];
-  @Input() movementTags: Record<number, Tag[]> = {};
-  @Output() editRequested = new EventEmitter<Movement>();
+  @Input() movements: MovementT[] = [];
+  @Input() categories: CategoryT[] = [];
+  @Input() envelopes: EnvelopeT[] = [];
+  @Input() movementTags: Record<number, TagT[]> = {};
+  @Output() editRequested = new EventEmitter<MovementT>();
   @Output() deleteRequested = new EventEmitter<number>();
 
   get groupedRows(): RowItem[] {
@@ -55,7 +55,7 @@ export class MovementListCompactComponent {
     return rows;
   }
 
-  openDetail(m: Movement): void {
+  openDetail(m: MovementT): void {
     const ref = this.dialog.open<MovementDetailDialogComponent, unknown, MovementDetailResult>(
       MovementDetailDialogComponent,
       {
@@ -77,7 +77,7 @@ export class MovementListCompactComponent {
       });
   }
 
-  signedCents(m: Movement): number {
+  signedCents(m: MovementT): number {
     return m.isPositive ? m.quantityCents : -m.quantityCents;
   }
 }

@@ -359,6 +359,54 @@ Primer paso del dashboard de resumen mensual. Los tipos están definidos; la ló
 
 ---
 
+## Junio 2026 (continuación 2)
+
+### Refactor de arquitectura: tipos wire T-suffix, clases de dominio, handlers como frontera de adaptación
+
+**Motivación:** Los tipos de entidad en `shared/types.ts` compartían nombre con las clases de dominio que se querían introducir (e.g., `Period` como tipo plano y como clase con métodos). Los servicios interrumpían la lógica de negocio para llamar `Period.from(period)` en medio de un método. `DEFAULT_CATEGORY_ICONS` y `DEFAULT_COLOR_ORDER` estaban duplicados entre `electron/services/settings.service.ts` y `angular/src/app/core/defaults.ts`.
+
+**Cambios realizados:**
+
+- **`shared/types.ts`** — todos los tipos de entidad renombrados con sufijo T: `Movement` → `MovementT`, `Category` → `CategoryT`, `Account` → `AccountT`, `Envelope` → `EnvelopeT`, `Tag` → `TagT`, `Period` → `PeriodT`, `PeriodSummary` → `PeriodSummaryT`. Son los tipos wire (DTOs planos, serializables por structured clone). Los tipos sin clase de dominio (`AccountStats`, `BasicSummary`, `AppSettings`, `MovementFilter`, `DirtyState`) conservan sus nombres.
+
+- **`shared/domain.ts`** (nuevo) — clases de dominio con métodos e instancia, cada una con `static from(d: XyzT): Xyz`:
+  - `Period`: `getPrevious()`, `getNext()`, `fromMovement(m)`, `fromPeriodSummary(ps)`
+  - `Movement`: `getPeriod()`
+  - `PeriodSummary`: `getPeriod()`
+  - `Account`, `Category`, `Envelope`, `Tag`: solo factory `from()`, sin métodos de instancia adicionales
+
+- **`shared/defaults.ts`** (nuevo) — fuente única de `DEFAULT_COLOR_ORDER` y `DEFAULT_CATEGORY_ICONS`. Elimina la duplicación entre el servicio de settings del backend y el frontend.
+
+- **`angular/src/app/core/defaults.ts`** (eliminado) — era un re-export shim de `@shared/defaults`. Sus dos importadores (`settings.component.ts`, `category-form.component.ts`) apuntan ahora directamente a `@shared/defaults`.
+
+- **Patrón handler-as-boundary** — los handlers IPC son el único punto de conversión T-type ↔ clase de dominio:
+  - Reciben T-types de IPC (e.g., `movement: MovementT`)
+  - Convierten antes de llamar al servicio: `movementService.update(Movement.from(movement))`
+  - El retorno de structured clone serializa automáticamente las clases a plain objects
+  - Los servicios nunca ven wire types en sus parámetros de entidad
+
+- **Servicios** (`electron/services/`) — firmas de los métodos que reciben entidades actualizadas a clases de dominio:
+  - `MovementService`: `update(movement: Movement)`, `getByPeriod(period: Period)`
+  - `AccountService`: `update(account: Account)`
+  - `CategoryService`: `update(category: Category)`
+  - `EnvelopeService`: `update(envelope: Envelope)`
+  - `TagService`: `update(tag: Tag)`
+  - `PeriodSummaryService`: todos los métodos que antes aceptaban `PeriodT` ahora aceptan `Period`; `update()` pasa de `PeriodSummaryT` a `PeriodSummary`; eliminadas las conversiones `Period.from(period)` mid-logic en `create()`, `recalculateForPeriod()` y `markDirty()`
+
+- **Handlers** (`electron/ipc/`) — añadidas conversiones at the boundary:
+  - `movements.handler.ts`: `Movement.from(movement)` en `MOVEMENT_UPDATE`
+  - `accounts.handler.ts`: `Account.from(account)` en `ACCOUNT_UPDATE`
+  - `categories.handler.ts`: `Category.from(category)` en `CATEGORY_UPDATE`
+  - `envelopes.handler.ts`: `Envelope.from(envelope)` en `ENVELOPE_UPDATE`
+  - `tags.handler.ts`: `Tag.from(tag)` en `TAG_UPDATE`
+  - `period-summaries.handler.ts`: `Period.from()` en CREATE/GET_BY_PERIOD/DELETE; `PeriodSummary.from()` en UPDATE
+
+- **Frontend Angular** — todos los usos de los tipos de entidad como tipos TypeScript actualizados al sufijo T en `electron.service.ts`, `preload.ts`, todos los componentes relevantes (`movement-form`, `movements-list`, `movements-filter`, `movement-list-compact`, `movement-detail-dialog`), fixtures de test (`mock-electron.service.ts`, `sample-summaries.ts`, `movements-list.component.spec.ts`, `settings.component.spec.ts`).
+
+**Verificación:** `npm run type-check` (electron) limpio. 46/46 tests Jest verdes. Tests Vitest sin cambios de comportamiento.
+
+---
+
 ## Pasos siguientes
 
 ### Pendientes arrastrados de auditorías previas

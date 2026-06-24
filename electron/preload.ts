@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { Channels } from './ipc/channels';
-import { Movement, Category, MovementFilter, AppSettings, Account, Envelope, Tag, PeriodSummary } from '../shared/types';
+import { MovementT, CategoryT, MovementFilter, AppSettings, AccountT, EnvelopeT, TagT, PeriodSummaryT } from '../shared/types';
 
 contextBridge.exposeInMainWorld('movements', {
   create: (
@@ -25,7 +25,7 @@ contextBridge.exposeInMainWorld('movements', {
     }),
   getAll: (filter?: MovementFilter) => ipcRenderer.invoke(Channels.MOVEMENT_GET_ALL, filter),
   getById: (id: number) => ipcRenderer.invoke(Channels.MOVEMENT_GET_BY_ID, id),
-  update: (movement: Movement) => ipcRenderer.invoke(Channels.MOVEMENT_UPDATE, movement),
+  update: (movement: MovementT) => ipcRenderer.invoke(Channels.MOVEMENT_UPDATE, movement),
   delete: (id: number) => ipcRenderer.invoke(Channels.MOVEMENT_DELETE, id),
   deleteMany: (ids: number[]) => ipcRenderer.invoke(Channels.MOVEMENT_DELETE_MANY, ids),
   suggestNames: (prefix: string, limit?: number) =>
@@ -37,7 +37,7 @@ contextBridge.exposeInMainWorld('categories', {
     ipcRenderer.invoke(Channels.CATEGORY_CREATE, { name, color, emoji, envelopeId }),
   getAll: () => ipcRenderer.invoke(Channels.CATEGORY_GET_ALL),
   getById: (id: number) => ipcRenderer.invoke(Channels.CATEGORY_GET_BY_ID, id),
-  update: (category: Category) => ipcRenderer.invoke(Channels.CATEGORY_UPDATE, category),
+  update: (category: CategoryT) => ipcRenderer.invoke(Channels.CATEGORY_UPDATE, category),
   delete: (id: number) => ipcRenderer.invoke(Channels.CATEGORY_DELETE, id),
   setDefault: (id: number) => ipcRenderer.invoke(Channels.CATEGORY_SET_DEFAULT, id),
 });
@@ -46,7 +46,7 @@ contextBridge.exposeInMainWorld('accounts', {
   create: (name: string, description?: string, startingBalance?: number) => ipcRenderer.invoke(Channels.ACCOUNT_CREATE, { name, description, startingBalance }),
   getAll: () => ipcRenderer.invoke(Channels.ACCOUNT_GET_ALL),
   getById: (id: number) => ipcRenderer.invoke(Channels.ACCOUNT_GET_BY_ID, id),
-  update: (account: Account) => ipcRenderer.invoke(Channels.ACCOUNT_UPDATE, account),
+  update: (account: AccountT) => ipcRenderer.invoke(Channels.ACCOUNT_UPDATE, account),
   delete: (id: number) => ipcRenderer.invoke(Channels.ACCOUNT_DELETE, id),
   setDefault: (id: number) => ipcRenderer.invoke(Channels.ACCOUNT_SET_DEFAULT, id),
   getStats: () => ipcRenderer.invoke(Channels.ACCOUNT_GET_STATS),
@@ -57,7 +57,7 @@ contextBridge.exposeInMainWorld('envelopes', {
     ipcRenderer.invoke(Channels.ENVELOPE_CREATE, { name, accountId, startingBalance }),
   getAll: () => ipcRenderer.invoke(Channels.ENVELOPE_GET_ALL),
   getById: (id: number) => ipcRenderer.invoke(Channels.ENVELOPE_GET_BY_ID, id),
-  update: (envelope: Envelope) => ipcRenderer.invoke(Channels.ENVELOPE_UPDATE, envelope),
+  update: (envelope: EnvelopeT) => ipcRenderer.invoke(Channels.ENVELOPE_UPDATE, envelope),
   delete: (id: number) => ipcRenderer.invoke(Channels.ENVELOPE_DELETE, id),
   setDefault: (id: number) => ipcRenderer.invoke(Channels.ENVELOPE_SET_DEFAULT, id),
 });
@@ -67,7 +67,7 @@ contextBridge.exposeInMainWorld('tags', {
     ipcRenderer.invoke(Channels.TAG_CREATE, { type, name, color }),
   getAll: () => ipcRenderer.invoke(Channels.TAG_GET_ALL),
   getById: (id: number) => ipcRenderer.invoke(Channels.TAG_GET_BY_ID, id),
-  update: (tag: Tag) => ipcRenderer.invoke(Channels.TAG_UPDATE, tag),
+  update: (tag: TagT) => ipcRenderer.invoke(Channels.TAG_UPDATE, tag),
   delete: (id: number) => ipcRenderer.invoke(Channels.TAG_DELETE, id),
   addToMovement: (tagId: number, movementId: number) =>
     ipcRenderer.invoke(Channels.TAG_ADD_TO_MOVEMENT, { tagId, movementId }),
@@ -80,14 +80,14 @@ contextBridge.exposeInMainWorld('tags', {
 });
 
 contextBridge.exposeInMainWorld('periodSummaries', {
-  create: (summary: Omit<PeriodSummary, 'id'>) =>
+  create: (summary: Omit<PeriodSummaryT, 'id'>) =>
     ipcRenderer.invoke(Channels.PERIOD_SUMMARY_CREATE, summary),
-  upsert: (summary: Omit<PeriodSummary, 'id'>) =>
+  upsert: (summary: Omit<PeriodSummaryT, 'id'>) =>
     ipcRenderer.invoke(Channels.PERIOD_SUMMARY_UPSERT, summary),
   getAll: () => ipcRenderer.invoke(Channels.PERIOD_SUMMARY_GET_ALL),
   getByPeriod: (accountId: number, envelopeId: number | null, year: number, month: number) =>
     ipcRenderer.invoke(Channels.PERIOD_SUMMARY_GET_BY_PERIOD, { accountId, envelopeId, year, month }),
-  update: (summary: PeriodSummary) => ipcRenderer.invoke(Channels.PERIOD_SUMMARY_UPDATE, summary),
+  update: (summary: PeriodSummaryT) => ipcRenderer.invoke(Channels.PERIOD_SUMMARY_UPDATE, summary),
   delete: (accountId: number, envelopeId: number | null, year: number, month: number) =>
     ipcRenderer.invoke(Channels.PERIOD_SUMMARY_DELETE, { accountId, envelopeId, year, month }),
 });

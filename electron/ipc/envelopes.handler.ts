@@ -1,43 +1,37 @@
 import { ipcMain, IpcMainInvokeEvent } from 'electron';
 import { Channels } from './channels';
 import { ipcHandle } from './ipc-utils';
-import {
-  createEnvelope,
-  getAllEnvelopes,
-  getEnvelopeById,
-  updateEnvelope,
-  deleteEnvelope,
-  setDefaultEnvelope,
-} from '../services/envelope.service';
-import { Envelope } from '@shared/types';
+import { envelopeService } from '../services/envelope.service';
+import { EnvelopeT } from '@shared/types';
+import { Envelope } from '@shared/domain';
 
 export function registerEnvelopeHandlers(): void {
   ipcMain.handle(
     Channels.ENVELOPE_CREATE,
     ipcHandle((_event: IpcMainInvokeEvent, arg: { name: string; accountId: number; startingBalance?: number }) =>
-      createEnvelope(arg.name, arg.accountId, arg.startingBalance),
+      envelopeService.create(arg.name, arg.accountId, arg.startingBalance),
     ),
   );
 
-  ipcMain.handle(Channels.ENVELOPE_GET_ALL, ipcHandle(() => getAllEnvelopes()));
+  ipcMain.handle(Channels.ENVELOPE_GET_ALL, ipcHandle(() => envelopeService.getAll()));
 
   ipcMain.handle(
     Channels.ENVELOPE_GET_BY_ID,
-    ipcHandle((_event: IpcMainInvokeEvent, id: number) => getEnvelopeById(id)),
+    ipcHandle((_event: IpcMainInvokeEvent, id: number) => envelopeService.getById(id)),
   );
 
   ipcMain.handle(
     Channels.ENVELOPE_UPDATE,
-    ipcHandle((_event: IpcMainInvokeEvent, envelope: Envelope) => updateEnvelope(envelope)),
+    ipcHandle((_event: IpcMainInvokeEvent, envelope: EnvelopeT) => envelopeService.update(Envelope.from(envelope))),
   );
 
   ipcMain.handle(
     Channels.ENVELOPE_DELETE,
-    ipcHandle((_event: IpcMainInvokeEvent, id: number) => deleteEnvelope(id)),
+    ipcHandle((_event: IpcMainInvokeEvent, id: number) => envelopeService.delete(id)),
   );
 
   ipcMain.handle(
     Channels.ENVELOPE_SET_DEFAULT,
-    ipcHandle((_event: IpcMainInvokeEvent, id: number) => setDefaultEnvelope(id)),
+    ipcHandle((_event: IpcMainInvokeEvent, id: number) => envelopeService.setDefault(id)),
   );
 }

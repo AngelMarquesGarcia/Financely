@@ -6,7 +6,7 @@ import { ConfirmService } from '../../core/services/confirm.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { ElectronService } from '../../core/services/electron.service';
 import { ErrorReporter } from '../../core/services/error-reporter.service';
-import { Account, AccountStats } from '@shared/types';
+import { AccountT, AccountStats } from '@shared/types';
 import { AccountFormComponent } from './account-form/account-form.component';
 import { AccountsListComponent } from './accounts-list/accounts-list.component';
 import { StatCardComponent } from '../../shared/components/stat-card/stat-card.component';
@@ -30,9 +30,9 @@ export class AccountsComponent implements OnInit {
   private errors = inject(ErrorReporter);
   private destroyRef = inject(DestroyRef);
 
-  accounts: Account[] = [];
+  accounts: AccountT[] = [];
   stats: AccountStats = { totalIncomeCents: 0, totalExpenseCents: 0, balanceCents: 0, envelopeCount: 0 };
-  editingAccount: Account | null = null;
+  editingAccount: AccountT | null = null;
 
   ngOnInit() {
     this.loadAll();
@@ -50,7 +50,7 @@ export class AccountsComponent implements OnInit {
       });
   }
 
-  onEditRequested(account: Account) {
+  onEditRequested(account: AccountT) {
     this.editingAccount = account;
   }
 

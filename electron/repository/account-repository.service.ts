@@ -1,4 +1,4 @@
-import { Account, AccountStats } from '@shared/types';
+import { AccountT, AccountStats } from '@shared/types';
 import { DatabaseService } from './database.service';
 import { tables } from '../constants';
 
@@ -7,7 +7,7 @@ export class AccountRepository {
 
   private readonly selectCols = `id, name, description, is_default as isDefault, starting_balance as startingBalance`;
 
-  insertAccount(account: Omit<Account, 'id' | 'isDefault'>): number | bigint {
+  insertAccount(account: Omit<AccountT, 'id' | 'isDefault'>): number | bigint {
     return this.db
       .prepare(
         `INSERT INTO ${tables.accounts} (name, description, starting_balance)
@@ -16,13 +16,13 @@ export class AccountRepository {
       .run({ ...account, description: account.description ?? null }).lastInsertRowid;
   }
 
-  getAllAccounts(): Account[] {
+  getAllAccounts(): AccountT[] {
     return (
       this.db.prepare(`SELECT ${this.selectCols} FROM ${tables.accounts}`).all() as RawAccount[]
     ).map(toAccount);
   }
 
-  getAccountById(id: number): Account | undefined {
+  getAccountById(id: number): AccountT | undefined {
     const row = this.db
       .prepare(`SELECT ${this.selectCols} FROM ${tables.accounts} WHERE id = ?`)
       .get(id) as RawAccount | undefined;
@@ -36,7 +36,7 @@ export class AccountRepository {
     return row?.id;
   }
 
-  updateAccount(account: Account): boolean {
+  updateAccount(account: AccountT): boolean {
     return (
       this.db
         .prepare(
@@ -92,7 +92,7 @@ export class AccountRepository {
 }
 
 type RawAccount = { id: number; name: string; description: string | null; isDefault: number; startingBalance: number };
-function toAccount(r: RawAccount): Account {
+function toAccount(r: RawAccount): AccountT {
   return { id: r.id, name: r.name, description: r.description ?? undefined, isDefault: r.isDefault === 1, startingBalance: r.startingBalance };
 }
 

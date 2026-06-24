@@ -1,4 +1,4 @@
-import { Movement, MovementFilter, Period } from '@shared/types';
+import { MovementT, MovementFilter, PeriodT } from '@shared/types';
 import { DatabaseService } from './database.service';
 import { tables } from '../constants';
 
@@ -32,7 +32,7 @@ type RawMovement = {
   additionalNotes: string | null;
 };
 
-function toMovement(r: RawMovement): Movement {
+function toMovement(r: RawMovement): MovementT {
   return {
     id: r.id,
     accountId: r.accountId,
@@ -54,7 +54,7 @@ export class MovementRepository {
     isPositive, date, category_id as categoryId, envelope_id as envelopeId,
     additional_notes as additionalNotes`;
 
-  insertMovement(mov: Omit<Movement, 'id'>): number | bigint {
+  insertMovement(mov: Omit<MovementT, 'id'>): number | bigint {
     const stmt = this.db.prepare(
       `INSERT INTO ${tables.movements}
          (account_id, name, concept, quantity_cents, isPositive, date, category_id, envelope_id, additional_notes)
@@ -73,7 +73,7 @@ export class MovementRepository {
     }).lastInsertRowid;
   }
 
-  getAllMovements(filter?: MovementFilter): Movement[] {
+  getAllMovements(filter?: MovementFilter): MovementT[] {
     const conditions: string[] = [];
     const params: Record<string, unknown> = {};
 
@@ -144,7 +144,7 @@ export class MovementRepository {
     ).map(toMovement);
   }
 
-  getMovementsByPeriod(period: Period): Movement[] {
+  getMovementsByPeriod(period: PeriodT): MovementT[] {
     return (
       this.db
         .prepare(
@@ -167,14 +167,14 @@ export class MovementRepository {
     return (this.db.prepare(sql).all() as { movement_id: number }[]).map((r) => r.movement_id);
   }
 
-  getMovementById(id: number): Movement | undefined {
+  getMovementById(id: number): MovementT | undefined {
     const row = this.db
       .prepare(`SELECT ${this.selectCols} FROM ${tables.movements} WHERE id = ?`)
       .get(id) as RawMovement | undefined;
     return row ? toMovement(row) : undefined;
   }
 
-  updateMovement(mov: Movement): boolean {
+  updateMovement(mov: MovementT): boolean {
     const stmt = this.db.prepare(`
       UPDATE ${tables.movements}
       SET account_id = :accountId, name = :name, concept = :concept, quantity_cents = :quantityCents,

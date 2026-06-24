@@ -1,27 +1,27 @@
-import { Tag } from '@shared/types';
+import { TagT } from '@shared/types';
 import { DatabaseService } from './database.service';
 import { tables } from '../constants';
 
 export class TagRepository {
   private readonly db = DatabaseService.getInstance().db;
 
-  insertTag(tag: Omit<Tag, 'id'>): number | bigint {
+  insertTag(tag: Omit<TagT, 'id'>): number | bigint {
     return this.db
       .prepare(`INSERT INTO ${tables.tags} (type, name, color) VALUES (:type, :name, :color)`)
       .run(tag).lastInsertRowid;
   }
 
-  getAllTags(): Tag[] {
-    return this.db.prepare(`SELECT * FROM ${tables.tags}`).all() as Tag[];
+  getAllTags(): TagT[] {
+    return this.db.prepare(`SELECT * FROM ${tables.tags}`).all() as TagT[];
   }
 
-  getTagById(id: number): Tag | undefined {
+  getTagById(id: number): TagT | undefined {
     return this.db
       .prepare(`SELECT * FROM ${tables.tags} WHERE id = ?`)
-      .get(id) as Tag | undefined;
+      .get(id) as TagT | undefined;
   }
 
-  updateTag(tag: Tag): boolean {
+  updateTag(tag: TagT): boolean {
     return (
       this.db
         .prepare(
@@ -49,17 +49,17 @@ export class TagRepository {
       .run(movementId, tagId);
   }
 
-  getTagsForMovement(movementId: number): Tag[] {
+  getTagsForMovement(movementId: number): TagT[] {
     return this.db
       .prepare(
         `SELECT ${tables.tags}.* FROM ${tables.tags}
          JOIN ${tables.movementTags} ON ${tables.tags}.id = ${tables.movementTags}.tag_id
          WHERE ${tables.movementTags}.movement_id = ?`,
       )
-      .all(movementId) as Tag[];
+      .all(movementId) as TagT[];
   }
 
-  getTagsForMovements(movementIds: number[]): Record<number, Tag[]> {
+  getTagsForMovements(movementIds: number[]): Record<number, TagT[]> {
     if (movementIds.length === 0) return {};
     const placeholders = movementIds.map(() => '?').join(',');
     const rows = this.db
@@ -69,8 +69,8 @@ export class TagRepository {
          JOIN ${tables.movementTags} ON ${tables.tags}.id = ${tables.movementTags}.tag_id
          WHERE ${tables.movementTags}.movement_id IN (${placeholders})`,
       )
-      .all(...movementIds) as (Tag & { movementId: number })[];
-    const map: Record<number, Tag[]> = {};
+      .all(...movementIds) as (TagT & { movementId: number })[];
+    const map: Record<number, TagT[]> = {};
     for (const row of rows) {
       const { movementId, ...tag } = row;
       (map[movementId] ??= []).push(tag);

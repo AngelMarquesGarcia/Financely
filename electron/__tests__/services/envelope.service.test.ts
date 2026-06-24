@@ -15,9 +15,9 @@ jest.mock('electron', () => ({
 }));
 
 import { DatabaseService } from '../../repository/database.service';
-import { deleteEnvelope, setDefaultEnvelope, getAllEnvelopes } from '../../services/envelope.service';
-import { createAccount } from '../../services/account.service';
-import { getMovementById } from '../../services/movement.service';
+import { envelopeService } from '../../services/envelope.service';
+import { accountService } from '../../services/account.service';
+import { movementService } from '../../services/movement.service';
 import { AppErrorCode } from '@shared/error-codes';
 
 describe('EnvelopeService — delete, setDefault, and account-create side effect', () => {
@@ -29,14 +29,14 @@ describe('EnvelopeService — delete, setDefault, and account-create side effect
     DatabaseService.getInstance().migrate();
   });
 
-  it('deleteEnvelope refuses when the target is the default envelope', () => {
-    const defaultEnv = getAllEnvelopes().find((e) => e.isDefault);
+  it('delete refuses when the target is the default envelope', () => {
+    const defaultEnv = envelopeService.getAll().find((e) => e.isDefault);
     expect(defaultEnv).toBeDefined();
-    expect(() => deleteEnvelope(defaultEnv!.id)).toThrow(AppErrorCode.ENVELOPE_DELETE_DEFAULT);
+    expect(() => envelopeService.delete(defaultEnv!.id)).toThrow(AppErrorCode.ENVELOPE_DELETE_DEFAULT);
   });
 
-  it('deleteEnvelope reassigns movements to the account default and removes the envelope', () => {
-    const envs = getAllEnvelopes();
+  it('delete reassigns movements to the account default and removes the envelope', () => {
+    const envs = envelopeService.getAll();
     const monthly = envs.find((e) => e.name === 'Monthly Expenses')!;
     const unassigned = envs.find((e) => e.name === 'Unassigned' && e.isDefault)!;
     expect(monthly.accountId).toBe(unassigned.accountId);
@@ -48,21 +48,21 @@ describe('EnvelopeService — delete, setDefault, and account-create side effect
     expect(movRow).toBeDefined();
     const movId = movRow!.id;
 
-    expect(deleteEnvelope(monthly.id)).toBe(true);
+    expect(envelopeService.delete(monthly.id)).toBe(true);
 
-    const after = getMovementById(movId)!;
+    const after = movementService.getById(movId)!;
     expect(after.envelopeId).toBe(unassigned.id);
-    expect(getAllEnvelopes().find((e) => e.id === monthly.id)).toBeUndefined();
+    expect(envelopeService.getAll().find((e) => e.id === monthly.id)).toBeUndefined();
   });
 
-  it('setDefaultEnvelope clears the previous default in the same account', () => {
-    const envs = getAllEnvelopes();
+  it('setDefault clears the previous default in the same account', () => {
+    const envs = envelopeService.getAll();
     const oldDefault = envs.find((e) => e.isDefault)!;
     const sibling = envs.find((e) => !e.isDefault && e.accountId === oldDefault.accountId)!;
 
-    setDefaultEnvelope(sibling.id);
+    envelopeService.setDefault(sibling.id);
 
-    const after = getAllEnvelopes();
+    const after = envelopeService.getAll();
     const defaultsInAccount = after.filter(
       (e) => e.isDefault && e.accountId === oldDefault.accountId,
     );
@@ -71,11 +71,11 @@ describe('EnvelopeService — delete, setDefault, and account-create side effect
     expect(after.find((e) => e.id === oldDefault.id)!.isDefault).toBe(false);
   });
 
-  it('createAccount auto-creates a default envelope named after the account', () => {
+  it('accountService.create auto-creates a default envelope named after the account', () => {
     const accountName = 'Test Bank';
-    const newAccountId = Number(createAccount(accountName));
+    const newAccountId = Number(accountService.create(accountName));
 
-    const env = getAllEnvelopes().find((e) => e.accountId === newAccountId);
+    const env = envelopeService.getAll().find((e) => e.accountId === newAccountId);
     expect(env).toBeDefined();
     expect(env!.name).toBe(accountName);
     expect(env!.isDefault).toBe(true);

@@ -5,7 +5,7 @@ import { ConfirmService } from '../../core/services/confirm.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { ElectronService } from '../../core/services/electron.service';
 import { ErrorReporter } from '../../core/services/error-reporter.service';
-import { Account, Category, Envelope } from '@shared/types';
+import { AccountT, CategoryT, EnvelopeT } from '@shared/types';
 import { EnvelopeFormComponent } from './envelope-form/envelope-form.component';
 import { EnvelopesListComponent } from './envelopes-list/envelopes-list.component';
 
@@ -22,10 +22,10 @@ export class EnvelopesComponent implements OnInit {
   private errors = inject(ErrorReporter);
   private destroyRef = inject(DestroyRef);
 
-  envelopes: Envelope[] = [];
-  accounts: Account[] = [];
-  categories: Category[] = [];
-  editingEnvelope: Envelope | null = null;
+  envelopes: EnvelopeT[] = [];
+  accounts: AccountT[] = [];
+  categories: CategoryT[] = [];
+  editingEnvelope: EnvelopeT | null = null;
 
   ngOnInit() {
     this.loadAll();
@@ -45,7 +45,7 @@ export class EnvelopesComponent implements OnInit {
       });
   }
 
-  onEditRequested(envelope: Envelope) {
+  onEditRequested(envelope: EnvelopeT) {
     this.editingEnvelope = envelope;
   }
 

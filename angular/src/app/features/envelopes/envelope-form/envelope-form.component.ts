@@ -16,7 +16,7 @@ import { forkJoin, of, switchMap } from 'rxjs';
 import { ElectronService } from '../../../core/services/electron.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { ErrorTextService } from '../../../core/services/error-text.service';
-import { Account, Category, Envelope } from '@shared/types';
+import { AccountT, CategoryT, EnvelopeT } from '@shared/types';
 
 @Component({
   selector: 'app-envelope-form',
@@ -25,9 +25,9 @@ import { Account, Category, Envelope } from '@shared/types';
   styleUrl: './envelope-form.component.scss',
 })
 export class EnvelopeFormComponent implements OnChanges {
-  @Input() editingEnvelope: Envelope | null = null;
-  @Input() accounts: Account[] = [];
-  @Input() categories: Category[] = [];
+  @Input() editingEnvelope: EnvelopeT | null = null;
+  @Input() accounts: AccountT[] = [];
+  @Input() categories: CategoryT[] = [];
   @Output() saved = new EventEmitter<void>();
   @Output() cancelled = new EventEmitter<void>();
 
@@ -42,11 +42,10 @@ export class EnvelopeFormComponent implements OnChanges {
   selectedCategoryIds: number[] = [];
   showErrors = false;
 
-  // Adapters for <app-entity-select>. Arrow fields so the template can pass them as inputs.
-  readonly categoryLabel = (c: Category) => c.name;
-  readonly categoryColor = (c: Category) => c.color ?? undefined;
-  readonly categoryEmoji = (c: Category) => c.emoji ?? undefined;
-  readonly categoryAvailable = (c: Category) =>
+  readonly categoryLabel = (c: CategoryT) => c.name;
+  readonly categoryColor = (c: CategoryT) => c.color ?? undefined;
+  readonly categoryEmoji = (c: CategoryT) => c.emoji ?? undefined;
+  readonly categoryAvailable = (c: CategoryT) =>
     c.envelopeId == null || c.envelopeId === this.editingEnvelope?.id;
 
   get isEditing() {

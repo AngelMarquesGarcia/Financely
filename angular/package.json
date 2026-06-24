@@ -1,6 +1,6 @@
 {
   "name": "financely_renderer_process",
-  "version": "0.0.10",
+  "version": "0.0.13",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",

@@ -1,4 +1,4 @@
-import { DirtyState, Period, PeriodSummary } from '@shared/types';
+import { DirtyState, PeriodT, PeriodSummaryT } from '@shared/types';
 import { DatabaseService } from './database.service';
 import { tables } from '../constants';
 
@@ -26,7 +26,7 @@ export class PeriodSummaryRepository {
     dirty_state               AS dirtyState
   `;
 
-  insert(s: Omit<PeriodSummary, 'id'>): number | bigint {
+  insert(s: Omit<PeriodSummaryT, 'id'>): number | bigint {
     return this.db
       .prepare(
         `INSERT INTO ${tables.periodSummaries} (
@@ -44,20 +44,20 @@ export class PeriodSummaryRepository {
       .run(toRow(s)).lastInsertRowid;
   }
 
-  getAll(): PeriodSummary[] {
+  getAll(): PeriodSummaryT[] {
     return (
       this.db.prepare(`SELECT ${this.selectCols} FROM ${tables.periodSummaries}`).all() as RawRow[]
     ).map(toSummary);
   }
 
-  getById(id: number): PeriodSummary | undefined {
+  getById(id: number): PeriodSummaryT | undefined {
     const row = this.db
       .prepare(`SELECT ${this.selectCols} FROM ${tables.periodSummaries} WHERE id = ?`)
       .get(id) as RawRow | undefined;
     return row ? toSummary(row) : undefined;
   }
 
-  getByPeriod(period: Period): PeriodSummary | undefined {
+  getByPeriod(period: PeriodT): PeriodSummaryT | undefined {
     const row = this.db
       .prepare(
         `SELECT ${this.selectCols} FROM ${tables.periodSummaries}
@@ -68,7 +68,7 @@ export class PeriodSummaryRepository {
     return row ? toSummary(row) : undefined;
   }
 
-  update(s: PeriodSummary): boolean {
+  update(s: PeriodSummaryT): boolean {
     return (
       this.db
         .prepare(
@@ -93,7 +93,7 @@ export class PeriodSummaryRepository {
     );
   }
 
-  delete(period: Period): boolean {
+  delete(period: PeriodT): boolean {
     return (
       this.db
         .prepare(
@@ -129,7 +129,7 @@ type RawRow = {
   dirtyState: string;
 };
 
-function toSummary(r: RawRow): PeriodSummary {
+function toSummary(r: RawRow): PeriodSummaryT {
   return {
     id: r.id,
     accountId: r.accountId,
@@ -152,7 +152,7 @@ function toSummary(r: RawRow): PeriodSummary {
   };
 }
 
-function toRow(s: Omit<PeriodSummary, 'id'>): Record<string, unknown> {
+function toRow(s: Omit<PeriodSummaryT, 'id'>): Record<string, unknown> {
   return {
     accountId: s.accountId,
     accountName: s.accountName,

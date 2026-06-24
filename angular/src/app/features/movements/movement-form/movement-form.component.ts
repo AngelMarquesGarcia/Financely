@@ -20,7 +20,7 @@ import { ElectronService } from '../../../core/services/electron.service';
 import { ErrorTextService } from '../../../core/services/error-text.service';
 import { DialogService } from '../../../core/services/dialog.service';
 import { DialogRef } from '../../../core/services/dialog-ref';
-import { Category, Envelope, Movement, Tag } from '@shared/types';
+import { CategoryT, EnvelopeT, MovementT, TagT } from '@shared/types';
 import { TagPickerComponent } from '../../../shared/components/tag-picker/tag-picker.component';
 import { SettingsComponent } from '../../settings/settings.component';
 import { AmountInputComponent } from '../../../shared/components/amount-input/amount-input.component';
@@ -34,7 +34,7 @@ import { AutocompleteInputComponent } from '../../../shared/components/autocompl
 })
 export class MovementFormComponent implements OnInit, OnChanges {
   protected readonly faGear = faGear;
-  @Input() editingMovement: Movement | null = null;
+  @Input() editingMovement: MovementT | null = null;
   @Output() saved = new EventEmitter<void>();
   @Output() cancelled = new EventEmitter<void>();
 
@@ -50,9 +50,9 @@ export class MovementFormComponent implements OnInit, OnChanges {
   private useDefaultDate = false;
   private loadedDefaultDate = '';
 
-  categories: Category[] = [];
-  envelopes: Envelope[] = [];
-  tags: Tag[] = [];
+  categories: CategoryT[] = [];
+  envelopes: EnvelopeT[] = [];
+  tags: TagT[] = [];
 
   name = '';
   concept: string | null = null;
@@ -236,7 +236,7 @@ export class MovementFormComponent implements OnInit, OnChanges {
     const categoryId = this.selectedCategoryId!;
 
     if (this.isEditing) {
-      const movement: Movement = {
+      const movement: MovementT = {
         id: this.editingMovement!.id,
         accountId: this.editingMovement!.accountId,
         name: this.name,

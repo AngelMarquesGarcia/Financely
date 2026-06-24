@@ -8,7 +8,7 @@ import { ElectronService } from '../../core/services/electron.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { ErrorTextService } from '../../core/services/error-text.service';
 import { DialogRef } from '../../core/services/dialog-ref';
-import { DEFAULT_COLOR_ORDER, DEFAULT_CATEGORY_ICONS } from '../../core/defaults';
+import { DEFAULT_COLOR_ORDER, DEFAULT_CATEGORY_ICONS } from '@shared/defaults';
 
 @Component({
   selector: 'app-settings',

@@ -37,7 +37,6 @@ angular/
 ├── src/
 │   ├── app/
 │   │   ├── core/                                 # App-wide singletons
-│   │   │   ├── defaults.ts                       # Shared default constants (color order, category icons)
 │   │   │   ├── guards/
 │   │   │   ├── interceptors/
 │   │   │   ├── models/
@@ -179,14 +178,18 @@ The main process is bundled by **esbuild**, not `tsc` — TypeScript here is typ
 
 ```
 shared/
-├── error-codes.ts  # AppErrorCode const + AppError class — backend throws, frontend resolves to text
-├── interfaces.ts   # Movements, Categories, Accounts, Envelopes, Tags, Settings, PeriodSummaries — IPC contracts
-└── types.ts        # Movement, Category, Account, AccountStats, Envelope, Tag, AppSettings, MovementFilter, Period, BasicSummary, PeriodSummary, DirtyState
+├── types.ts        # IPC wire types (plain, serializable): MovementT, CategoryT, AccountT, EnvelopeT, TagT, PeriodT, PeriodSummaryT, AccountStats, BasicSummary, AppSettings, MovementFilter, DirtyState
+├── domain.ts       # Domain classes with methods: Period, Movement, PeriodSummary, Account, Category, Envelope, Tag — each with a static from(d: XyzT): Xyz factory
+├── defaults.ts     # DEFAULT_COLOR_ORDER and DEFAULT_CATEGORY_ICONS — single source of truth for both frontend and backend
+├── interfaces.ts   # IPC contracts: Movements, Categories, Accounts, Envelopes, Tags, Settings, PeriodSummaries
+└── error-codes.ts  # AppErrorCode const + AppError class — backend throws, frontend resolves to text
 ```
 
 Imported by both children: the renderer's `electron.service.ts` and the backend's services and handlers. Anything that crosses the IPC boundary should be typed here.
 
-**Key domain type — `PeriodSummary`:** a stored snapshot of financial activity for a single `(accountId, envelopeId, year, month)` combination (`null` `envelopeId` = account-level). The `month` field is **0-indexed** (JavaScript `Date.getMonth()` convention); display layers add 1. Fields include all `BasicSummary` aggregates (cash flow, income/expense totals, averages, movement count) plus: `endingBalanceCents` — a running chain where `ending_balance(P) = ending_balance(P-1) + cashFlow(P)`, anchored by the account's or envelope's `startingBalance` on the first period; `availableBudgetCents` — remaining budget for envelope-level summaries with a fixed budget; `notes` — the only user-editable field; `dirtyState: DirtyState` (`'CLEAN' | 'MODIFIED' | 'DIRTY'`) — `MODIFIED` triggers full recomputation of aggregates from movements; `DIRTY` propagates the ending-balance chain forward without re-reading movements. Multi-period (multi-month) views are assembled on the fly from stored single-month entries. The `PeriodSummary` lifecycle is automatic: created on the first movement in a period, updated on any movement change, deleted when the last movement is removed.
+**Dual-representation pattern:** `*T` types (`MovementT`, `PeriodT`, etc.) are plain serializable DTOs — the IPC wire format. Domain classes (`Movement`, `Period`, etc. in `domain.ts`) add methods and live exclusively in the backend. **Handlers** are the sole adaptation boundary: they receive T-types from IPC, convert via `XyzClass.from(arg)`, and call services with domain class instances. The return direction is automatic — structured clone strips methods when crossing the IPC boundary. Services never see wire types in their entity parameters.
+
+**Key domain type — `PeriodSummaryT`:** a stored snapshot of financial activity for a single `(accountId, envelopeId, year, month)` combination (`null` `envelopeId` = account-level). The `month` field is **0-indexed** (JavaScript `Date.getMonth()` convention); display layers add 1. Fields include all `BasicSummary` aggregates (cash flow, income/expense totals, averages, movement count) plus: `endingBalanceCents` — a running chain where `ending_balance(P) = ending_balance(P-1) + cashFlow(P)`, anchored by the account's or envelope's `startingBalance` on the first period; `availableBudgetCents` — remaining budget for envelope-level summaries with a fixed budget; `notes` — the only user-editable field; `dirtyState: DirtyState` (`'CLEAN' | 'MODIFIED' | 'DIRTY'`) — `MODIFIED` triggers full recomputation of aggregates from movements; `DIRTY` propagates the ending-balance chain forward without re-reading movements. Multi-period (multi-month) views are assembled on the fly from stored single-month entries. The `PeriodSummary` lifecycle is automatic: created on the first movement in a period, updated on any movement change, deleted when the last movement is removed.
 
 ### `e2e/` — End-to-end tests
 

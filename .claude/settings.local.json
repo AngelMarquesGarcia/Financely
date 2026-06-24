@@ -32,7 +32,8 @@
       "PowerShell(npm show @fortawesome/angular-fontawesome@2.0.1 peerDependencies)",
       "PowerShell(npm show @fortawesome/angular-fontawesome@3.0.0 peerDependencies)",
       "Bash(cat playwright.config.ts)",
-      "Bash(cat playwright.config.js)"
+      "Bash(cat playwright.config.js)",
+      "PowerShell(cd d:\\\\Universidad\\\\TFG\\\\Financely\\\\electron; npm test 2>&1 | Select-String -Pattern \"PASS|FAIL|Tests:|Test Suites:\" | ForEach-Object { $_.Line })"
     ]
   },
   "hooks": {

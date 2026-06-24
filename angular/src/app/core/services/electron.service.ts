@@ -1,13 +1,13 @@
 import { Injectable } from '@angular/core';
 import { from } from 'rxjs';
 import {
-  Movement,
-  Category,
+  MovementT,
+  CategoryT,
   MovementFilter,
   AppSettings,
-  Account,
-  Envelope,
-  Tag,
+  AccountT,
+  EnvelopeT,
+  TagT,
 } from '@shared/types';
 
 @Injectable({
@@ -54,7 +54,7 @@ export class ElectronService {
     return from(this.movements.getById(id));
   }
 
-  updateMovement(movement: Movement) {
+  updateMovement(movement: MovementT) {
     return from(this.movements.update(movement));
   }
 
@@ -83,7 +83,7 @@ export class ElectronService {
     return from(this.categories.getById(id));
   }
 
-  updateCategory(category: Category) {
+  updateCategory(category: CategoryT) {
     return from(this.categories.update(category));
   }
 
@@ -108,7 +108,7 @@ export class ElectronService {
     return from(this.accounts.getById(id));
   }
 
-  updateAccount(account: Account) {
+  updateAccount(account: AccountT) {
     return from(this.accounts.update(account));
   }
 
@@ -137,7 +137,7 @@ export class ElectronService {
     return from(this.envelopes.getById(id));
   }
 
-  updateEnvelope(envelope: Envelope) {
+  updateEnvelope(envelope: EnvelopeT) {
     return from(this.envelopes.update(envelope));
   }
 
@@ -162,7 +162,7 @@ export class ElectronService {
     return from(this.tags.getById(id));
   }
 
-  updateTag(tag: Tag) {
+  updateTag(tag: TagT) {
     return from(this.tags.update(tag));
   }
 

@@ -13,7 +13,7 @@ jest.mock('electron-store', () => {
   }));
 });
 
-import { getAllSettings, saveSettings } from '../../services/settings.service';
+import { settingsService } from '../../services/settings.service';
 
 describe('SettingsService', () => {
   beforeEach(() => {
@@ -21,7 +21,7 @@ describe('SettingsService', () => {
   });
 
   it('getAll returns default values on fresh store', () => {
-    const s = getAllSettings();
+    const s = settingsService.getAll();
     expect(s.useDefaultDate).toBe(false);
     expect(s.defaultDate).toBe('');
     expect(Array.isArray(s.colorOrder)).toBe(true);
@@ -31,20 +31,20 @@ describe('SettingsService', () => {
   });
 
   it('save persists useDefaultDate', () => {
-    saveSettings({ useDefaultDate: true });
-    expect(getAllSettings().useDefaultDate).toBe(true);
+    settingsService.save({ useDefaultDate: true });
+    expect(settingsService.getAll().useDefaultDate).toBe(true);
   });
 
   it('save merges partial — unset keys keep defaults', () => {
-    saveSettings({ defaultDate: '2024-06-01' });
-    const s = getAllSettings();
+    settingsService.save({ defaultDate: '2024-06-01' });
+    const s = settingsService.getAll();
     expect(s.defaultDate).toBe('2024-06-01');
     expect(s.useDefaultDate).toBe(false);
   });
 
   it('save overwrites previous value', () => {
-    saveSettings({ defaultDate: '2024-01-01' });
-    saveSettings({ defaultDate: '2024-12-31' });
-    expect(getAllSettings().defaultDate).toBe('2024-12-31');
+    settingsService.save({ defaultDate: '2024-01-01' });
+    settingsService.save({ defaultDate: '2024-12-31' });
+    expect(settingsService.getAll().defaultDate).toBe('2024-12-31');
   });
 });

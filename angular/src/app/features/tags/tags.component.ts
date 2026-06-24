@@ -2,7 +2,7 @@ import { Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ElectronService } from '../../core/services/electron.service';
 import { ErrorReporter } from '../../core/services/error-reporter.service';
-import { Tag } from '@shared/types';
+import { TagT } from '@shared/types';
 import { TagsListComponent } from './tags-list/tags-list.component';
 
 @Component({
@@ -16,7 +16,7 @@ export class TagsComponent implements OnInit {
   private errors = inject(ErrorReporter);
   private destroyRef = inject(DestroyRef);
 
-  tags: Tag[] = [];
+  tags: TagT[] = [];
 
   ngOnInit() {
     this.loadAll();

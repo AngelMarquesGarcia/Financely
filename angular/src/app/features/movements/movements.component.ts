@@ -6,7 +6,7 @@ import { ConfirmService } from '../../core/services/confirm.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { ElectronService } from '../../core/services/electron.service';
 import { ErrorReporter } from '../../core/services/error-reporter.service';
-import { Category, Envelope, Movement, MovementFilter, Tag } from '@shared/types';
+import { CategoryT, EnvelopeT, MovementT, MovementFilter, TagT } from '@shared/types';
 import { MovementFormComponent } from './movement-form/movement-form.component';
 import { MovementsListComponent } from './movements-list/movements-list.component';
 import { MovementListCompactComponent } from './movement-list-compact/movement-list-compact.component';
@@ -25,12 +25,12 @@ export class MovementsComponent implements OnInit {
   private errors = inject(ErrorReporter);
   private destroyRef = inject(DestroyRef);
 
-  movements: Movement[] = [];
-  categories: Category[] = [];
-  envelopes: Envelope[] = [];
-  tags: Tag[] = [];
-  movementTags: Record<number, Tag[]> = {};
-  editingMovement: Movement | null = null;
+  movements: MovementT[] = [];
+  categories: CategoryT[] = [];
+  envelopes: EnvelopeT[] = [];
+  tags: TagT[] = [];
+  movementTags: Record<number, TagT[]> = {};
+  editingMovement: MovementT | null = null;
 
   private currentFilter: MovementFilter = {};
 
@@ -55,7 +55,7 @@ export class MovementsComponent implements OnInit {
       .pipe(
         switchMap((list) => {
           this.movements = list;
-          if (list.length === 0) return of<Record<number, Tag[]>>({});
+          if (list.length === 0) return of<Record<number, TagT[]>>({});
           return this.electron.getTagsForMovements(list.map((m) => m.id));
         }),
         this.errors.toast(),
@@ -69,7 +69,7 @@ export class MovementsComponent implements OnInit {
     this.loadMovements();
   }
 
-  onEditRequested(m: Movement) {
+  onEditRequested(m: MovementT) {
     this.editingMovement = m;
   }
 

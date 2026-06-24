@@ -1,4 +1,4 @@
-import { Envelope } from '@shared/types';
+import { EnvelopeT } from '@shared/types';
 import { AppError, AppErrorCode } from '@shared/error-codes';
 import { DatabaseService } from './database.service';
 import { tables } from '../constants';
@@ -8,7 +8,7 @@ export class EnvelopeRepository {
 
   private readonly selectCols = `id, name, account_id as accountId, is_default as isDefault, starting_balance as startingBalance`;
 
-  insertEnvelope(envelope: Omit<Envelope, 'id' | 'isDefault'>): number | bigint {
+  insertEnvelope(envelope: Omit<EnvelopeT, 'id' | 'isDefault'>): number | bigint {
     return this.db
       .prepare(
         `INSERT INTO ${tables.envelopes} (name, account_id, starting_balance)
@@ -17,20 +17,20 @@ export class EnvelopeRepository {
       .run(envelope).lastInsertRowid;
   }
 
-  getAllEnvelopes(): Envelope[] {
+  getAllEnvelopes(): EnvelopeT[] {
     return (
       this.db.prepare(`SELECT ${this.selectCols} FROM ${tables.envelopes}`).all() as RawEnvelope[]
     ).map(toEnvelope);
   }
 
-  getEnvelopeById(id: number): Envelope | undefined {
+  getEnvelopeById(id: number): EnvelopeT | undefined {
     const row = this.db
       .prepare(`SELECT ${this.selectCols} FROM ${tables.envelopes} WHERE id = ?`)
       .get(id) as RawEnvelope | undefined;
     return row ? toEnvelope(row) : undefined;
   }
 
-  updateEnvelope(envelope: Envelope): boolean {
+  updateEnvelope(envelope: EnvelopeT): boolean {
     return (
       this.db
         .prepare(
@@ -92,7 +92,7 @@ export class EnvelopeRepository {
 }
 
 type RawEnvelope = { id: number; name: string; accountId: number | null; isDefault: number; startingBalance: number };
-function toEnvelope(r: RawEnvelope): Envelope {
+function toEnvelope(r: RawEnvelope): EnvelopeT {
   return { id: r.id, name: r.name, accountId: r.accountId, isDefault: r.isDefault === 1, startingBalance: r.startingBalance };
 }
 

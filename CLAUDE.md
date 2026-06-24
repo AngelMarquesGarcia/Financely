@@ -36,7 +36,6 @@ angular/
 ├── src/
 │   ├── app/
 │   │   ├── core/
-│   │   │   ├── defaults.ts                   # Constantes compartidas (color order, category icons)
 │   │   │   ├── guards/
 │   │   │   ├── interceptors/
 │   │   │   ├── models/
@@ -160,14 +159,18 @@ El output de esbuild va a `dist/main/` (dos archivos: `main.js` y `preload.js`).
 
 ```
 shared/
-├── types.ts       # Movement, Category, Account, AccountStats, Envelope, Tag, AppSettings, MovementFilter, Period, BasicSummary, PeriodSummary, DirtyState
+├── types.ts       # Tipos wire IPC (plain objects serializables): MovementT, CategoryT, AccountT, EnvelopeT, TagT, PeriodT, PeriodSummaryT, AccountStats, BasicSummary, AppSettings, MovementFilter, DirtyState
+├── domain.ts      # Clases de dominio con métodos: Period, Movement, PeriodSummary, Account, Category, Envelope, Tag — cada una con static from(d: XyzT): Xyz
+├── defaults.ts    # DEFAULT_COLOR_ORDER y DEFAULT_CATEGORY_ICONS — fuente única, importada por frontend y backend
 ├── interfaces.ts  # Movements, Categories, Accounts, Envelopes, Tags, Settings, PeriodSummaries (contratos IPC)
 └── error-codes.ts # AppErrorCode + AppError — usado por backend (throw) y frontend (resolve a texto)
 ```
 
 Importado tanto por el frontend (`electron.service.ts`) como por el backend (servicios y handlers).
 
-**Tipo de dominio clave — `PeriodSummary`:** snapshot mensual de actividad financiera para una combinación `(accountId, envelopeId, year, month)` (`envelopeId = null` → resumen a nivel de cuenta). El campo `month` es **0-indexado** (convenio `Date.getMonth()` de JavaScript); la capa de presentación suma 1 al renderizar. Incluye todos los campos de `BasicSummary` (cash flow, totales income/expense, medias, count) más: `endingBalanceCents` — cadena acumulativa `ending_balance(P) = ending_balance(P-1) + cashFlow(P)`, anclada en `startingBalance` del account o envelope en el primer periodo; `availableBudgetCents` — presupuesto restante para summaries de envelope con budget fijo; `notes` — único campo editable por el usuario; `dirtyState: DirtyState` (`'CLEAN' | 'MODIFIED' | 'DIRTY'`) — `MODIFIED` desencadena recálculo completo de agregados desde los movimientos; `DIRTY` propaga únicamente el endingBalance en la cadena sin releer movimientos. Las vistas multi-mes se ensamblan al vuelo a partir de los datos mensuales almacenados.
+**Patrón de representación dual:** los tipos `*T` (`MovementT`, `PeriodT`, etc.) son DTOs planos que cruzan el IPC — serializables por structured clone. Las clases de dominio (`Movement`, `Period`, etc. en `domain.ts`) añaden métodos y se usan exclusivamente en el backend. Los **handlers** son la frontera de adaptación: reciben T-types del IPC, convierten via `XyzClass.from(arg)`, y llaman a los servicios con clases. El retorno es automático — structured clone elimina los métodos al cruzar la frontera. Los servicios nunca ven wire types en sus parámetros de entidad.
+
+**Tipo de dominio clave — `PeriodSummaryT`:** snapshot mensual de actividad financiera para una combinación `(accountId, envelopeId, year, month)` (`envelopeId = null` → resumen a nivel de cuenta). El campo `month` es **0-indexado** (convenio `Date.getMonth()` de JavaScript); la capa de presentación suma 1 al renderizar. Incluye todos los campos de `BasicSummary` (cash flow, totales income/expense, medias, count) más: `endingBalanceCents` — cadena acumulativa `ending_balance(P) = ending_balance(P-1) + cashFlow(P)`, anclada en `startingBalance` del account o envelope en el primer periodo; `availableBudgetCents` — presupuesto restante para summaries de envelope con budget fijo; `notes` — único campo editable por el usuario; `dirtyState: DirtyState` (`'CLEAN' | 'MODIFIED' | 'DIRTY'`) — `MODIFIED` desencadena recálculo completo de agregados desde los movimientos; `DIRTY` propaga únicamente el endingBalance en la cadena sin releer movimientos. Las vistas multi-mes se ensamblan al vuelo a partir de los datos mensuales almacenados.
 
 ### `dist/` — Output (gitignored)
 

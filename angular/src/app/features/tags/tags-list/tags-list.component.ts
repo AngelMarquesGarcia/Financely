@@ -7,7 +7,7 @@ import { ConfirmService } from '../../../core/services/confirm.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { ElectronService } from '../../../core/services/electron.service';
 import { ErrorTextService } from '../../../core/services/error-text.service';
-import { Tag } from '@shared/types';
+import { TagT } from '@shared/types';
 import { TagFormComponent } from '../tag-form/tag-form.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 
@@ -19,7 +19,7 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state/empt
 })
 export class TagsListComponent {
   protected readonly faPlus = faPlus;
-  @Input() tags: Tag[] = [];
+  @Input() tags: TagT[] = [];
   @Output() changed = new EventEmitter<void>();
 
   private electron = inject(ElectronService);
@@ -29,7 +29,7 @@ export class TagsListComponent {
   private destroyRef = inject(DestroyRef);
 
   showForm = false;
-  editingTag: Tag | null = null;
+  editingTag: TagT | null = null;
 
   get existingTypes(): string[] {
     return [...new Set(this.tags.map((t) => t.type))].sort();
@@ -40,7 +40,7 @@ export class TagsListComponent {
     this.showForm = true;
   }
 
-  openEdit(tag: Tag) {
+  openEdit(tag: TagT) {
     this.editingTag = tag;
     this.showForm = true;
   }

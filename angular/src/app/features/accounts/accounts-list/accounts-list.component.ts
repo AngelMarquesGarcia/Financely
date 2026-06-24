@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { Account } from '@shared/types';
+import { AccountT } from '@shared/types';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 
 @Component({
@@ -9,8 +9,8 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state/empt
   styleUrl: './accounts-list.component.scss',
 })
 export class AccountsListComponent {
-  @Input() accounts: Account[] = [];
-  @Output() editRequested = new EventEmitter<Account>();
+  @Input() accounts: AccountT[] = [];
+  @Output() editRequested = new EventEmitter<AccountT>();
   @Output() deleteRequested = new EventEmitter<number>();
   @Output() setDefaultRequested = new EventEmitter<number>();
 }

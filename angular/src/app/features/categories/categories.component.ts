@@ -5,7 +5,7 @@ import { ConfirmService } from '../../core/services/confirm.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { ElectronService } from '../../core/services/electron.service';
 import { ErrorReporter } from '../../core/services/error-reporter.service';
-import { Category } from '@shared/types';
+import { CategoryT } from '@shared/types';
 import { CategoryFormComponent } from './category-form/category-form.component';
 import { CategoriesListComponent } from './categories-list/categories-list.component';
 
@@ -22,8 +22,8 @@ export class CategoriesComponent implements OnInit {
   private errors = inject(ErrorReporter);
   private destroyRef = inject(DestroyRef);
 
-  categories: Category[] = [];
-  editingCategory: Category | null = null;
+  categories: CategoryT[] = [];
+  editingCategory: CategoryT | null = null;
 
   ngOnInit() {
     this.loadAll();
@@ -36,7 +36,7 @@ export class CategoriesComponent implements OnInit {
       .subscribe((list) => (this.categories = list));
   }
 
-  onEditRequested(c: Category) {
+  onEditRequested(c: CategoryT) {
     this.editingCategory = c;
   }
 

@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { Category, Envelope, Movement, MovementFilter, Tag } from '@shared/types';
+import { CategoryT, EnvelopeT, MovementT, MovementFilter, TagT } from '@shared/types';
 import { MoneyPipe } from '../../../shared/pipes/money.pipe';
 import { contrastColor } from '../../../shared/utils';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
@@ -7,7 +7,7 @@ import { MovementsFilterComponent } from '../movements-filter/movements-filter.c
 import { QuickCreateMovementButtonComponent } from '../../../shared/components/quick-create-movement-button/quick-create-movement-button.component';
 
 type HeaderRow = { kind: 'header'; key: string; label: string };
-type MovementRow = { kind: 'movement'; key: string; movement: Movement };
+type MovementRow = { kind: 'movement'; key: string; movement: MovementT };
 type RowItem = HeaderRow | MovementRow;
 
 @Component({
@@ -17,12 +17,12 @@ type RowItem = HeaderRow | MovementRow;
   styleUrl: './movements-list.component.scss',
 })
 export class MovementsListComponent {
-  @Input() movements: Movement[] = [];
-  @Input() categories: Category[] = [];
-  @Input() envelopes: Envelope[] = [];
-  @Input() tags: Tag[] = [];
-  @Input() movementTags: Record<number, Tag[]> = {};
-  @Output() editRequested = new EventEmitter<Movement>();
+  @Input() movements: MovementT[] = [];
+  @Input() categories: CategoryT[] = [];
+  @Input() envelopes: EnvelopeT[] = [];
+  @Input() tags: TagT[] = [];
+  @Input() movementTags: Record<number, TagT[]> = {};
+  @Output() editRequested = new EventEmitter<MovementT>();
   @Output() deleteRequested = new EventEmitter<number>();
   @Output() bulkDeleteRequested = new EventEmitter<number[]>();
   @Output() filterChanged = new EventEmitter<MovementFilter>();
@@ -75,15 +75,15 @@ export class MovementsListComponent {
     this.selected = new Set();
   }
 
-  getMovementTags(movementId: number): Tag[] {
+  getMovementTags(movementId: number): TagT[] {
     return this.movementTags[movementId] ?? [];
   }
 
-  getCategory(categoryId: number): Category | undefined {
+  getCategory(categoryId: number): CategoryT | undefined {
     return this.categories.find((c) => c.id === categoryId);
   }
 
-  getEnvelope(envelopeId: number): Envelope | undefined {
+  getEnvelope(envelopeId: number): EnvelopeT | undefined {
     return this.envelopes.find((e) => e.id === envelopeId);
   }
 
@@ -112,7 +112,7 @@ export class MovementsListComponent {
     return rows;
   }
 
-  signedCents(m: Movement): number {
+  signedCents(m: MovementT): number {
     return m.isPositive ? m.quantityCents : -m.quantityCents;
   }
 

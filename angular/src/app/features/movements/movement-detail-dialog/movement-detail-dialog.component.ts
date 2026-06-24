@@ -1,14 +1,14 @@
 import { Component, inject } from '@angular/core';
-import { Category, Envelope, Movement, Tag } from '@shared/types';
+import { CategoryT, EnvelopeT, MovementT, TagT } from '@shared/types';
 import { DIALOG_DATA } from '../../../core/services/dialog.tokens';
 import { DialogRef } from '../../../core/services/dialog-ref';
 import { MoneyPipe } from '../../../shared/pipes/money.pipe';
 
 export type MovementDetailData = {
-  movement: Movement;
-  categories: Category[];
-  envelopes: Envelope[];
-  tags: Tag[];
+  movement: MovementT;
+  categories: CategoryT[];
+  envelopes: EnvelopeT[];
+  tags: TagT[];
 };
 
 export type MovementDetailResult = { action: 'edit' | 'delete' };
@@ -23,19 +23,19 @@ export class MovementDetailDialogComponent {
   protected readonly data = inject<MovementDetailData>(DIALOG_DATA);
   protected readonly dialogRef = inject(DialogRef<MovementDetailResult>);
 
-  get movement(): Movement {
+  get movement(): MovementT {
     return this.data.movement;
   }
 
-  get category(): Category | undefined {
+  get category(): CategoryT | undefined {
     return this.data.categories.find((c) => c.id === this.movement.categoryId);
   }
 
-  get envelope(): Envelope | undefined {
+  get envelope(): EnvelopeT | undefined {
     return this.data.envelopes.find((e) => e.id === this.movement.envelopeId);
   }
 
-  get tags(): Tag[] {
+  get tags(): TagT[] {
     return this.data.tags;
   }
 

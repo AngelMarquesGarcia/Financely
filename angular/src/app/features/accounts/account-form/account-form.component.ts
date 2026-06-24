@@ -15,7 +15,7 @@ import { NotificationService } from '../../../core/services/notification.service
 import { ErrorTextService } from '../../../core/services/error-text.service';
 import { FormFieldComponent } from '../../../shared/components/form-field/form-field.component';
 import { AmountInputComponent } from '../../../shared/components/amount-input/amount-input.component';
-import { Account } from '@shared/types';
+import { AccountT } from '@shared/types';
 
 @Component({
   selector: 'app-account-form',
@@ -24,7 +24,7 @@ import { Account } from '@shared/types';
   styleUrl: './account-form.component.scss',
 })
 export class AccountFormComponent implements OnChanges {
-  @Input() editingAccount: Account | null = null;
+  @Input() editingAccount: AccountT | null = null;
   @Output() saved = new EventEmitter<void>();
   @Output() cancelled = new EventEmitter<void>();
 

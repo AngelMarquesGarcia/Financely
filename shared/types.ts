@@ -1,4 +1,4 @@
-export type Movement = {
+export type MovementT = {
   id: number;
   accountId: number;
   name: string;
@@ -12,7 +12,7 @@ export type Movement = {
   additionalNotes: string | null;
 };
 
-export type Category = {
+export type CategoryT = {
   id: number;
   name: string;
   color?: string;
@@ -22,7 +22,7 @@ export type Category = {
   movementCount?: number;
 };
 
-export type Account = {
+export type AccountT = {
   id: number;
   name: string;
   description?: string;
@@ -38,7 +38,7 @@ export type AccountStats = {
   envelopeCount: number;
 };
 
-export type Envelope = {
+export type EnvelopeT = {
   id: number;
   name: string;
   accountId: number | null;
@@ -46,7 +46,7 @@ export type Envelope = {
   startingBalance: number;
 };
 
-export type Tag = {
+export type TagT = {
   id: number;
   type: string;
   name: string;
@@ -99,7 +99,7 @@ export type BasicSummary = {
 
 export type DirtyState = 'CLEAN' | 'MODIFIED' | 'DIRTY';
 
-export type PeriodSummary = {
+export type PeriodSummaryT = {
   id: number;
   accountId: number;
   envelopeId: number | null; // null = account-level summary
@@ -122,7 +122,7 @@ export type PeriodSummary = {
   dirtyState: DirtyState;
 };
 
-export type Period = {
+export type PeriodT = {
   accountId: number;
   envelopeId: number | null; // null = account-level summary
   year: number;

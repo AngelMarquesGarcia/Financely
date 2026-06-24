@@ -2,7 +2,7 @@ import { Component, Input, signal } from '@angular/core';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import { faChevronRight, faChevronDown } from '@fortawesome/free-solid-svg-icons';
 import { MoneyPipe } from '../../pipes/money.pipe';
-import type { PeriodSummary } from '@shared/types';
+import type { PeriodSummaryT } from '@shared/types';
 
 @Component({
   selector: 'app-period-summary-card',
@@ -11,7 +11,7 @@ import type { PeriodSummary } from '@shared/types';
   styleUrl: './period-summary-card.component.scss',
 })
 export class PeriodSummaryCardComponent {
-  @Input({ required: true }) summary!: PeriodSummary;
+  @Input({ required: true }) summary!: PeriodSummaryT;
 
   protected expanded = signal(false);
   protected readonly faChevronRight = faChevronRight;

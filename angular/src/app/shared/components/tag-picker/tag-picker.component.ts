@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
-import { Tag } from '@shared/types';
+import { TagT } from '@shared/types';
 import { TagFormComponent } from '../../../features/tags/tag-form/tag-form.component';
 import { ChipComponent } from '../chip/chip.component';
 import { PopoverComponent } from '../popover/popover.component';
@@ -14,7 +14,7 @@ import { EntitySelectComponent } from '../entity-select/entity-select.component'
 })
 export class TagPickerComponent {
   protected readonly faPlus = faPlus;
-  @Input() tags: Tag[] = [];
+  @Input() tags: TagT[] = [];
   @Input() selectedTagIds: number[] = [];
   @Output() selectedTagIdsChange = new EventEmitter<number[]>();
   @Input() allowCreate = true;
@@ -22,8 +22,8 @@ export class TagPickerComponent {
 
   showTagForm = false;
 
-  readonly tagLabel = (t: Tag) => t.name;
-  readonly tagColor = (t: Tag) => t.color;
+  readonly tagLabel = (t: TagT) => t.name;
+  readonly tagColor = (t: TagT) => t.color;
 
   get existingTypes(): string[] {
     return [...new Set(this.tags.map((t) => t.type))];

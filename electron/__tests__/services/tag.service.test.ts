@@ -15,7 +15,7 @@ jest.mock('electron', () => ({
 }));
 
 import { DatabaseService } from '../../repository/database.service';
-import { createTag, updateTag, deleteTag, getAllTags, addTagToMovement, removeTagFromMovement, getTagsForMovement, getTagsForMovements } from '../../services/tag.service';
+import { tagService } from '../../services/tag.service';
 import { AppErrorCode } from '@shared/error-codes';
 
 describe('TagService', () => {
@@ -27,87 +27,87 @@ describe('TagService', () => {
     DatabaseService.getInstance().migrate();
   });
 
-  it('createTag throws TAG_TYPE_REQUIRED for empty type', () => {
-    expect(() => createTag('', 'label', '#fff')).toThrow(AppErrorCode.TAG_TYPE_REQUIRED);
+  it('create throws TAG_TYPE_REQUIRED for empty type', () => {
+    expect(() => tagService.create('', 'label', '#fff')).toThrow(AppErrorCode.TAG_TYPE_REQUIRED);
   });
 
-  it('createTag throws TAG_NAME_REQUIRED for empty name', () => {
-    expect(() => createTag('expense', '', '#fff')).toThrow(AppErrorCode.TAG_NAME_REQUIRED);
+  it('create throws TAG_NAME_REQUIRED for empty name', () => {
+    expect(() => tagService.create('expense', '', '#fff')).toThrow(AppErrorCode.TAG_NAME_REQUIRED);
   });
 
-  it('createTag returns a positive id on success', () => {
-    const id = createTag('expense', 'Food', '#ff0000');
+  it('create returns a positive id on success', () => {
+    const id = tagService.create('expense', 'Food', '#ff0000');
     expect(Number(id)).toBeGreaterThan(0);
   });
 
-  it('updateTag throws TAG_TYPE_REQUIRED for blank type', () => {
-    const id = Number(createTag('income', 'Salary', '#00ff00'));
-    expect(() => updateTag({ id, type: '  ', name: 'Salary', color: '#00ff00' })).toThrow(AppErrorCode.TAG_TYPE_REQUIRED);
+  it('update throws TAG_TYPE_REQUIRED for blank type', () => {
+    const id = Number(tagService.create('income', 'Salary', '#00ff00'));
+    expect(() => tagService.update({ id, type: '  ', name: 'Salary', color: '#00ff00' })).toThrow(AppErrorCode.TAG_TYPE_REQUIRED);
   });
 
-  it('updateTag throws TAG_NAME_REQUIRED for blank name', () => {
-    const id = Number(createTag('income', 'Salary2', '#00ff00'));
-    expect(() => updateTag({ id, type: 'income', name: '', color: '#00ff00' })).toThrow(AppErrorCode.TAG_NAME_REQUIRED);
+  it('update throws TAG_NAME_REQUIRED for blank name', () => {
+    const id = Number(tagService.create('income', 'Salary2', '#00ff00'));
+    expect(() => tagService.update({ id, type: 'income', name: '', color: '#00ff00' })).toThrow(AppErrorCode.TAG_NAME_REQUIRED);
   });
 
-  it('deleteTag returns true for existing tag', () => {
-    const id = Number(createTag('expense', 'Rent', '#0000ff'));
-    expect(deleteTag(id)).toBe(true);
-    expect(getAllTags().find((t) => t.id === id)).toBeUndefined();
+  it('delete returns true for existing tag', () => {
+    const id = Number(tagService.create('expense', 'Rent', '#0000ff'));
+    expect(tagService.delete(id)).toBe(true);
+    expect(tagService.getAll().find((t) => t.id === id)).toBeUndefined();
   });
 
-  it('addTagToMovement is idempotent (INSERT OR IGNORE)', () => {
+  it('addToMovement is idempotent (INSERT OR IGNORE)', () => {
     const db = DatabaseService.getInstance().db;
     const movId = (db.prepare('SELECT id FROM movements LIMIT 1').get() as { id: number } | undefined)?.id;
     if (!movId) return;
 
-    const tagId = Number(createTag('label', 'Idempotent', '#111111'));
-    addTagToMovement(tagId, movId);
-    addTagToMovement(tagId, movId);
+    const tagId = Number(tagService.create('label', 'Idempotent', '#111111'));
+    tagService.addToMovement(tagId, movId);
+    tagService.addToMovement(tagId, movId);
 
-    const tags = getTagsForMovement(movId);
+    const tags = tagService.getForMovement(movId);
     expect(tags.filter((t) => t.id === tagId)).toHaveLength(1);
   });
 
-  it('removeTagFromMovement removes the junction row', () => {
+  it('removeFromMovement removes the junction row', () => {
     const db = DatabaseService.getInstance().db;
     const movId = (db.prepare('SELECT id FROM movements LIMIT 1').get() as { id: number } | undefined)?.id;
     if (!movId) return;
 
-    const tagId = Number(createTag('label', 'ToRemove', '#222222'));
-    addTagToMovement(tagId, movId);
-    removeTagFromMovement(tagId, movId);
+    const tagId = Number(tagService.create('label', 'ToRemove', '#222222'));
+    tagService.addToMovement(tagId, movId);
+    tagService.removeFromMovement(tagId, movId);
 
-    const tags = getTagsForMovement(movId);
+    const tags = tagService.getForMovement(movId);
     expect(tags.find((t) => t.id === tagId)).toBeUndefined();
   });
 
-  it('getTagsForMovement returns only tags for the given movement', () => {
+  it('getForMovement returns only tags for the given movement', () => {
     const db = DatabaseService.getInstance().db;
     const movId = (db.prepare('SELECT id FROM movements LIMIT 1').get() as { id: number } | undefined)?.id;
     if (!movId) return;
 
-    const tagId = Number(createTag('label', 'Tagged', '#333333'));
-    addTagToMovement(tagId, movId);
+    const tagId = Number(tagService.create('label', 'Tagged', '#333333'));
+    tagService.addToMovement(tagId, movId);
 
-    const tags = getTagsForMovement(movId);
+    const tags = tagService.getForMovement(movId);
     expect(tags.some((t) => t.id === tagId)).toBe(true);
   });
 
-  it('getTagsForMovements groups tags by movement id', () => {
+  it('getForMovements groups tags by movement id', () => {
     const db = DatabaseService.getInstance().db;
     const movs = db.prepare('SELECT id FROM movements ORDER BY id DESC LIMIT 2').all() as {
       id: number;
     }[];
     if (movs.length < 2) return;
 
-    const tagA = Number(createTag('label', 'BulkA', '#444444'));
-    const tagB = Number(createTag('label', 'BulkB', '#555555'));
-    addTagToMovement(tagA, movs[0].id);
-    addTagToMovement(tagB, movs[0].id);
-    addTagToMovement(tagA, movs[1].id);
+    const tagA = Number(tagService.create('label', 'BulkA', '#444444'));
+    const tagB = Number(tagService.create('label', 'BulkB', '#555555'));
+    tagService.addToMovement(tagA, movs[0].id);
+    tagService.addToMovement(tagB, movs[0].id);
+    tagService.addToMovement(tagA, movs[1].id);
 
-    const map = getTagsForMovements([movs[0].id, movs[1].id]);
+    const map = tagService.getForMovements([movs[0].id, movs[1].id]);
     const ids0 = (map[movs[0].id] ?? []).map((t) => t.id);
     const ids1 = (map[movs[1].id] ?? []).map((t) => t.id);
     expect(ids0).toContain(tagA);
@@ -116,7 +116,7 @@ describe('TagService', () => {
     expect(ids1).not.toContain(tagB);
   });
 
-  it('getTagsForMovements returns {} for empty input', () => {
-    expect(getTagsForMovements([])).toEqual({});
+  it('getForMovements returns {} for empty input', () => {
+    expect(tagService.getForMovements([])).toEqual({});
   });
 });

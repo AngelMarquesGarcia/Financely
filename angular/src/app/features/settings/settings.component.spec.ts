@@ -7,7 +7,7 @@ import { NotificationService } from '../../core/services/notification.service';
 import { AppSettings } from '@shared/types';
 
 function makeMocks(settings: Partial<AppSettings> = {}, failLoad = false) {
-  const defaults: AppSettings = { useDefaultDate: false, defaultDate: '', colorOrder: [] };
+  const defaults: AppSettings = { useDefaultDate: false, defaultDate: '', colorOrder: [], categoryIcons: [] };
   const merged = { ...defaults, ...settings };
 
   const mockElectron = {

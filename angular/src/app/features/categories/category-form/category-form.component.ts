@@ -17,8 +17,8 @@ import { ColorSwatchesComponent } from '../../../shared/components/color-swatche
 import { ElectronService } from '../../../core/services/electron.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { ErrorTextService } from '../../../core/services/error-text.service';
-import { Category } from '@shared/types';
-import { DEFAULT_COLOR_ORDER, DEFAULT_CATEGORY_ICONS } from '../../../core/defaults';
+import { CategoryT } from '@shared/types';
+import { DEFAULT_COLOR_ORDER, DEFAULT_CATEGORY_ICONS } from '@shared/defaults';
 import { contrastColor } from '../../../shared/utils';
 
 @Component({
@@ -28,7 +28,7 @@ import { contrastColor } from '../../../shared/utils';
   styleUrl: './category-form.component.scss',
 })
 export class CategoryFormComponent implements OnInit, OnChanges {
-  @Input() editingCategory: Category | null = null;
+  @Input() editingCategory: CategoryT | null = null;
   @Output() saved = new EventEmitter<void>();
   @Output() cancelled = new EventEmitter<void>();
 

@@ -1,4 +1,4 @@
-import { Category } from '@shared/types';
+import { CategoryT } from '@shared/types';
 import { DatabaseService } from './database.service';
 import { tables } from '../constants';
 
@@ -8,7 +8,7 @@ export class CategoryRepository {
   private readonly selectCols = `id, name, color, emoji, envelope_id as envelopeId, is_default as isDefault`;
   private readonly selectColsWithCount = `c.id, c.name, c.color, c.emoji, c.envelope_id as envelopeId, c.is_default as isDefault, COUNT(m.id) as movementCount`;
 
-  insertCategory(cat: Omit<Category, 'id' | 'isDefault'>): number | bigint {
+  insertCategory(cat: Omit<CategoryT, 'id' | 'isDefault'>): number | bigint {
     const stmt = this.db.prepare(
       `INSERT INTO ${tables.categories} (name, color, emoji, envelope_id)
        VALUES (:name, :color, :emoji, :envelopeId)`,
@@ -16,7 +16,7 @@ export class CategoryRepository {
     return stmt.run({ emoji: null, ...cat }).lastInsertRowid;
   }
 
-  getAllCategories(): Category[] {
+  getAllCategories(): CategoryT[] {
     return (
       this.db
         .prepare(
@@ -28,14 +28,14 @@ export class CategoryRepository {
     ).map(toCategory);
   }
 
-  getCategoryById(id: number): Category | undefined {
+  getCategoryById(id: number): CategoryT | undefined {
     const row = this.db
       .prepare(`SELECT ${this.selectCols} FROM ${tables.categories} WHERE id = ?`)
       .get(id) as RawCategory | undefined;
     return row ? toCategory(row) : undefined;
   }
 
-  updateCategory(cat: Category): boolean {
+  updateCategory(cat: CategoryT): boolean {
     return (
       this.db
         .prepare(
@@ -92,7 +92,7 @@ type RawCategory = {
   isDefault: number;
   movementCount?: number;
 };
-function toCategory(r: RawCategory): Category {
+function toCategory(r: RawCategory): CategoryT {
   return {
     id: r.id,
     name: r.name,

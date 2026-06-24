@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { Category } from '@shared/types';
+import { CategoryT } from '@shared/types';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 
 @Component({
@@ -9,8 +9,8 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state/empt
   styleUrl: './categories-list.component.scss',
 })
 export class CategoriesListComponent {
-  @Input() categories: Category[] = [];
-  @Output() editRequested = new EventEmitter<Category>();
+  @Input() categories: CategoryT[] = [];
+  @Output() editRequested = new EventEmitter<CategoryT>();
   @Output() deleteRequested = new EventEmitter<number>();
   @Output() setDefaultRequested = new EventEmitter<number>();
 }

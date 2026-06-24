@@ -1,6 +1,6 @@
-import { PeriodSummary } from '@shared/types';
+import { PeriodSummaryT } from '@shared/types';
 
-export const SAMPLE_ACCOUNT_SUMMARY: PeriodSummary = {
+export const SAMPLE_ACCOUNT_SUMMARY: PeriodSummaryT = {
   id: 1,
   accountId: 1,
   envelopeId: null,
@@ -20,7 +20,7 @@ export const SAMPLE_ACCOUNT_SUMMARY: PeriodSummary = {
   dirtyState: 'CLEAN',
 };
 
-export const SAMPLE_FOOD_SUMMARY: PeriodSummary = {
+export const SAMPLE_FOOD_SUMMARY: PeriodSummaryT = {
   id: 2,
   accountId: 1,
   envelopeId: 1,
@@ -40,7 +40,7 @@ export const SAMPLE_FOOD_SUMMARY: PeriodSummary = {
   dirtyState: 'CLEAN',
 };
 
-export const SAMPLE_TRANSPORT_SUMMARY: PeriodSummary = {
+export const SAMPLE_TRANSPORT_SUMMARY: PeriodSummaryT = {
   id: 3,
   accountId: 1,
   envelopeId: 2,
@@ -59,7 +59,7 @@ export const SAMPLE_TRANSPORT_SUMMARY: PeriodSummary = {
   dirtyState: 'CLEAN',
 };
 
-export const SAMPLE_SAVINGS_SUMMARY: PeriodSummary = {
+export const SAMPLE_SAVINGS_SUMMARY: PeriodSummaryT = {
   id: 4,
   accountId: 1,
   envelopeId: 3,
@@ -79,7 +79,7 @@ export const SAMPLE_SAVINGS_SUMMARY: PeriodSummary = {
   dirtyState: 'CLEAN',
 };
 
-export const SAMPLE_SUMMARIES: PeriodSummary[] = [
+export const SAMPLE_SUMMARIES: PeriodSummaryT[] = [
   SAMPLE_ACCOUNT_SUMMARY,
   SAMPLE_FOOD_SUMMARY,
   SAMPLE_TRANSPORT_SUMMARY,

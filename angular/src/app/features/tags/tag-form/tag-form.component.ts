@@ -14,7 +14,7 @@ import { FormsModule } from '@angular/forms';
 import { ElectronService } from '../../../core/services/electron.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { ErrorTextService } from '../../../core/services/error-text.service';
-import { Tag } from '@shared/types';
+import { TagT } from '@shared/types';
 
 const COLOR_OPTIONS = [
   { label: 'Red', value: '#ef4444' },
@@ -36,7 +36,7 @@ const COLOR_OPTIONS = [
   styleUrl: './tag-form.component.scss',
 })
 export class TagFormComponent implements OnChanges {
-  @Input() editingTag: Tag | null = null;
+  @Input() editingTag: TagT | null = null;
   @Input() existingTypes: string[] = [];
   @Output() saved = new EventEmitter<number | null>();
   @Output() cancelled = new EventEmitter<void>();

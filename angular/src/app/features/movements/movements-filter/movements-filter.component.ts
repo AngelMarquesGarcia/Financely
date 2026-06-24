@@ -3,10 +3,10 @@ import { FormsModule } from '@angular/forms';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import { faFilter } from '@fortawesome/free-solid-svg-icons';
 import {
-  Category,
-  Envelope,
+  CategoryT,
+  EnvelopeT,
   MovementFilter,
-  Tag,
+  TagT,
   TextMatchCondition,
   TextMatchField,
 } from '@shared/types';
@@ -22,9 +22,9 @@ import { AmountInputComponent } from '../../../shared/components/amount-input/am
 })
 export class MovementsFilterComponent {
   protected readonly faFilter = faFilter;
-  @Input() categories: Category[] = [];
-  @Input() envelopes: Envelope[] = [];
-  @Input() tags: Tag[] = [];
+  @Input() categories: CategoryT[] = [];
+  @Input() envelopes: EnvelopeT[] = [];
+  @Input() tags: TagT[] = [];
   @Output() filterChanged = new EventEmitter<MovementFilter>();
 
   showPanel = false;
