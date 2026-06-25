@@ -98,8 +98,8 @@ describe('MovementService — validation and CRUD', () => {
     expect(movementService.delete(id)).toBe(true);
   });
 
-  it('delete returns false for non-existent id', () => {
-    expect(movementService.delete(999999)).toBe(false);
+  it('delete throws MOVEMENT_NOT_FOUND for a non-existent id', () => {
+    expect(() => movementService.delete(999999)).toThrow(AppErrorCode.MOVEMENT_NOT_FOUND);
   });
 
   // ── getAll ─────────────────────────────────────────────────────────────────
