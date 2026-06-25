@@ -59,7 +59,7 @@ export const PeriodSummarySchema = `
   avg_income_cents INTEGER NOT NULL CHECK(avg_income_cents >= 0),
   avg_movement_amount_cents INTEGER NOT NULL CHECK(avg_movement_amount_cents >= 0),
   movement_count INTEGER NOT NULL DEFAULT 0 CHECK(movement_count >= 0),
-  ending_balance_cents INTEGER NOT NULL CHECK(ending_balance_cents >= 0),
+  ending_balance_cents INTEGER NOT NULL,
   budget_cents INTEGER,
   notes TEXT,
   dirty_state TEXT NOT NULL DEFAULT 'CLEAN' CHECK(dirty_state IN ('CLEAN', 'MODIFIED', 'DIRTY'))

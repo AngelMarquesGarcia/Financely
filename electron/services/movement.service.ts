@@ -3,6 +3,7 @@ import { accountRepository } from '../repository/account-repository.service';
 import { MovementT, MovementFilter } from '@shared/types';
 import { Movement, Period } from '@shared/domain';
 import { AppError, AppErrorCode } from '@shared/error-codes';
+import { periodSummaryService } from './period-summary.service';
 
 export class MovementService {
   create(
@@ -29,7 +30,8 @@ export class MovementService {
       throw new AppError(AppErrorCode.MOVEMENT_ENVELOPE_REQUIRED);
     }
     const accountId = accountRepository.getDefaultId()!;
-    return movementRepository.insertMovement({
+    const movement = new Movement(
+      -1,
       accountId,
       name,
       concept,
@@ -39,7 +41,11 @@ export class MovementService {
       categoryId,
       envelopeId,
       additionalNotes,
-    });
+    );
+    const returnValue = movementRepository.insertMovement(movement);
+    const period = Period.fromMovement(movement);
+    periodSummaryService.movementCreatedInPeriod(period);
+    return returnValue;
   }
 
   getAll(filter?: MovementFilter): MovementT[] {
@@ -62,10 +68,14 @@ export class MovementService {
     if (!(movement.date instanceof Date) || isNaN(movement.date.getTime())) {
       throw new AppError(AppErrorCode.MOVEMENT_DATE_INVALID);
     }
+    periodSummaryService.markDirty(Period.fromMovement(movement));
     return movementRepository.updateMovement(movement);
   }
 
   delete(id: number): boolean {
+    const movement = movementRepository.getMovementById(id);
+    if (movement == undefined) throw new AppError(AppErrorCode.MOVEMENT_NOT_FOUND);
+    periodSummaryService.markDirty(Period.fromMovement(movement));
     return movementRepository.deleteMovement(id);
   }
 
@@ -73,7 +83,19 @@ export class MovementService {
     if (!Array.isArray(ids) || ids.some((id) => !Number.isInteger(id) || id <= 0)) {
       throw new AppError(AppErrorCode.MOVEMENT_ID_INVALID);
     }
-    return movementRepository.deleteManyMovements(ids);
+    const periods = new Map<string, Period>();
+    for (const id of ids) {
+      const movement = movementRepository.getMovementById(id);
+      if (movement != undefined) {
+        const period = Period.fromMovement(movement);
+        periods.set(`${period.accountId}-${period.envelopeId}-${period.year}-${period.month}`, period);
+      }
+    }
+    const count = movementRepository.deleteManyMovements(ids);
+    for (const period of periods.values()) {
+      if (periodSummaryService.checkExists(period)) periodSummaryService.markDirty(period);
+    }
+    return count;
   }
 
   suggestNames(prefix: string, limit?: number): string[] {

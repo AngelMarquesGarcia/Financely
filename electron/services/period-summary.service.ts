@@ -39,13 +39,17 @@ export class PeriodSummaryService {
   }
 
   recalculateForPeriod(period: Period): number | bigint {
-    const summary = this.calculatePeriodSummary(period);
     try {
-      const existing = periodSummaryRepository.getByPeriod(period);
-      if (existing == undefined) throw new AppError(AppErrorCode.PERIODSUMMARY_NOT_FOUND);
-      return periodSummaryRepository.update(summary) ? 1 : -1;
+      const summary = this.calculatePeriodSummary(period);
+      try {
+        const existing = periodSummaryRepository.getByPeriod(period);
+        if (existing == undefined) throw new AppError(AppErrorCode.PERIODSUMMARY_NOT_FOUND);
+        return periodSummaryRepository.update(summary) ? 1 : -1;
+      } catch {
+        return this.create(period);
+      }
     } catch {
-      return this.create(period);
+      return periodSummaryRepository.delete(period) ? 1 : -1;
     }
   }
 
@@ -89,20 +93,34 @@ export class PeriodSummaryService {
     }
   }
 
+  movementCreatedInPeriod(period: Period) {
+    const summary = periodSummaryRepository.getByPeriod(period);
+    if (summary == undefined) this.create(period);
+    else this.markDirty(period);
+  }
+
   private cleanPeriodSummary(period: Period): PeriodSummaryT | undefined {
     const periodSummary = periodSummaryRepository.getByPeriod(period);
     if (periodSummary == undefined || periodSummary.dirtyState == 'CLEAN') return periodSummary;
     return this.cleanPeriodSummaryB(periodSummary, period);
   }
 
-  private cleanPeriodSummaryB(periodSummary: PeriodSummaryT, period: Period): PeriodSummaryT | undefined {
+  private cleanPeriodSummaryB(
+    periodSummary: PeriodSummaryT,
+    period: Period,
+  ): PeriodSummaryT | undefined {
     if (periodSummary.dirtyState == 'CLEAN') return periodSummary;
 
     const prevSum = this.cleanPeriodSummary(period.getPrevious());
     if (periodSummary.dirtyState == 'MODIFIED') {
-      const updatedSum = this.calculatePeriodSummary(period);
-      periodSummaryRepository.update(updatedSum);
-      return updatedSum;
+      try {
+        const updatedSum = this.calculatePeriodSummary(period);
+        periodSummaryRepository.update(updatedSum);
+        return updatedSum;
+      } catch {
+        periodSummaryRepository.delete(period);
+        return undefined;
+      }
     }
     if (prevSum == undefined) {
       throw new AppError(AppErrorCode.PERIODSUMMARY_NOT_FOUND);
@@ -158,7 +176,8 @@ export class PeriodSummaryService {
     if (envelopeId != undefined && envelope == undefined)
       throw new AppError(AppErrorCode.ENVELOPE_NOT_FOUND);
     else if (envelopeId != undefined) {
-      availableBudgetCents = (envelope as unknown as { fixedBudget: number }).fixedBudget - sum.totalExpenseCents;
+      availableBudgetCents =
+        (envelope as unknown as { fixedBudget: number }).fixedBudget - sum.totalExpenseCents;
     }
 
     return {

@@ -431,6 +431,10 @@ Generados directamente por el trabajo de esta iteración.
 - **ESLint `!= null` en `period-summary-card.component.html`**: `@angular-eslint/template/eqeqeq` prohíbe `!= null`. Reemplazar por `!== undefined` o configurar `"allowNullOrUndefined": true`.
 - **Playwright CRUD test con IPC**: `smoke-crud.spec.ts` está marcado como `test.fixme`. La solución real sería correr Playwright contra la app Electron completa, o añadir un mock de contextBridge en el setup de Playwright para el contexto `ng serve`.
 
+### Known Issues
+
+- Borrar todos los movimientos de un Periodo elimina su PeriodSummary. Si en algún momento es necesario recalcular el ending balance de algún periodo posterior, podría fallar.
+
 ### Recomendaciones de mayor alcance (fuera de la iteración actual)
 
 Registradas para no perderlas; ninguna es bloqueante.
