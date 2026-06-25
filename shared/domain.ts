@@ -59,7 +59,6 @@ export class Movement implements MovementT {
 
 export class PeriodSummary implements PeriodSummaryT {
   constructor(
-    public readonly id: number,
     public readonly accountId: number,
     public readonly envelopeId: number | null,
     public readonly accountName: string,
@@ -85,7 +84,7 @@ export class PeriodSummary implements PeriodSummaryT {
 
   static from(d: PeriodSummaryT): PeriodSummary {
     return new PeriodSummary(
-      d.id, d.accountId, d.envelopeId, d.accountName, d.envelopeName,
+      d.accountId, d.envelopeId, d.accountName, d.envelopeName,
       d.year, d.month, d.cashFlowCents, d.totalIncomeCents, d.totalExpenseCents,
       d.avgExpenseCents, d.avgIncomeCents, d.avgMovementAmountCents, d.movementCount,
       d.endingBalanceCents, d.availableBudgetCents, d.notes, d.dirtyState,

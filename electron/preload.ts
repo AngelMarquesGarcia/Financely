@@ -80,9 +80,9 @@ contextBridge.exposeInMainWorld('tags', {
 });
 
 contextBridge.exposeInMainWorld('periodSummaries', {
-  create: (summary: Omit<PeriodSummaryT, 'id'>) =>
+  create: (summary: PeriodSummaryT) =>
     ipcRenderer.invoke(Channels.PERIOD_SUMMARY_CREATE, summary),
-  upsert: (summary: Omit<PeriodSummaryT, 'id'>) =>
+  upsert: (summary: PeriodSummaryT) =>
     ipcRenderer.invoke(Channels.PERIOD_SUMMARY_UPSERT, summary),
   getAll: () => ipcRenderer.invoke(Channels.PERIOD_SUMMARY_GET_ALL),
   getByPeriod: (accountId: number, envelopeId: number | null, year: number, month: number) =>

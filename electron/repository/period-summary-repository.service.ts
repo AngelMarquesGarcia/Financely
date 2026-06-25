@@ -6,7 +6,6 @@ export class PeriodSummaryRepository {
   private readonly db = DatabaseService.getInstance().db;
 
   private readonly selectCols = `
-    id,
     account_id        AS accountId,
     account_name      AS accountName,
     envelope_id       AS envelopeId,
@@ -26,7 +25,7 @@ export class PeriodSummaryRepository {
     dirty_state               AS dirtyState
   `;
 
-  insert(s: Omit<PeriodSummaryT, 'id'>): number | bigint {
+  insert(s: PeriodSummaryT): number | bigint {
     return this.db
       .prepare(
         `INSERT INTO ${tables.periodSummaries} (
@@ -48,13 +47,6 @@ export class PeriodSummaryRepository {
     return (
       this.db.prepare(`SELECT ${this.selectCols} FROM ${tables.periodSummaries}`).all() as RawRow[]
     ).map(toSummary);
-  }
-
-  getById(id: number): PeriodSummaryT | undefined {
-    const row = this.db
-      .prepare(`SELECT ${this.selectCols} FROM ${tables.periodSummaries} WHERE id = ?`)
-      .get(id) as RawRow | undefined;
-    return row ? toSummary(row) : undefined;
   }
 
   getByPeriod(period: PeriodT): PeriodSummaryT | undefined {
@@ -87,9 +79,12 @@ export class PeriodSummaryRepository {
             budget_cents = :availableBudgetCents,
             notes = :notes,
             dirty_state = :dirtyState
-           WHERE id = :id`,
+           WHERE account_id = :accountId
+             AND year = :year
+             AND month = :month
+             AND (envelope_id IS :envelopeId)`,
         )
-        .run({ ...toRow(s), id: s.id }).changes > 0
+        .run(toRow(s)).changes > 0
     );
   }
 
@@ -109,7 +104,6 @@ export class PeriodSummaryRepository {
 }
 
 type RawRow = {
-  id: number;
   accountId: number;
   accountName: string;
   envelopeId: number | null;
@@ -131,7 +125,6 @@ type RawRow = {
 
 function toSummary(r: RawRow): PeriodSummaryT {
   return {
-    id: r.id,
     accountId: r.accountId,
     accountName: r.accountName,
     envelopeId: r.envelopeId,
@@ -152,7 +145,7 @@ function toSummary(r: RawRow): PeriodSummaryT {
   };
 }
 
-function toRow(s: Omit<PeriodSummaryT, 'id'>): Record<string, unknown> {
+function toRow(s: PeriodSummaryT): Record<string, unknown> {
   return {
     accountId: s.accountId,
     accountName: s.accountName,

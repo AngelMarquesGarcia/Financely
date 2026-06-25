@@ -100,7 +100,6 @@ export type BasicSummary = {
 export type DirtyState = 'CLEAN' | 'MODIFIED' | 'DIRTY';
 
 export type PeriodSummaryT = {
-  id: number;
   accountId: number;
   envelopeId: number | null; // null = account-level summary
   accountName: string;

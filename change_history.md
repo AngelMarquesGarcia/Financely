@@ -311,14 +311,14 @@ Primer paso del dashboard de resumen mensual. Los tipos están definidos; la ló
 
 **Diseño del ending balance:** los PeriodSummaries forman una cadena mensual por (account, envelope). `ending_balance(P) = ending_balance(P-1) + cashFlow(P)`. El primer periodo se ancla en `startingBalance` de la cuenta o del envelope. Ediciones en periodos pasados marcan `isDirty = true` en ese periodo y en todos los posteriores; el getter recalcula lazily desde el periodo dirtied más antiguo hacia adelante.
 
-### Cambios próximos planificados
+### Cambios próximos planificados (implementados)
 
-- **Eliminar `id` de `PeriodSummary`**: usar los cuatro campos de `Period` (accountId, envelopeId, year, month) como clave primaria compuesta en lugar de un `id` autoincremental. Requiere:
+- (implementado) **Eliminar `id` de `PeriodSummary`**: usar los cuatro campos de `Period` (accountId, envelopeId, year, month) como clave primaria compuesta en lugar de un `id` autoincremental. Requiere:
   - Cambiar el `UPDATE` y `DELETE` del repositorio para usar `Period` en lugar de `id`.
   - Añadir dos índices `UNIQUE` parciales en el schema: uno para filas con `envelope_id IS NOT NULL` y otro `WHERE envelope_id IS NULL` para filas de nivel de cuenta (SQLite trata los `NULL` como distintos en constraints `UNIQUE` normales, por lo que se necesita el mismo patrón de índice parcial que ya usan los defaults de `is_default`).
   - Eliminar el campo `id` de la interfaz `PeriodSummary` en `shared/types.ts` y actualizar todos los callers.
 
-- **Cambio de `type` a `class`**: reemplazar los tipos planos de `shared/types.ts` por clases TypeScript con métodos de dominio (e.g. `Period.previous()`, `Period.next()`). TypeScript no impone un archivo por clase — múltiples clases pueden exportarse desde un mismo `.ts`. La transición requerirá actualizar las deserializaciones en los repositorios (ya que `better-sqlite3` devuelve plain objects que habrá que mapear a instancias de clase).
+- (implementado) **Cambio de `type` a `class`**: reemplazar los tipos planos de `shared/types.ts` por clases TypeScript con métodos de dominio (e.g. `Period.previous()`, `Period.next()`). TypeScript no impone un archivo por clase — múltiples clases pueden exportarse desde un mismo `.ts`. La transición requerirá actualizar las deserializaciones en los repositorios (ya que `better-sqlite3` devuelve plain objects que habrá que mapear a instancias de clase).
 
 ---
 
@@ -359,9 +359,9 @@ Primer paso del dashboard de resumen mensual. Los tipos están definidos; la ló
 
 ---
 
-## Junio 2026 (continuación 2)
+## Junio 2026 (continuación 2 - 24/06)
 
-### Refactor de arquitectura: tipos wire T-suffix, clases de dominio, handlers como frontera de adaptación
+### Refactor de arquitectura: se pasa de usar tipos a usar clases, siguiendo más de cerca el diseño POO de Spring (con tipos wire T-suffix, clases de dominio, handlers como frontera de adaptación)
 
 **Motivación:** Los tipos de entidad en `shared/types.ts` compartían nombre con las clases de dominio que se querían introducir (e.g., `Period` como tipo plano y como clase con métodos). Los servicios interrumpían la lógica de negocio para llamar `Period.from(period)` en medio de un método. `DEFAULT_CATEGORY_ICONS` y `DEFAULT_COLOR_ORDER` estaban duplicados entre `electron/services/settings.service.ts` y `angular/src/app/core/defaults.ts`.
 

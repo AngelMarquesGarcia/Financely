@@ -43,9 +43,7 @@ export class PeriodSummaryService {
     try {
       const existing = periodSummaryRepository.getByPeriod(period);
       if (existing == undefined) throw new AppError(AppErrorCode.PERIODSUMMARY_NOT_FOUND);
-      return periodSummaryRepository.update({ ...summary, id: existing.id })
-        ? existing.id
-        : -1;
+      return periodSummaryRepository.update(summary) ? 1 : -1;
     } catch {
       return this.create(period);
     }
@@ -55,17 +53,11 @@ export class PeriodSummaryService {
     return periodSummaryRepository.delete(period);
   }
 
-  /** Upserts based on (accountId, envelopeId, year, month). Returns the id. */
-  upsert(summary: Omit<PeriodSummaryT, 'id'>): number | bigint {
-    const existing = periodSummaryRepository.getByPeriod({
-      accountId: summary.accountId,
-      envelopeId: summary.envelopeId ?? null,
-      year: summary.year,
-      month: summary.month,
-    });
-    if (existing) {
-      periodSummaryRepository.update({ ...summary, id: existing.id });
-      return existing.id;
+  /** Upserts based on (accountId, envelopeId, year, month). */
+  upsert(summary: PeriodSummaryT): number | bigint {
+    if (this.checkExists(Period.from(summary))) {
+      periodSummaryRepository.update(summary);
+      return 1;
     }
     return periodSummaryRepository.insert(summary);
   }
@@ -108,7 +100,7 @@ export class PeriodSummaryService {
 
     const prevSum = this.cleanPeriodSummary(period.getPrevious());
     if (periodSummary.dirtyState == 'MODIFIED') {
-      const updatedSum = { ...this.calculatePeriodSummary(period), id: periodSummary.id };
+      const updatedSum = this.calculatePeriodSummary(period);
       periodSummaryRepository.update(updatedSum);
       return updatedSum;
     }
@@ -121,7 +113,7 @@ export class PeriodSummaryService {
     return periodSummary;
   }
 
-  private calculatePeriodSummary(period: Period): Omit<PeriodSummaryT, 'id'> {
+  private calculatePeriodSummary(period: Period): PeriodSummaryT {
     const movements = movementService.getByPeriod(period);
     const result = this.calculatePeriodSummaryFromMovements(movements);
     const prevPeriodSummary = periodSummaryRepository.getByPeriod(period.getPrevious());
@@ -141,7 +133,7 @@ export class PeriodSummaryService {
     return result;
   }
 
-  private calculatePeriodSummaryFromMovements(movements: MovementT[]): Omit<PeriodSummaryT, 'id'> {
+  private calculatePeriodSummaryFromMovements(movements: MovementT[]): PeriodSummaryT {
     if (movements.length == 0) throw new AppError(AppErrorCode.INCORRECT_PARAMETERS);
     const accountId = movements[0].accountId;
     const envelopeId = movements[0].envelopeId;

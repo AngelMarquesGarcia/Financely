@@ -74,8 +74,8 @@ export interface Settings {
 }
 
 export interface PeriodSummaries {
-  create(summary: Omit<PeriodSummaryT, 'id'>): Promise<number | bigint>;
-  upsert(summary: Omit<PeriodSummaryT, 'id'>): Promise<number | bigint>;
+  create(summary: PeriodSummaryT): Promise<number | bigint>;
+  upsert(summary: PeriodSummaryT): Promise<number | bigint>;
   getAll(): Promise<PeriodSummaryT[]>;
   getByPeriod(accountId: number, envelopeId: number | null, year: number, month: number): Promise<PeriodSummaryT | undefined>;
   update(summary: PeriodSummaryT): Promise<boolean>;

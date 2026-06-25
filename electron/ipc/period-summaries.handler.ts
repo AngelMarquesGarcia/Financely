@@ -15,7 +15,7 @@ export function registerPeriodSummaryHandlers(): void {
 
   ipcMain.handle(
     Channels.PERIOD_SUMMARY_UPSERT,
-    ipcHandle((_event: IpcMainInvokeEvent, summary: Omit<PeriodSummaryT, 'id'>) =>
+    ipcHandle((_event: IpcMainInvokeEvent, summary: PeriodSummaryT) =>
       periodSummaryService.upsert(summary),
     ),
   );

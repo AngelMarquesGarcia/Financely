@@ -1,7 +1,6 @@
 import { PeriodSummaryT } from '@shared/types';
 
 export const SAMPLE_ACCOUNT_SUMMARY: PeriodSummaryT = {
-  id: 1,
   accountId: 1,
   envelopeId: null,
   accountName: 'Main Account',
@@ -21,7 +20,6 @@ export const SAMPLE_ACCOUNT_SUMMARY: PeriodSummaryT = {
 };
 
 export const SAMPLE_FOOD_SUMMARY: PeriodSummaryT = {
-  id: 2,
   accountId: 1,
   envelopeId: 1,
   accountName: 'Main Account',
@@ -41,7 +39,6 @@ export const SAMPLE_FOOD_SUMMARY: PeriodSummaryT = {
 };
 
 export const SAMPLE_TRANSPORT_SUMMARY: PeriodSummaryT = {
-  id: 3,
   accountId: 1,
   envelopeId: 2,
   accountName: 'Main Account',
@@ -60,7 +57,6 @@ export const SAMPLE_TRANSPORT_SUMMARY: PeriodSummaryT = {
 };
 
 export const SAMPLE_SAVINGS_SUMMARY: PeriodSummaryT = {
-  id: 4,
   accountId: 1,
   envelopeId: 3,
   accountName: 'Main Account',
