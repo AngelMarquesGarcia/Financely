@@ -35,13 +35,14 @@ export class AmountInputComponent {
   @Input() inputId?: string;
   /** Empty input maps to `null` (filter use case). Form use case can pass `0`. */
   @Input() set amountCents(value: number | null | undefined) {
-    if (value == null) {
-      this.display = '';
-      this.lastEmitted = null;
-    } else {
-      this.display = formatCents(value);
-      this.lastEmitted = value;
-    }
+    const normalized = value ?? null;
+    // Ignore echoes of our own emission. Parents bind (amountCentsChange)="x = $event",
+    // so every keystroke's emitted value flows straight back into this setter. Reformatting
+    // `display` here would rewrite what the user is mid-way through typing (e.g. "39" → "3.009").
+    // Only react to genuinely external changes (initial value, editing a record, reset).
+    if (normalized === this.lastEmitted) return;
+    this.lastEmitted = normalized;
+    this.display = normalized == null ? '' : formatCents(normalized);
   }
   @Output() amountCentsChange = new EventEmitter<number | null>();
 

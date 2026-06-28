@@ -53,4 +53,22 @@ describe('AmountInputComponent', () => {
     ac.onBlur();
     expect(ac.display).toBe('5.00');
   });
+
+  it('does not reformat `display` mid-typing when the parent echoes the value back', () => {
+    const fixture = TestBed.createComponent(Host);
+    fixture.detectChanges();
+    const input = fixture.nativeElement.querySelector('input') as HTMLInputElement;
+    const ac = fixture.debugElement.children[0].componentInstance as AmountInputComponent;
+
+    input.value = '3';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    // Simulate the parent's two-way echo: (amountCentsChange)="amountCents = $event".
+    const emitted = fixture.componentInstance.onChange.mock.calls.at(-1)![0] as number;
+    ac.amountCents = emitted;
+    fixture.detectChanges();
+
+    expect(ac.display).toBe('3'); // not "3.00" — typing must not be corrupted
+  });
 });
