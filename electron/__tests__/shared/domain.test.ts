@@ -30,7 +30,9 @@ const sampleSummaryT: PeriodSummaryT = {
   avgMovementAmountCents: 750,
   movementCount: 2,
   endingBalanceCents: -1500,
-  availableBudgetCents: 5000,
+  netTransfersCents: 0,
+  budgetCents: 5000,
+  maxSavingsCents: 10000,
   notes: 'note',
   dirtyState: 'CLEAN',
 };

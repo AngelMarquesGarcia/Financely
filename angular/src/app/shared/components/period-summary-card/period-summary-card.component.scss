@@ -73,6 +73,18 @@
     color: var(--c-text-muted);
   }
 
+  &__badge {
+    margin-left: var(--sp-2);
+    padding: 0 var(--sp-2);
+    border-radius: var(--r-sm);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--c-expense-text);
+    background: var(--c-expense-bg, var(--c-surface-alt));
+  }
+
   &__row-value {
     font-variant-numeric: tabular-nums;
     font-weight: 500;

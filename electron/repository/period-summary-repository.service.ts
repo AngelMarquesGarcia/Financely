@@ -20,7 +20,9 @@ export class PeriodSummaryRepository {
     avg_movement_amount_cents AS avgMovementAmountCents,
     movement_count            AS movementCount,
     ending_balance_cents      AS endingBalanceCents,
-    budget_cents              AS availableBudgetCents,
+    net_transfers_cents       AS netTransfersCents,
+    budget_cents              AS budgetCents,
+    max_savings_cents         AS maxSavingsCents,
     notes,
     dirty_state               AS dirtyState
   `;
@@ -32,12 +34,14 @@ export class PeriodSummaryRepository {
           account_id, account_name, envelope_id, envelope_name, year, month,
           cash_flow_cents, total_income_cents, total_expense_cents,
           avg_expense_cents, avg_income_cents, avg_movement_amount_cents,
-          movement_count, ending_balance_cents, budget_cents, notes, dirty_state
+          movement_count, ending_balance_cents, net_transfers_cents,
+          budget_cents, max_savings_cents, notes, dirty_state
         ) VALUES (
           :accountId, :accountName, :envelopeId, :envelopeName, :year, :month,
           :cashFlowCents, :totalIncomeCents, :totalExpenseCents,
           :avgExpenseCents, :avgIncomeCents, :avgMovementAmountCents,
-          :movementCount, :endingBalanceCents, :availableBudgetCents, :notes, :dirtyState
+          :movementCount, :endingBalanceCents, :netTransfersCents,
+          :budgetCents, :maxSavingsCents, :notes, :dirtyState
         )`,
       )
       .run(toRow(s)).lastInsertRowid;
@@ -76,7 +80,9 @@ export class PeriodSummaryRepository {
             avg_movement_amount_cents = :avgMovementAmountCents,
             movement_count = :movementCount,
             ending_balance_cents = :endingBalanceCents,
-            budget_cents = :availableBudgetCents,
+            net_transfers_cents = :netTransfersCents,
+            budget_cents = :budgetCents,
+            max_savings_cents = :maxSavingsCents,
             notes = :notes,
             dirty_state = :dirtyState
            WHERE account_id = :accountId
@@ -85,6 +91,32 @@ export class PeriodSummaryRepository {
              AND (envelope_id IS :envelopeId)`,
         )
         .run(toRow(s)).changes > 0
+    );
+  }
+
+  /**
+   * Stamps the budget + savings-cap snapshot onto the exact (year, month) period for an envelope.
+   * Only the targeted month is updated — past and future existing summaries are untouched.
+   * New summaries created in the future pick up the envelope's current values at creation.
+   * Returns the number of rows updated (0 if no summary exists for that period yet).
+   */
+  stampEnvelopeSnapshot(
+    envelopeId: number,
+    budgetCents: number | null,
+    maxSavingsCents: number | null,
+    year: number,
+    month: number,
+  ): number {
+    return Number(
+      this.db
+        .prepare(
+          `UPDATE ${tables.periodSummaries}
+             SET budget_cents = :budgetCents, max_savings_cents = :maxSavingsCents
+           WHERE envelope_id = :envelopeId
+             AND year = :year
+             AND month = :month`,
+        )
+        .run({ budgetCents, maxSavingsCents, envelopeId, year, month }).changes,
     );
   }
 
@@ -118,7 +150,9 @@ type RawRow = {
   avgMovementAmountCents: number;
   movementCount: number;
   endingBalanceCents: number;
-  availableBudgetCents: number | null;
+  netTransfersCents: number;
+  budgetCents: number | null;
+  maxSavingsCents: number | null;
   notes: string | null;
   dirtyState: string;
 };
@@ -139,7 +173,9 @@ function toSummary(r: RawRow): PeriodSummaryT {
     avgMovementAmountCents: r.avgMovementAmountCents,
     movementCount: r.movementCount,
     endingBalanceCents: r.endingBalanceCents,
-    availableBudgetCents: r.availableBudgetCents ?? undefined,
+    netTransfersCents: r.netTransfersCents,
+    budgetCents: r.budgetCents ?? undefined,
+    maxSavingsCents: r.maxSavingsCents ?? undefined,
     notes: r.notes ?? undefined,
     dirtyState: r.dirtyState as DirtyState,
   };
@@ -161,7 +197,9 @@ function toRow(s: PeriodSummaryT): Record<string, unknown> {
     avgMovementAmountCents: s.avgMovementAmountCents,
     movementCount: s.movementCount,
     endingBalanceCents: s.endingBalanceCents,
-    availableBudgetCents: s.availableBudgetCents ?? null,
+    netTransfersCents: s.netTransfersCents ?? 0,
+    budgetCents: s.budgetCents ?? null,
+    maxSavingsCents: s.maxSavingsCents ?? null,
     notes: s.notes ?? null,
     dirtyState: s.dirtyState,
   };

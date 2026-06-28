@@ -1,6 +1,7 @@
-import { BasicSummary, DirtyState, MovementT, PeriodSummaryT } from '@shared/types';
+import { BasicSummary, MovementT, PeriodSummaryT } from '@shared/types';
 import { Period, PeriodSummary } from '@shared/domain';
 import { periodSummaryRepository } from '../repository/period-summary-repository.service';
+import { transferRepository } from '../repository/transfer-repository.service';
 import { movementService } from './movement.service';
 import { accountService } from './account.service';
 import { envelopeService } from './envelope.service';
@@ -93,7 +94,8 @@ export class PeriodSummaryService {
     }
   }
 
-  movementCreatedInPeriod(period: Period) {
+  /** A movement or transfer landed in this period: create its summary if absent, else mark dirty. */
+  periodTouched(period: Period) {
     const summary = periodSummaryRepository.getByPeriod(period);
     if (summary == undefined) this.create(period);
     else this.markDirty(period);
@@ -125,7 +127,8 @@ export class PeriodSummaryService {
     if (prevSum == undefined) {
       throw new AppError(AppErrorCode.PERIODSUMMARY_NOT_FOUND);
     }
-    periodSummary.endingBalanceCents = prevSum.endingBalanceCents + periodSummary.cashFlowCents;
+    periodSummary.endingBalanceCents =
+      prevSum.endingBalanceCents + periodSummary.cashFlowCents + periodSummary.netTransfersCents;
     periodSummary.dirtyState = 'CLEAN';
     periodSummaryRepository.update(periodSummary);
     return periodSummary;
@@ -133,60 +136,92 @@ export class PeriodSummaryService {
 
   private calculatePeriodSummary(period: Period): PeriodSummaryT {
     const movements = movementService.getByPeriod(period);
-    const result = this.calculatePeriodSummaryFromMovements(movements);
-    const prevPeriodSummary = periodSummaryRepository.getByPeriod(period.getPrevious());
-    if (prevPeriodSummary == undefined) {
-      if (period.envelopeId != undefined) {
-        const envelope = envelopeService.getById(period.envelopeId);
-        if (envelope == undefined) throw new AppError(AppErrorCode.ENVELOPE_NOT_FOUND);
-        result.endingBalanceCents = envelope.startingBalance + result.cashFlowCents;
-      } else {
-        const account = accountService.getById(period.accountId);
-        if (account == undefined) throw new AppError(AppErrorCode.ACCOUNT_NOT_FOUND);
-        result.endingBalanceCents = account.startingBalance + result.cashFlowCents;
-      }
-    } else {
-      result.endingBalanceCents = prevPeriodSummary.endingBalanceCents + result.cashFlowCents;
+
+    // Internal transfers apply only to envelope-level summaries.
+    let inCents = 0;
+    let outCents = 0;
+    if (period.envelopeId != null) {
+      ({ inCents, outCents } = transferRepository.netForEnvelopePeriod(
+        period.envelopeId,
+        period.year,
+        period.month,
+      ));
     }
+    const hasTransfers = inCents + outCents > 0;
+
+    // A summary exists only if the period has at least one movement or transfer.
+    if (movements.length === 0 && !hasTransfers) {
+      throw new AppError(AppErrorCode.INCORRECT_PARAMETERS);
+    }
+
+    const result = this.buildSummary(period, movements);
+    result.netTransfersCents = inCents - outCents;
+
+    // Budget + savings-cap snapshots: freeze an existing summary's snapshot on recalc; otherwise
+    // stamp the envelope's current values at first creation. Account-level summaries have neither.
+    if (period.envelopeId != null) {
+      const existing = periodSummaryRepository.getByPeriod(period);
+      if (existing) {
+        result.budgetCents = existing.budgetCents;
+        result.maxSavingsCents = existing.maxSavingsCents;
+      } else {
+        const envelope = envelopeService.getById(period.envelopeId);
+        result.budgetCents = envelope?.budgetCents ?? undefined;
+        result.maxSavingsCents = envelope?.maxSavingsCents ?? undefined;
+      }
+    }
+
+    const prevPeriodSummary = periodSummaryRepository.getByPeriod(period.getPrevious());
+    const anchor =
+      prevPeriodSummary != undefined
+        ? prevPeriodSummary.endingBalanceCents
+        : this.startingBalanceFor(period);
+    result.endingBalanceCents = anchor + result.cashFlowCents + result.netTransfersCents;
     return result;
   }
 
-  private calculatePeriodSummaryFromMovements(movements: MovementT[]): PeriodSummaryT {
-    if (movements.length == 0) throw new AppError(AppErrorCode.INCORRECT_PARAMETERS);
-    const accountId = movements[0].accountId;
-    const envelopeId = movements[0].envelopeId;
-    const year = movements[0].date.getFullYear();
-    const month = movements[0].date.getMonth();
+  /** Starting balance to anchor the first period of a chain: the envelope's (or account's). */
+  private startingBalanceFor(period: Period): number {
+    if (period.envelopeId != undefined) {
+      const envelope = envelopeService.getById(period.envelopeId);
+      if (envelope == undefined) throw new AppError(AppErrorCode.ENVELOPE_NOT_FOUND);
+      return envelope.startingBalance;
+    }
+    const account = accountService.getById(period.accountId);
+    if (account == undefined) throw new AppError(AppErrorCode.ACCOUNT_NOT_FOUND);
+    return account.startingBalance;
+  }
 
-    const accountName = accountService.getById(accountId)?.name;
-    if (accountName == undefined) throw new AppError(AppErrorCode.ACCOUNT_NOT_FOUND);
+  /**
+   * Builds a summary skeleton from the period identity and its movements. Movements may be empty
+   * (a period can exist solely because of transfers); aggregates are then all zero. The caller
+   * stamps netTransfers, the budget/savings snapshots, and the ending balance.
+   */
+  private buildSummary(period: Period, movements: MovementT[]): PeriodSummaryT {
+    const account = accountService.getById(period.accountId);
+    if (account == undefined) throw new AppError(AppErrorCode.ACCOUNT_NOT_FOUND);
 
-    const envelope = envelopeService.getById(envelopeId);
-    const envelopeName = envelope?.name ?? null;
+    let envelopeName: string | null = null;
+    if (period.envelopeId != null) {
+      const envelope = envelopeService.getById(period.envelopeId);
+      if (envelope == undefined) throw new AppError(AppErrorCode.ENVELOPE_NOT_FOUND);
+      envelopeName = envelope.name;
+    }
 
     movements.forEach((m) => {
-      if (m.accountId != accountId || m.envelopeId != envelopeId)
+      if (m.accountId != period.accountId || m.envelopeId != period.envelopeId)
         throw new AppError(AppErrorCode.INCORRECT_PARAMETERS);
     });
 
     const sum = this.getBasicSummary(movements);
-    const dirtyState: DirtyState = 'CLEAN';
-
-    let availableBudgetCents;
-    if (envelopeId != undefined && envelope == undefined)
-      throw new AppError(AppErrorCode.ENVELOPE_NOT_FOUND);
-    else if (envelopeId != undefined) {
-      availableBudgetCents =
-        (envelope as unknown as { fixedBudget: number }).fixedBudget - sum.totalExpenseCents;
-    }
 
     return {
-      accountId,
-      envelopeId,
-      accountName,
+      accountId: period.accountId,
+      envelopeId: period.envelopeId,
+      accountName: account.name,
       envelopeName,
-      year,
-      month,
+      year: period.year,
+      month: period.month,
       cashFlowCents: sum.cashFlowCents,
       totalIncomeCents: sum.totalIncomeCents,
       totalExpenseCents: sum.totalExpenseCents,
@@ -194,15 +229,16 @@ export class PeriodSummaryService {
       avgIncomeCents: sum.avgIncomeCents,
       avgMovementAmountCents: sum.avgMovementAmountCents,
       movementCount: sum.movementCount,
-      availableBudgetCents,
+      endingBalanceCents: 0, // set by calculatePeriodSummary
+      netTransfersCents: 0, // set by calculatePeriodSummary
+      budgetCents: undefined, // stamped by calculatePeriodSummary (freeze existing vs. envelope)
+      maxSavingsCents: undefined, // stamped by calculatePeriodSummary (freeze existing vs. envelope)
       notes: undefined,
-      dirtyState,
-      endingBalanceCents: 0,
+      dirtyState: 'CLEAN',
     };
   }
 
   private getBasicSummary(movements: MovementT[]): BasicSummary {
-    if (movements.length == 0) throw new AppError(AppErrorCode.INCORRECT_PARAMETERS);
     let totalIncomeCents = 0;
     let incomeCount = 0;
     let totalExpenseCents = 0;
@@ -220,7 +256,8 @@ export class PeriodSummaryService {
     const cashFlowCents = totalIncomeCents - totalExpenseCents;
     const avgIncomeCents = incomeCount != 0 ? totalIncomeCents / incomeCount : 0;
     const avgExpenseCents = expenseCount != 0 ? totalExpenseCents / expenseCount : 0;
-    const avgMovementAmountCents = (totalIncomeCents + totalExpenseCents) / movementCount;
+    const avgMovementAmountCents =
+      movementCount != 0 ? (totalIncomeCents + totalExpenseCents) / movementCount : 0;
 
     return {
       movementCount,

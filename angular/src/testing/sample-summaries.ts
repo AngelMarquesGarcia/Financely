@@ -15,6 +15,7 @@ export const SAMPLE_ACCOUNT_SUMMARY: PeriodSummaryT = {
   avgMovementAmountCents: 19056,
   movementCount: 18,
   endingBalanceCents: 312500,
+  netTransfersCents: 0,
   notes: 'Good month overall. Big grocery run mid-month skewed food expenses.',
   dirtyState: 'CLEAN',
 };
@@ -34,7 +35,8 @@ export const SAMPLE_FOOD_SUMMARY: PeriodSummaryT = {
   avgMovementAmountCents: 7917,
   movementCount: 12,
   endingBalanceCents: -95000,
-  availableBudgetCents: 100000,
+  netTransfersCents: 0,
+  budgetCents: 100000,
   dirtyState: 'CLEAN',
 };
 
@@ -53,6 +55,8 @@ export const SAMPLE_TRANSPORT_SUMMARY: PeriodSummaryT = {
   avgMovementAmountCents: 8400,
   movementCount: 5,
   endingBalanceCents: -42000,
+  netTransfersCents: 0,
+  budgetCents: 50000,
   dirtyState: 'CLEAN',
 };
 
@@ -71,6 +75,8 @@ export const SAMPLE_SAVINGS_SUMMARY: PeriodSummaryT = {
   avgMovementAmountCents: 200000,
   movementCount: 1,
   endingBalanceCents: 1500000,
+  netTransfersCents: 0,
+  maxSavingsCents: 1000000,
   notes: 'Monthly transfer in.',
   dirtyState: 'CLEAN',
 };

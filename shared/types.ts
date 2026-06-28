@@ -44,6 +44,25 @@ export type EnvelopeT = {
   accountId: number | null;
   isDefault: boolean;
   startingBalance: number;
+  budgetCents: number | null;
+  maxSavingsCents: number | null;
+  /** Envelope that over-cap savings are redirected to. null → resolve to the account default. */
+  overflowsTo: number | null;
+};
+
+/** An internal transfer between two envelopes of the same account. Moves no real-world cash, so
+ *  it never affects income/expense/cashflow aggregates — only each envelope's running balance. */
+export type TransferT = {
+  id: number;
+  fromEnvelopeId: number;
+  toEnvelopeId: number;
+  accountId: number; // both envelopes share this account
+  /** Amount in integer cents; always > 0. */
+  quantityCents: number;
+  date: Date;
+  /** true = created automatically by the over-cap savings redirect. */
+  isAuto: boolean;
+  notes: string | null;
 };
 
 export type TagT = {
@@ -116,7 +135,10 @@ export type PeriodSummaryT = {
   movementCount: number;
   // Period-specific
   endingBalanceCents: number;
-  availableBudgetCents?: number;
+  /** Net of internal transfers in this period (incoming − outgoing); folded into endingBalance. */
+  netTransfersCents: number;
+  budgetCents?: number;
+  maxSavingsCents?: number;
   notes?: string;
   dirtyState: DirtyState;
 };

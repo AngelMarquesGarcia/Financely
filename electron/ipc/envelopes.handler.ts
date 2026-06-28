@@ -8,8 +8,26 @@ import { Envelope } from '@shared/domain';
 export function registerEnvelopeHandlers(): void {
   ipcMain.handle(
     Channels.ENVELOPE_CREATE,
-    ipcHandle((_event: IpcMainInvokeEvent, arg: { name: string; accountId: number; startingBalance?: number }) =>
-      envelopeService.create(arg.name, arg.accountId, arg.startingBalance),
+    ipcHandle(
+      (
+        _event: IpcMainInvokeEvent,
+        arg: {
+          name: string;
+          accountId: number;
+          startingBalance?: number;
+          budgetCents?: number | null;
+          maxSavingsCents?: number | null;
+          overflowsTo?: number | null;
+        },
+      ) =>
+        envelopeService.create(
+          arg.name,
+          arg.accountId,
+          arg.startingBalance,
+          arg.budgetCents,
+          arg.maxSavingsCents,
+          arg.overflowsTo,
+        ),
     ),
   );
 

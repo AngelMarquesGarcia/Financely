@@ -31,7 +31,7 @@ describe('MovementsListComponent', () => {
   it('getEnvelope returns matching envelope', () => {
     const fixture = createComponent();
     const comp = fixture.componentInstance;
-    const env: EnvelopeT = { id: 42, name: 'Savings', accountId: 1, isDefault: false, startingBalance: 0 };
+    const env: EnvelopeT = { id: 42, name: 'Savings', accountId: 1, isDefault: false, startingBalance: 0, budgetCents: null, maxSavingsCents: null, overflowsTo: null };
     comp.envelopes = [env];
     expect(comp.getEnvelope(42)).toEqual(env);
   });
@@ -66,7 +66,7 @@ describe('MovementsListComponent', () => {
   it('renders envelope column name in table', () => {
     const fixture = createComponent();
     const comp = fixture.componentInstance;
-    const env: EnvelopeT = { id: 1, name: 'Monthly', accountId: 1, isDefault: true, startingBalance: 0 };
+    const env: EnvelopeT = { id: 1, name: 'Monthly', accountId: 1, isDefault: true, startingBalance: 0, budgetCents: null, maxSavingsCents: null, overflowsTo: null };
     const cat: CategoryT = { id: 1, name: 'Food', isDefault: false, envelopeId: null };
     comp.envelopes = [env];
     comp.categories = [cat];

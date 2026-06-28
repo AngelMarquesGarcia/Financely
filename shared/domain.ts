@@ -1,4 +1,14 @@
-import type { PeriodT, MovementT, PeriodSummaryT, AccountT, CategoryT, EnvelopeT, TagT, DirtyState } from './types';
+import type {
+  PeriodT,
+  MovementT,
+  PeriodSummaryT,
+  AccountT,
+  CategoryT,
+  EnvelopeT,
+  TagT,
+  TransferT,
+  DirtyState,
+} from './types';
 
 export class Period implements PeriodT {
   constructor(
@@ -51,8 +61,16 @@ export class Movement implements MovementT {
 
   static from(d: MovementT): Movement {
     return new Movement(
-      d.id, d.accountId, d.name, d.concept, d.quantityCents,
-      d.isPositive, d.date, d.categoryId, d.envelopeId, d.additionalNotes,
+      d.id,
+      d.accountId,
+      d.name,
+      d.concept,
+      d.quantityCents,
+      d.isPositive,
+      d.date,
+      d.categoryId,
+      d.envelopeId,
+      d.additionalNotes,
     );
   }
 }
@@ -73,7 +91,9 @@ export class PeriodSummary implements PeriodSummaryT {
     public readonly avgMovementAmountCents: number,
     public readonly movementCount: number,
     public readonly endingBalanceCents: number,
-    public readonly availableBudgetCents: number | undefined,
+    public readonly netTransfersCents: number,
+    public readonly budgetCents: number | undefined,
+    public readonly maxSavingsCents: number | undefined,
     public readonly notes: string | undefined,
     public readonly dirtyState: DirtyState,
   ) {}
@@ -82,12 +102,31 @@ export class PeriodSummary implements PeriodSummaryT {
     return Period.fromPeriodSummary(this);
   }
 
+  getAvailableBudget() {
+    return (this.budgetCents ?? this.totalExpenseCents) - this.totalExpenseCents;
+  }
+
   static from(d: PeriodSummaryT): PeriodSummary {
     return new PeriodSummary(
-      d.accountId, d.envelopeId, d.accountName, d.envelopeName,
-      d.year, d.month, d.cashFlowCents, d.totalIncomeCents, d.totalExpenseCents,
-      d.avgExpenseCents, d.avgIncomeCents, d.avgMovementAmountCents, d.movementCount,
-      d.endingBalanceCents, d.availableBudgetCents, d.notes, d.dirtyState,
+      d.accountId,
+      d.envelopeId,
+      d.accountName,
+      d.envelopeName,
+      d.year,
+      d.month,
+      d.cashFlowCents,
+      d.totalIncomeCents,
+      d.totalExpenseCents,
+      d.avgExpenseCents,
+      d.avgIncomeCents,
+      d.avgMovementAmountCents,
+      d.movementCount,
+      d.endingBalanceCents,
+      d.netTransfersCents,
+      d.budgetCents,
+      d.maxSavingsCents,
+      d.notes,
+      d.dirtyState,
     );
   }
 }
@@ -129,10 +168,22 @@ export class Envelope implements EnvelopeT {
     public readonly accountId: number | null,
     public readonly isDefault: boolean,
     public readonly startingBalance: number,
+    public readonly budgetCents: number | null,
+    public readonly maxSavingsCents: number | null,
+    public readonly overflowsTo: number | null,
   ) {}
 
   static from(d: EnvelopeT): Envelope {
-    return new Envelope(d.id, d.name, d.accountId, d.isDefault, d.startingBalance);
+    return new Envelope(
+      d.id,
+      d.name,
+      d.accountId,
+      d.isDefault,
+      d.startingBalance,
+      d.budgetCents,
+      d.maxSavingsCents,
+      d.overflowsTo,
+    );
   }
 }
 
@@ -146,5 +197,41 @@ export class Tag implements TagT {
 
   static from(d: TagT): Tag {
     return new Tag(d.id, d.type, d.name, d.color);
+  }
+}
+
+export class Transfer implements TransferT {
+  constructor(
+    public readonly id: number,
+    public readonly fromEnvelopeId: number,
+    public readonly toEnvelopeId: number,
+    public readonly accountId: number,
+    public readonly quantityCents: number,
+    public readonly date: Date,
+    public readonly isAuto: boolean,
+    public readonly notes: string | null,
+  ) {}
+
+  /** The source envelope's period (money leaves here). */
+  fromPeriod(): Period {
+    return new Period(this.accountId, this.fromEnvelopeId, this.date.getFullYear(), this.date.getMonth());
+  }
+
+  /** The destination envelope's period (money arrives here). */
+  toPeriod(): Period {
+    return new Period(this.accountId, this.toEnvelopeId, this.date.getFullYear(), this.date.getMonth());
+  }
+
+  static from(d: TransferT): Transfer {
+    return new Transfer(
+      d.id,
+      d.fromEnvelopeId,
+      d.toEnvelopeId,
+      d.accountId,
+      d.quantityCents,
+      d.date,
+      d.isAuto,
+      d.notes,
+    );
   }
 }

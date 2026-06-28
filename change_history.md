@@ -407,6 +407,43 @@ Primer paso del dashboard de resumen mensual. Los tipos están definidos; la ló
 
 ---
 
+## Junio 2026 (continuación 3 - 27/06)
+
+### Presupuestos de envelope, tope de ahorro y transferencias internas
+
+Tres fases incrementales sobre el modelo de envelopes. El plan detallado vive en [`i-intended-you-to-dynamic-shore.md`](C:/Users/burak/.claude/plans/i-intended-you-to-dynamic-shore.md).
+
+**Fase 1 — Presupuesto (`budgetCents`):**
+
+- Nuevo campo nullable `budgetCents` en `EnvelopeT`/`Envelope`/schema. Se snapshotea en cada `PeriodSummary` (columna `budget_cents`, ya existente, resignificada del "available budget" roto a "snapshot de presupuesto"). El available budget pasa a ser **derivado** (`budget − gastos`), no almacenado.
+- Eliminado el bug por el que `availableBudgetCents` se calculaba como `NaN` (leía `envelope.fixedBudget`, campo inexistente) y se guardaba como `NULL`.
+- Edición del presupuesto: re-snapshot **solo del mes en curso** (`stampEnvelopeSnapshot`, exacto `(year, month)`); meses pasados congelados; meses futuros toman el valor actual del envelope al crearse.
+
+**Fase 2 — Tope de ahorro (`maxSavingsCents`):**
+
+- Espejo de `budgetCents`: campo nullable en envelope + snapshot en `PeriodSummary`, almacenado como céntimos absolutos. Form con selector None / 1× / 2× / 3× / Custom.
+- La card muestra "Savings cap" + "Overflow" (en su momento display-only; ahora el getter `savingsOverflowCents` usa el umbral real de redirección `cap + budget`).
+
+**Fase 3 — Transferencias internas + redirección de excedente:**
+
+- Nueva entidad `Transfer` (tabla `transfers`): mueve céntimos entre dos envelopes de la **misma cuenta**, con flag `isAuto`, fecha y notas. No es un movimiento: no afecta a income/expense/cashflow, solo al balance acumulado. Sin edición (solo create/delete).
+- `PeriodSummary` gana `netTransfersCents` (entradas − salidas), plegado en la cadena de ending balance (`ending = prev + cashFlow + netTransfers`). El recálculo DIRTY (solo re-encadenar) reutiliza el valor almacenado; el MODIFIED lo recalcula desde `transfers`.
+- `calculatePeriodSummary` pasa a ser **movement-OR-transfer-driven**: un summary existe si el periodo tiene al menos un movimiento *o* una transferencia (antes exigía ≥1 movimiento). `calculatePeriodSummaryFromMovements` refactorizado a `buildSummary(period, movements)` (deriva la identidad del `Period`, tolera lista vacía); `getBasicSummary` devuelve ceros en vez de lanzar.
+- Crear/borrar una transferencia marca dirty los periodos de **ambos** envelopes (`periodTouched`, antes `movementCreatedInPeriod`, ahora invocado también desde el flujo de transferencias).
+- `Envelope` gana `overflowsTo` (FK nullable a otro envelope). Redirección: al **crear o editar** un movimiento de ingreso, si `balance > maxSavings + budget`, el excedente se transfiere (auto) a `overflowsTo` o, si es null, al envelope por defecto de la cuenta (resuelto lazy). El `+ budget` deja disponible la asignación del mes. Solo los ingresos disparan la comprobación (las transferencias no), de modo que no hay cascada. La "fuga" cuando el dinero se gasta antes de recibirse es comportamiento intencionado.
+- Capa IPC completa para transferencias manuales (channels, `transfers.handler`, preload, `interfaces.ts`, `global.d.ts`, `ElectronService`). UI de transferencias (lista, formulario, selector de `overflowsTo`) **diferida**.
+- Helpers `dateToISO`/`isoToDate` extraídos a [electron/repository/date-utils.ts](electron/repository/date-utils.ts), reutilizados por movement- y transfer-repository.
+
+**Nuevos `AppErrorCode`:** `ENVELOPE_BUDGET_NEGATIVE`, `ENVELOPE_MAXSAVINGS_NEGATIVE`, `ENVELOPE_OVERFLOWS_TO_SELF`, `TRANSFER_SAME_ENVELOPE`, `TRANSFER_AMOUNT_INVALID`, `TRANSFER_CROSS_ACCOUNT`, `TRANSFER_DATE_INVALID`, `TRANSFER_NOT_FOUND` (+ textos en `ErrorTextService`).
+
+**Nota de schema:** la versión permanece en **1** (CLAUDE.md); `migrate()` sigue haciendo drop+recreate de todas las tablas, así que añadir `transfers` fue solo una línea de CREATE/DROP.
+
+**Tests:** nueva suite [electron/__tests__/services/transfer.service.test.ts](electron/__tests__/services/transfer.service.test.ts) (creación/validación, `getForEnvelope`, delete, integración en la cadena de balance, redirección en create y update, target `overflowsTo`). Suites de envelope y period-summary ampliadas con budget/maxSavings/netTransfers.
+
+**Verificación:** electron `type-check` limpio; **105/105** Jest verdes; **72/72** Vitest verdes; `build:dev` y `npm run lint` limpios. Sin smoke-test manual de la app.
+
+---
+
 ## Pasos siguientes
 
 ### Pendientes arrastrados de auditorías previas
@@ -434,6 +471,9 @@ Generados directamente por el trabajo de esta iteración.
 ### Known Issues
 
 - Borrar todos los movimientos de un Periodo elimina su PeriodSummary. Si en algún momento es necesario recalcular el ending balance de algún periodo posterior, podría fallar.
+- Sobre PeriodSummary: Cross-period edits leave the old summary stale. update dirties only Period.fromMovement(movement) — the new period (:71). If a user changes a movement's date (into another month) or its envelope, the old period's summary still counts the moved movement and is never marked dirty. Fix shape: read the existing movement first, then markDirty both old and new periods.
+- `EnvelopeService.update()` takes a full `Envelope` instance via IPC and persists it wholesale. Architecturally, envelope attributes derived from movements (e.g. running balance) should be computed the same way PeriodSummary is — not hand-edited. The current model works because there are no such derived fields yet, but will need rework once computed envelope attributes exist. Flagged but not blocking.
+- Budget/savings-cap snapshot logic (`calculatePeriodSummary` in `period-summary.service.ts`): the freeze-existing-snapshot block reads from the DB inside a calculation function that is also called on creation. Ideally callers would pass the frozen snapshot in (so the function stays pure), with the "freeze vs stamp" decision made at the call site. Left as-is because refactoring requires restructuring the call chain, and the current behavior is correct for now.
 
 ### Recomendaciones de mayor alcance (fuera de la iteración actual)
 

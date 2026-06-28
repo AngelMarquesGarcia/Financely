@@ -41,16 +41,40 @@
         <span class="psc__row-label">Movements</span>
         <span class="psc__row-value">{{ summary.movementCount }}</span>
       </div>
-      @if (summary.budgetCents !== null) {
+      @if (summary.budgetCents !== undefined) {
         <div class="psc__row">
           <span class="psc__row-label">Budget</span>
           <span class="psc__row-value">{{ summary.budgetCents | money }}</span>
         </div>
-      }
-      @if (summary.title) {
         <div class="psc__row">
-          <span class="psc__row-label">Title</span>
-          <span class="psc__row-value">{{ summary.title }}</span>
+          <span class="psc__row-label">
+            Available budget
+            @if (underfunded) {
+              <span class="psc__badge" title="Income to this envelope fell short of the budget"
+                >underfunded</span
+              >
+            }
+          </span>
+          <span
+            class="psc__row-value"
+            [class.psc__row-value--positive]="(availableBudgetCents ?? 0) >= 0"
+            [class.psc__row-value--negative]="(availableBudgetCents ?? 0) < 0"
+            >{{ availableBudgetCents | money }}</span
+          >
+        </div>
+      }
+      @if (summary.maxSavingsCents !== undefined) {
+        <div class="psc__row">
+          <span class="psc__row-label">Savings cap</span>
+          <span class="psc__row-value">{{ summary.maxSavingsCents | money }}</span>
+        </div>
+        <div class="psc__row">
+          <span class="psc__row-label">Overflow</span>
+          <span
+            class="psc__row-value"
+            [class.psc__row-value--negative]="(savingsOverflowCents ?? 0) > 0"
+            >{{ savingsOverflowCents | money }}</span
+          >
         </div>
       }
       @if (summary.notes) {

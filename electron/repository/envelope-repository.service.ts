@@ -6,13 +6,13 @@ import { tables } from '../constants';
 export class EnvelopeRepository {
   private readonly db = DatabaseService.getInstance().db;
 
-  private readonly selectCols = `id, name, account_id as accountId, is_default as isDefault, starting_balance as startingBalance`;
+  private readonly selectCols = `id, name, account_id as accountId, is_default as isDefault, starting_balance as startingBalance, budget_cents as budgetCents, max_savings_cents as maxSavingsCents, overflows_to as overflowsTo`;
 
   insertEnvelope(envelope: Omit<EnvelopeT, 'id' | 'isDefault'>): number | bigint {
     return this.db
       .prepare(
-        `INSERT INTO ${tables.envelopes} (name, account_id, starting_balance)
-         VALUES (:name, :accountId, :startingBalance)`,
+        `INSERT INTO ${tables.envelopes} (name, account_id, starting_balance, budget_cents, max_savings_cents, overflows_to)
+         VALUES (:name, :accountId, :startingBalance, :budgetCents, :maxSavingsCents, :overflowsTo)`,
       )
       .run(envelope).lastInsertRowid;
   }
@@ -31,14 +31,25 @@ export class EnvelopeRepository {
   }
 
   updateEnvelope(envelope: EnvelopeT): boolean {
+    // Bind a plain object: better-sqlite3 rejects class instances (e.g. Envelope) for named params.
     return (
       this.db
         .prepare(
           `UPDATE ${tables.envelopes}
-           SET name = :name, account_id = :accountId, starting_balance = :startingBalance
+           SET name = :name, account_id = :accountId, starting_balance = :startingBalance,
+               budget_cents = :budgetCents, max_savings_cents = :maxSavingsCents,
+               overflows_to = :overflowsTo
            WHERE id = :id`,
         )
-        .run(envelope).changes > 0
+        .run({
+          id: envelope.id,
+          name: envelope.name,
+          accountId: envelope.accountId,
+          startingBalance: envelope.startingBalance,
+          budgetCents: envelope.budgetCents,
+          maxSavingsCents: envelope.maxSavingsCents,
+          overflowsTo: envelope.overflowsTo,
+        }).changes > 0
     );
   }
 
@@ -91,9 +102,27 @@ export class EnvelopeRepository {
   }
 }
 
-type RawEnvelope = { id: number; name: string; accountId: number | null; isDefault: number; startingBalance: number };
+type RawEnvelope = {
+  id: number;
+  name: string;
+  accountId: number | null;
+  isDefault: number;
+  startingBalance: number;
+  budgetCents: number | null;
+  maxSavingsCents: number | null;
+  overflowsTo: number | null;
+};
 function toEnvelope(r: RawEnvelope): EnvelopeT {
-  return { id: r.id, name: r.name, accountId: r.accountId, isDefault: r.isDefault === 1, startingBalance: r.startingBalance };
+  return {
+    id: r.id,
+    name: r.name,
+    accountId: r.accountId,
+    isDefault: r.isDefault === 1,
+    startingBalance: r.startingBalance,
+    budgetCents: r.budgetCents,
+    maxSavingsCents: r.maxSavingsCents,
+    overflowsTo: r.overflowsTo,
+  };
 }
 
 export const envelopeRepository = new EnvelopeRepository();

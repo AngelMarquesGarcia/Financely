@@ -10,7 +10,7 @@
 
   <section class="month-overview__section">
     <h2 class="month-overview__section-title">Envelopes</h2>
-    @for (s of envelopeSummaries; track s.id) {
+    @for (s of envelopeSummaries; track s.envelopeId) {
       <app-period-summary-card [summary]="s" />
     }
   </section>

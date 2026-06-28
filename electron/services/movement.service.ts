@@ -4,6 +4,7 @@ import { MovementT, MovementFilter } from '@shared/types';
 import { Movement, Period } from '@shared/domain';
 import { AppError, AppErrorCode } from '@shared/error-codes';
 import { periodSummaryService } from './period-summary.service';
+import { transferService } from './transfer.service';
 
 export class MovementService {
   create(
@@ -44,7 +45,9 @@ export class MovementService {
     );
     const returnValue = movementRepository.insertMovement(movement);
     const period = Period.fromMovement(movement);
-    periodSummaryService.movementCreatedInPeriod(period);
+    periodSummaryService.periodTouched(period);
+    // Income may push the envelope over its savings cap — redirect the surplus.
+    if (isPositive) transferService.redirectOverflowIfNeeded(period);
     return returnValue;
   }
 
@@ -68,8 +71,12 @@ export class MovementService {
     if (!(movement.date instanceof Date) || isNaN(movement.date.getTime())) {
       throw new AppError(AppErrorCode.MOVEMENT_DATE_INVALID);
     }
-    periodSummaryService.markDirty(Period.fromMovement(movement));
-    return movementRepository.updateMovement(movement);
+    const period = Period.fromMovement(movement);
+    periodSummaryService.markDirty(period);
+    const result = movementRepository.updateMovement(movement);
+    // Editing income (e.g. raising it) may push the envelope over its cap — re-check the redirect.
+    if (movement.isPositive) transferService.redirectOverflowIfNeeded(period);
+    return result;
   }
 
   delete(id: number): boolean {

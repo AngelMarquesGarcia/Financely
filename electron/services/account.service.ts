@@ -13,7 +13,16 @@ export class AccountService {
 
     const tx = this.db.transaction((n: string, d: string | undefined, sb: number) => {
       const accountId = Number(accountRepository.insertAccount({ name: n, description: d, startingBalance: sb }));
-      const envelopeId = Number(envelopeRepository.insertEnvelope({ name: n, accountId, startingBalance: 0 }));
+      const envelopeId = Number(
+        envelopeRepository.insertEnvelope({
+          name: n,
+          accountId,
+          startingBalance: 0,
+          budgetCents: null,
+          maxSavingsCents: null,
+          overflowsTo: null,
+        }),
+      );
       envelopeRepository.setDefault(envelopeId);
       return accountId;
     });

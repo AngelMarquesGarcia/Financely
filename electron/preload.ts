@@ -32,6 +32,27 @@ contextBridge.exposeInMainWorld('movements', {
     ipcRenderer.invoke(Channels.MOVEMENT_SUGGEST_NAMES, { prefix, limit }),
 });
 
+contextBridge.exposeInMainWorld('transfers', {
+  create: (
+    fromEnvelopeId: number,
+    toEnvelopeId: number,
+    quantityCents: number,
+    date: Date,
+    notes: string | null = null,
+  ) =>
+    ipcRenderer.invoke(Channels.TRANSFER_CREATE, {
+      fromEnvelopeId,
+      toEnvelopeId,
+      quantityCents,
+      date,
+      notes,
+    }),
+  getAll: () => ipcRenderer.invoke(Channels.TRANSFER_GET_ALL),
+  getForEnvelope: (envelopeId: number) =>
+    ipcRenderer.invoke(Channels.TRANSFER_GET_FOR_ENVELOPE, envelopeId),
+  delete: (id: number) => ipcRenderer.invoke(Channels.TRANSFER_DELETE, id),
+});
+
 contextBridge.exposeInMainWorld('categories', {
   create: (name: string, color?: string, emoji?: string, envelopeId: number | null = null) =>
     ipcRenderer.invoke(Channels.CATEGORY_CREATE, { name, color, emoji, envelopeId }),
@@ -53,8 +74,22 @@ contextBridge.exposeInMainWorld('accounts', {
 });
 
 contextBridge.exposeInMainWorld('envelopes', {
-  create: (name: string, accountId: number, startingBalance?: number) =>
-    ipcRenderer.invoke(Channels.ENVELOPE_CREATE, { name, accountId, startingBalance }),
+  create: (
+    name: string,
+    accountId: number,
+    startingBalance?: number,
+    budgetCents?: number | null,
+    maxSavingsCents?: number | null,
+    overflowsTo?: number | null,
+  ) =>
+    ipcRenderer.invoke(Channels.ENVELOPE_CREATE, {
+      name,
+      accountId,
+      startingBalance,
+      budgetCents,
+      maxSavingsCents,
+      overflowsTo,
+    }),
   getAll: () => ipcRenderer.invoke(Channels.ENVELOPE_GET_ALL),
   getById: (id: number) => ipcRenderer.invoke(Channels.ENVELOPE_GET_BY_ID, id),
   update: (envelope: EnvelopeT) => ipcRenderer.invoke(Channels.ENVELOPE_UPDATE, envelope),

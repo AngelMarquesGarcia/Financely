@@ -10,6 +10,7 @@ import {
   MovementTagSchema,
   PeriodSummarySchema,
   TagSchema,
+  TransferSchema,
 } from './schema';
 import { tables } from '../constants';
 
@@ -131,6 +132,7 @@ export class DatabaseService {
     // Meta table is intentionally preserved so persisted settings survive restarts
     this.db.prepare(`DROP TABLE IF EXISTS ${tables.periodSummaries}`).run();
     this.db.prepare(`DROP TABLE IF EXISTS ${tables.movementTags}`).run();
+    this.db.prepare(`DROP TABLE IF EXISTS ${tables.transfers}`).run();
     this.db.prepare(`DROP TABLE IF EXISTS ${tables.movements}`).run();
     this.db.prepare(`DROP TABLE IF EXISTS ${tables.categories}`).run();
     this.db.prepare(`DROP TABLE IF EXISTS ${tables.envelopes}`).run();
@@ -151,6 +153,7 @@ export class DatabaseService {
     this.db.prepare(`CREATE TABLE ${tables.envelopes} (${EnvelopeSchema})`).run();
     this.db.prepare(`CREATE TABLE ${tables.categories} (${CategorySchema})`).run();
     this.db.prepare(`CREATE TABLE ${tables.movements} (${MovementSchema})`).run();
+    this.db.prepare(`CREATE TABLE ${tables.transfers} (${TransferSchema})`).run();
     this.db.prepare(`CREATE TABLE ${tables.movementTags} (${MovementTagSchema})`).run();
     this.db.prepare(`CREATE TABLE ${tables.periodSummaries} (${PeriodSummarySchema})`).run();
     //#endregion

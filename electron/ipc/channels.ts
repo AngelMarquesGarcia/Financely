@@ -7,6 +7,11 @@ export const Channels = {
   MOVEMENT_DELETE_MANY: 'movement:deleteMany',
   MOVEMENT_SUGGEST_NAMES: 'movement:suggestNames',
 
+  TRANSFER_CREATE: 'transfer:create',
+  TRANSFER_GET_ALL: 'transfer:getAll',
+  TRANSFER_GET_FOR_ENVELOPE: 'transfer:getForEnvelope',
+  TRANSFER_DELETE: 'transfer:delete',
+
   CATEGORY_CREATE: 'category:create',
   CATEGORY_GET_ALL: 'category:getAll',
   CATEGORY_GET_BY_ID: 'category:getById',

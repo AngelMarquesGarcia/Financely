@@ -1,4 +1,4 @@
-import { MovementT, CategoryT, MovementFilter, AppSettings, AccountT, AccountStats, EnvelopeT, TagT, PeriodSummaryT } from './types';
+import { MovementT, CategoryT, MovementFilter, AppSettings, AccountT, AccountStats, EnvelopeT, TagT, TransferT, PeriodSummaryT } from './types';
 
 export interface Movements {
   create(
@@ -47,12 +47,32 @@ export interface Accounts {
 }
 
 export interface Envelopes {
-  create(name: string, accountId: number, startingBalance?: number): Promise<number | bigint>;
+  create(
+    name: string,
+    accountId: number,
+    startingBalance?: number,
+    budgetCents?: number | null,
+    maxSavingsCents?: number | null,
+    overflowsTo?: number | null,
+  ): Promise<number | bigint>;
   getAll(): Promise<EnvelopeT[]>;
   getById(id: number): Promise<EnvelopeT | undefined>;
   update(envelope: EnvelopeT): Promise<boolean>;
   delete(id: number): Promise<boolean>;
   setDefault(id: number): Promise<void>;
+}
+
+export interface Transfers {
+  create(
+    fromEnvelopeId: number,
+    toEnvelopeId: number,
+    quantityCents: number,
+    date: Date,
+    notes?: string | null,
+  ): Promise<number | bigint>;
+  getAll(): Promise<TransferT[]>;
+  getForEnvelope(envelopeId: number): Promise<TransferT[]>;
+  delete(id: number): Promise<boolean>;
 }
 
 export interface Tags {

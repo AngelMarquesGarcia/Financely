@@ -18,6 +18,7 @@ import { DatabaseService } from '../../repository/database.service';
 import { envelopeService } from '../../services/envelope.service';
 import { accountService } from '../../services/account.service';
 import { movementService } from '../../services/movement.service';
+import { Envelope } from '@shared/domain';
 import { AppErrorCode } from '@shared/error-codes';
 
 describe('EnvelopeService — delete, setDefault, and account-create side effect', () => {
@@ -69,6 +70,49 @@ describe('EnvelopeService — delete, setDefault, and account-create side effect
     expect(defaultsInAccount).toHaveLength(1);
     expect(defaultsInAccount[0].id).toBe(sibling.id);
     expect(after.find((e) => e.id === oldDefault.id)!.isDefault).toBe(false);
+  });
+
+  // ── budget ───────────────────────────────────────────────────────────────
+  it('create persists the budget', () => {
+    const accId = envelopeService.getAll().find((e) => e.isDefault)!.accountId!;
+    const id = Number(envelopeService.create('Budgeted', accId, 0, 30000));
+    expect(envelopeService.getById(id)!.budgetCents).toBe(30000);
+  });
+
+  it('create defaults the budget to null when omitted', () => {
+    const accId = envelopeService.getAll().find((e) => e.isDefault)!.accountId!;
+    const id = Number(envelopeService.create('No budget', accId));
+    expect(envelopeService.getById(id)!.budgetCents).toBeNull();
+  });
+
+  it('create rejects a negative budget', () => {
+    const accId = envelopeService.getAll().find((e) => e.isDefault)!.accountId!;
+    expect(() => envelopeService.create('Bad', accId, 0, -1)).toThrow(
+      AppErrorCode.ENVELOPE_BUDGET_NEGATIVE,
+    );
+  });
+
+  it('update rejects a negative budget', () => {
+    const env = envelopeService.getAll().find((e) => e.name === 'Monthly Expenses')!;
+    expect(() => envelopeService.update(Envelope.from({ ...env, budgetCents: -5 }))).toThrow(
+      AppErrorCode.ENVELOPE_BUDGET_NEGATIVE,
+    );
+  });
+
+  it('create persists the savings cap and rejects a negative one', () => {
+    const accId = envelopeService.getAll().find((e) => e.isDefault)!.accountId!;
+    const id = Number(envelopeService.create('Capped', accId, 0, 30000, 60000));
+    expect(envelopeService.getById(id)!.maxSavingsCents).toBe(60000);
+    expect(() => envelopeService.create('Bad cap', accId, 0, 30000, -1)).toThrow(
+      AppErrorCode.ENVELOPE_MAXSAVINGS_NEGATIVE,
+    );
+  });
+
+  it('update rejects a negative savings cap', () => {
+    const env = envelopeService.getAll().find((e) => e.name === 'Monthly Expenses')!;
+    expect(() => envelopeService.update(Envelope.from({ ...env, maxSavingsCents: -5 }))).toThrow(
+      AppErrorCode.ENVELOPE_MAXSAVINGS_NEGATIVE,
+    );
   });
 
   it('accountService.create auto-creates a default envelope named after the account', () => {

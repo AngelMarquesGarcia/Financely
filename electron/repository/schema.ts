@@ -19,7 +19,10 @@ export const EnvelopeSchema = `
   name TEXT NOT NULL UNIQUE,
   account_id INTEGER REFERENCES accounts(id) ON DELETE CASCADE,
   is_default INTEGER NOT NULL DEFAULT 0,
-  starting_balance INTEGER NOT NULL DEFAULT 0
+  starting_balance INTEGER NOT NULL DEFAULT 0,
+  budget_cents INTEGER,
+  max_savings_cents INTEGER,
+  overflows_to INTEGER REFERENCES envelopes(id) ON DELETE SET NULL
 `;
 
 export const CategorySchema = `
@@ -44,6 +47,17 @@ export const MovementSchema = `
   additional_notes TEXT
 `;
 
+export const TransferSchema = `
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  from_envelope_id INTEGER NOT NULL REFERENCES envelopes(id) ON DELETE CASCADE,
+  to_envelope_id INTEGER NOT NULL REFERENCES envelopes(id) ON DELETE CASCADE,
+  account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  quantity_cents INTEGER NOT NULL CHECK(quantity_cents > 0),
+  date TEXT NOT NULL,
+  is_auto INTEGER NOT NULL DEFAULT 0,
+  notes TEXT
+`;
+
 export const PeriodSummarySchema = `
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
@@ -60,7 +74,9 @@ export const PeriodSummarySchema = `
   avg_movement_amount_cents INTEGER NOT NULL CHECK(avg_movement_amount_cents >= 0),
   movement_count INTEGER NOT NULL DEFAULT 0 CHECK(movement_count >= 0),
   ending_balance_cents INTEGER NOT NULL,
+  net_transfers_cents INTEGER NOT NULL DEFAULT 0,
   budget_cents INTEGER,
+  max_savings_cents INTEGER,
   notes TEXT,
   dirty_state TEXT NOT NULL DEFAULT 'CLEAN' CHECK(dirty_state IN ('CLEAN', 'MODIFIED', 'DIRTY'))
 `;

@@ -60,6 +60,40 @@
       />
     </div>
 
+    <div class="form__group">
+      <label class="form__label" for="budget">Monthly budget</label>
+      <app-amount-input
+        inputId="budget"
+        [amountCents]="budgetCents"
+        (amountCentsChange)="onBudgetChange($event)"
+      />
+      <span class="form__hint">Leave empty for no budget.</span>
+    </div>
+
+    <div class="form__group">
+      <label class="form__label" for="maxSavingsMode">Max savings</label>
+      <select
+        id="maxSavingsMode"
+        class="form__input"
+        [(ngModel)]="maxSavingsMode"
+        (ngModelChange)="onMaxSavingsModeChange()"
+      >
+        <option value="none">No cap</option>
+        <option value="1x" [disabled]="budgetCents === null">1× budget</option>
+        <option value="2x" [disabled]="budgetCents === null">2× budget</option>
+        <option value="3x" [disabled]="budgetCents === null">3× budget</option>
+        <option value="custom">Custom…</option>
+      </select>
+      @if (maxSavingsMode === 'custom') {
+        <app-amount-input
+          inputId="maxSavings"
+          [amountCents]="maxSavingsCents"
+          (amountCentsChange)="maxSavingsCents = $event"
+        />
+      }
+      <span class="form__hint">Caps accumulated savings for this envelope.</span>
+    </div>
+
     <div class="form__actions">
       <button class="btn btn--primary" (click)="save()">
         {{ isEditing ? 'Update' : 'Create' }}

@@ -17,9 +17,10 @@ jest.mock('electron', () => ({
 import { DatabaseService } from '../../repository/database.service';
 import { periodSummaryService } from '../../services/period-summary.service';
 import { periodSummaryRepository } from '../../repository/period-summary-repository.service';
+import { envelopeRepository } from '../../repository/envelope-repository.service';
 import { movementService } from '../../services/movement.service';
 import { envelopeService } from '../../services/envelope.service';
-import { Period, PeriodSummary } from '@shared/domain';
+import { Period, PeriodSummary, Envelope } from '@shared/domain';
 import { AppErrorCode } from '@shared/error-codes';
 
 // Seeded movements (see database.service.ts#initDatabase) land in April (month 3) and
@@ -83,9 +84,8 @@ describe('PeriodSummaryService', () => {
     expect(stored.accountName).toBe('Default');
     expect(stored.envelopeName).toBe('Monthly Expenses');
     expect(stored.dirtyState).toBe('CLEAN');
-    // KNOWN BUG: period-summary.service.ts reads `envelope.fixedBudget`, a field that does
-    // not exist on Envelope, so availableBudgetCents is NaN → stored as NULL → undefined.
-    expect(stored.availableBudgetCents).toBeUndefined();
+    // 'Monthly Expenses' is seeded without a budget, so no snapshot is stored.
+    expect(stored.budgetCents).toBeUndefined();
   });
 
   it('checkExists returns true after create', () => {
@@ -111,6 +111,79 @@ describe('PeriodSummaryService', () => {
     expect(() => periodSummaryService.create(accountLevel)).toThrow(
       AppErrorCode.INCORRECT_PARAMETERS,
     );
+  });
+
+  // ── budget + savings-cap snapshot ──────────────────────────────────────────
+  it('stamps budgetCents and maxSavingsCents from the envelope on create', () => {
+    const accId = defaultAccountId();
+    const envId = Number(envelopeService.create('Groceries', accId, 0, 30000, 60000));
+    movementService.create('Shop', null, 5000, false, new Date(2026, 3, 5), firstCategoryId(), envId, null);
+
+    const stored = periodSummaryRepository.getByPeriod(new Period(accId, envId, 2026, 3))!;
+    expect(stored.budgetCents).toBe(30000);
+    expect(stored.maxSavingsCents).toBe(60000);
+  });
+
+  it('preserves the snapshots on recalc even when the envelope changes', () => {
+    const accId = defaultAccountId();
+    const envId = Number(envelopeService.create('Groceries', accId, 0, 30000, 60000));
+    movementService.create('Shop', null, 5000, false, new Date(2026, 3, 5), firstCategoryId(), envId, null);
+    const period = new Period(accId, envId, 2026, 3);
+
+    // Change the envelope directly (bypassing the service re-stamp), then force a recalc.
+    envelopeRepository.updateEnvelope(
+      Envelope.from({
+        id: envId,
+        name: 'Groceries',
+        accountId: accId,
+        isDefault: false,
+        startingBalance: 0,
+        budgetCents: 99000,
+        maxSavingsCents: 120000,
+        overflowsTo: null,
+      }),
+    );
+    periodSummaryService.recalculateForPeriod(period);
+
+    const stored = periodSummaryRepository.getByPeriod(period)!;
+    expect(stored.budgetCents).toBe(30000);
+    expect(stored.maxSavingsCents).toBe(60000);
+  });
+
+  it('re-stamps current/future summaries on envelope edit but freezes past months', () => {
+    const accId = defaultAccountId();
+    const envId = Number(envelopeService.create('Groceries', accId, 0, 30000, 60000));
+
+    const now = new Date();
+    const pastDate = new Date(now.getFullYear(), now.getMonth() - 1, 5);
+    const curDate = new Date(now.getFullYear(), now.getMonth(), 5);
+    movementService.create('Past shop', null, 5000, false, pastDate, firstCategoryId(), envId, null);
+    movementService.create('Current shop', null, 5000, false, curDate, firstCategoryId(), envId, null);
+
+    const pastP = new Period(accId, envId, pastDate.getFullYear(), pastDate.getMonth());
+    const curP = new Period(accId, envId, curDate.getFullYear(), curDate.getMonth());
+    expect(periodSummaryRepository.getByPeriod(pastP)!.budgetCents).toBe(30000);
+    expect(periodSummaryRepository.getByPeriod(curP)!.maxSavingsCents).toBe(60000);
+
+    envelopeService.update(
+      Envelope.from({
+        id: envId,
+        name: 'Groceries',
+        accountId: accId,
+        isDefault: false,
+        startingBalance: 0,
+        budgetCents: 45000,
+        maxSavingsCents: 90000,
+        overflowsTo: null,
+      }),
+    );
+
+    const past = periodSummaryRepository.getByPeriod(pastP)!;
+    const cur = periodSummaryRepository.getByPeriod(curP)!;
+    expect(past.budgetCents).toBe(30000); // past frozen
+    expect(past.maxSavingsCents).toBe(60000);
+    expect(cur.budgetCents).toBe(45000); // current re-stamped
+    expect(cur.maxSavingsCents).toBe(90000);
   });
 
   // ── ending-balance chain ──────────────────────────────────────────────────

@@ -15,6 +15,7 @@ import {
 })
 export class ElectronService {
   private movements = window.movements;
+  private transfers = window.transfers;
   private categories = window.categories;
   private accounts = window.accounts;
   private envelopes = window.envelopes;
@@ -68,6 +69,29 @@ export class ElectronService {
 
   suggestMovementNames(prefix: string, limit?: number) {
     return from(this.movements.suggestNames(prefix, limit));
+  }
+
+  // Transfers
+  createTransfer(
+    fromEnvelopeId: number,
+    toEnvelopeId: number,
+    quantityCents: number,
+    date: Date,
+    notes: string | null = null,
+  ) {
+    return from(this.transfers.create(fromEnvelopeId, toEnvelopeId, quantityCents, date, notes));
+  }
+
+  getAllTransfers() {
+    return from(this.transfers.getAll());
+  }
+
+  getTransfersForEnvelope(envelopeId: number) {
+    return from(this.transfers.getForEnvelope(envelopeId));
+  }
+
+  deleteTransfer(id: number) {
+    return from(this.transfers.delete(id));
   }
 
   // Categories
@@ -125,8 +149,17 @@ export class ElectronService {
   }
 
   // Envelopes
-  createEnvelope(name: string, accountId: number, startingBalance?: number) {
-    return from(this.envelopes.create(name, accountId, startingBalance));
+  createEnvelope(
+    name: string,
+    accountId: number,
+    startingBalance?: number,
+    budgetCents?: number | null,
+    maxSavingsCents?: number | null,
+    overflowsTo?: number | null,
+  ) {
+    return from(
+      this.envelopes.create(name, accountId, startingBalance, budgetCents, maxSavingsCents, overflowsTo),
+    );
   }
 
   getAllEnvelopes() {

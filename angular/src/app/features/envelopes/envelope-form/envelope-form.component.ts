@@ -39,6 +39,9 @@ export class EnvelopeFormComponent implements OnChanges {
   name = '';
   accountId: number | null = null;
   startingBalance = 0;
+  budgetCents: number | null = null;
+  maxSavingsCents: number | null = null;
+  maxSavingsMode: 'none' | '1x' | '2x' | '3x' | 'custom' = 'none';
   selectedCategoryIds: number[] = [];
   showErrors = false;
 
@@ -52,11 +55,48 @@ export class EnvelopeFormComponent implements OnChanges {
     return this.editingEnvelope !== null;
   }
 
+  /** Multiplier modes derive the cap from the current budget; custom/none keep their own value. */
+  onBudgetChange(value: number | null) {
+    this.budgetCents = value;
+    if (this.maxSavingsMode !== 'none' && this.maxSavingsMode !== 'custom') {
+      this.recomputeMaxSavings();
+    }
+  }
+
+  onMaxSavingsModeChange() {
+    this.recomputeMaxSavings();
+  }
+
+  private recomputeMaxSavings() {
+    if (this.maxSavingsMode === 'none') {
+      this.maxSavingsCents = null;
+    } else if (this.maxSavingsMode !== 'custom') {
+      const multiplier = Number(this.maxSavingsMode[0]); // '2x' → 2
+      this.maxSavingsCents = this.budgetCents != null ? this.budgetCents * multiplier : null;
+    }
+    // 'custom' keeps whatever the amount input holds.
+  }
+
+  private inferMaxSavingsMode(
+    maxSavingsCents: number | null,
+    budgetCents: number | null,
+  ): 'none' | '1x' | '2x' | '3x' | 'custom' {
+    if (maxSavingsCents == null) return 'none';
+    if (budgetCents != null && budgetCents > 0 && maxSavingsCents % budgetCents === 0) {
+      const multiplier = maxSavingsCents / budgetCents;
+      if (multiplier >= 1 && multiplier <= 3) return `${multiplier}x` as '1x' | '2x' | '3x';
+    }
+    return 'custom';
+  }
+
   ngOnChanges(changes: SimpleChanges) {
     if (changes['editingEnvelope'] || changes['categories']) {
       this.name = this.editingEnvelope?.name ?? '';
       this.accountId = this.editingEnvelope?.accountId ?? null;
       this.startingBalance = this.editingEnvelope?.startingBalance ?? 0;
+      this.budgetCents = this.editingEnvelope?.budgetCents ?? null;
+      this.maxSavingsCents = this.editingEnvelope?.maxSavingsCents ?? null;
+      this.maxSavingsMode = this.inferMaxSavingsMode(this.maxSavingsCents, this.budgetCents);
       this.selectedCategoryIds = this.editingEnvelope
         ? this.categories.filter((c) => c.envelopeId === this.editingEnvelope!.id).map((c) => c.id)
         : [];
@@ -89,7 +129,7 @@ export class EnvelopeFormComponent implements OnChanges {
     if (this.isEditing) {
       const envelopeId = this.editingEnvelope!.id;
       this.electron
-        .updateEnvelope({ id: envelopeId, name: this.name, accountId: this.accountId, isDefault: this.editingEnvelope!.isDefault, startingBalance: this.startingBalance })
+        .updateEnvelope({ id: envelopeId, name: this.name, accountId: this.accountId, isDefault: this.editingEnvelope!.isDefault, startingBalance: this.startingBalance, budgetCents: this.budgetCents, maxSavingsCents: this.maxSavingsCents, overflowsTo: this.editingEnvelope!.overflowsTo })
         .pipe(
           switchMap(() => this.syncCategories(envelopeId)),
           takeUntilDestroyed(this.destroyRef),
@@ -99,7 +139,7 @@ export class EnvelopeFormComponent implements OnChanges {
           error: (e: Error) => this.notify.error(this.errorText.resolve(e.message)),
         });
     } else {
-      this.electron.createEnvelope(this.name, this.accountId, this.startingBalance || undefined)
+      this.electron.createEnvelope(this.name, this.accountId, this.startingBalance || undefined, this.budgetCents, this.maxSavingsCents)
         .pipe(
           switchMap((newId) => {
             const envelopeId = Number(newId);
@@ -117,6 +157,9 @@ export class EnvelopeFormComponent implements OnChanges {
             this.name = '';
             this.accountId = null;
             this.startingBalance = 0;
+            this.budgetCents = null;
+            this.maxSavingsCents = null;
+            this.maxSavingsMode = 'none';
             this.selectedCategoryIds = [];
             this.showErrors = false;
           },
