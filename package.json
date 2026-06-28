@@ -1,6 +1,6 @@
 {
   "name": "financely_orchestrator_projectd",
-  "version": "0.0.18",
+  "version": "0.0.19",
   "main": "dist/main/main.js",
   "scripts": {
     "start": "npm run compile:electron && run-p --race start:angular start:electron-serve",

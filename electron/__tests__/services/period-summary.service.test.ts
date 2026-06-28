@@ -347,4 +347,22 @@ describe('PeriodSummaryService', () => {
     periodSummaryService.create(periodFor('Savings', 2026, 3));
     expect(periodSummaryService.getAll()).toHaveLength(2);
   });
+
+  // ── getLatestPeriodSummary ─────────────────────────────────────────────────
+  it('getLatestPeriodSummary returns the chronologically last summary', () => {
+    const savings = envByName('Savings');
+    periodSummaryService.create(periodFor('Savings', 2026, 3)); // April: ending 220000
+    periodSummaryService.create(periodFor('Savings', 2026, 4)); // May: 220000 + 220000
+
+    const latest = periodSummaryService.getLatestPeriodSummary(savings.id)!;
+    expect(latest.year).toBe(2026);
+    expect(latest.month).toBe(4); // May, not April
+    expect(latest.endingBalanceCents).toBe(440000);
+    expect(latest.dirtyState).toBe('CLEAN');
+  });
+
+  it('getLatestPeriodSummary returns undefined when the envelope has no summary', () => {
+    const savings = envByName('Savings');
+    expect(periodSummaryService.getLatestPeriodSummary(savings.id)).toBeUndefined();
+  });
 });

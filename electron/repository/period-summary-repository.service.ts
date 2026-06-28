@@ -64,6 +64,19 @@ export class PeriodSummaryRepository {
     return row ? toSummary(row) : undefined;
   }
 
+  /** Most recent summary for an envelope (chronologically last by year, then month). */
+  getLatest(envelopeId: number): PeriodSummaryT | undefined {
+    const row = this.db
+      .prepare(
+        `SELECT ${this.selectCols} FROM ${tables.periodSummaries}
+         WHERE envelope_id = ?
+         ORDER BY year DESC, month DESC
+         LIMIT 1`,
+      )
+      .get(envelopeId) as RawRow | undefined;
+    return row ? toSummary(row) : undefined;
+  }
+
   update(s: PeriodSummaryT): boolean {
     return (
       this.db

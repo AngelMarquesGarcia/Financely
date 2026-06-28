@@ -21,6 +21,7 @@ export class ElectronService {
   private envelopes = window.envelopes;
   private tags = window.tags;
   private settings = window.settings;
+  private periodSummaries = window.periodSummaries;
 
   // Movements
   createMovement(
@@ -180,6 +181,11 @@ export class ElectronService {
 
   setDefaultEnvelope(id: number) {
     return from(this.envelopes.setDefault(id));
+  }
+
+  // Period summaries
+  getLatestPeriodSummary(envelopeId: number) {
+    return from(this.periodSummaries.getLatest(envelopeId));
   }
 
   // Tags

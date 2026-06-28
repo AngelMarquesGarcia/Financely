@@ -28,6 +28,7 @@ export class EnvelopeFormComponent implements OnChanges {
   @Input() editingEnvelope: EnvelopeT | null = null;
   @Input() accounts: AccountT[] = [];
   @Input() categories: CategoryT[] = [];
+  @Input() envelopes: EnvelopeT[] = [];
   @Output() saved = new EventEmitter<void>();
   @Output() cancelled = new EventEmitter<void>();
 
@@ -42,8 +43,17 @@ export class EnvelopeFormComponent implements OnChanges {
   budgetCents: number | null = null;
   maxSavingsCents: number | null = null;
   maxSavingsMode: 'none' | '1x' | '2x' | '3x' | 'custom' = 'none';
+  overflowsTo: number | null = null;
   selectedCategoryIds: number[] = [];
   showErrors = false;
+
+  /** Over-cap redirect targets: other envelopes in the selected account. */
+  get overflowTargets(): EnvelopeT[] {
+    if (this.accountId == null) return [];
+    return this.envelopes.filter(
+      (e) => e.accountId === this.accountId && e.id !== this.editingEnvelope?.id,
+    );
+  }
 
   readonly categoryLabel = (c: CategoryT) => c.name;
   readonly categoryColor = (c: CategoryT) => c.color ?? undefined;
@@ -97,6 +107,7 @@ export class EnvelopeFormComponent implements OnChanges {
       this.budgetCents = this.editingEnvelope?.budgetCents ?? null;
       this.maxSavingsCents = this.editingEnvelope?.maxSavingsCents ?? null;
       this.maxSavingsMode = this.inferMaxSavingsMode(this.maxSavingsCents, this.budgetCents);
+      this.overflowsTo = this.editingEnvelope?.overflowsTo ?? null;
       this.selectedCategoryIds = this.editingEnvelope
         ? this.categories.filter((c) => c.envelopeId === this.editingEnvelope!.id).map((c) => c.id)
         : [];
@@ -129,7 +140,7 @@ export class EnvelopeFormComponent implements OnChanges {
     if (this.isEditing) {
       const envelopeId = this.editingEnvelope!.id;
       this.electron
-        .updateEnvelope({ id: envelopeId, name: this.name, accountId: this.accountId, isDefault: this.editingEnvelope!.isDefault, startingBalance: this.startingBalance, budgetCents: this.budgetCents, maxSavingsCents: this.maxSavingsCents, overflowsTo: this.editingEnvelope!.overflowsTo })
+        .updateEnvelope({ id: envelopeId, name: this.name, accountId: this.accountId, isDefault: this.editingEnvelope!.isDefault, startingBalance: this.startingBalance, budgetCents: this.budgetCents, maxSavingsCents: this.maxSavingsCents, overflowsTo: this.overflowsTo })
         .pipe(
           switchMap(() => this.syncCategories(envelopeId)),
           takeUntilDestroyed(this.destroyRef),
@@ -139,7 +150,7 @@ export class EnvelopeFormComponent implements OnChanges {
           error: (e: Error) => this.notify.error(this.errorText.resolve(e.message)),
         });
     } else {
-      this.electron.createEnvelope(this.name, this.accountId, this.startingBalance || undefined, this.budgetCents, this.maxSavingsCents)
+      this.electron.createEnvelope(this.name, this.accountId, this.startingBalance || undefined, this.budgetCents, this.maxSavingsCents, this.overflowsTo)
         .pipe(
           switchMap((newId) => {
             const envelopeId = Number(newId);
@@ -160,6 +171,7 @@ export class EnvelopeFormComponent implements OnChanges {
             this.budgetCents = null;
             this.maxSavingsCents = null;
             this.maxSavingsMode = 'none';
+            this.overflowsTo = null;
             this.selectedCategoryIds = [];
             this.showErrors = false;
           },

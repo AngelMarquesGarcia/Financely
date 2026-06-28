@@ -3,12 +3,14 @@
     [editingEnvelope]="editingEnvelope"
     [accounts]="accounts"
     [categories]="categories"
+    [envelopes]="envelopes"
     (saved)="onSaved()"
     (cancelled)="onCancelled()"
   />
   <app-envelopes-list
     [envelopes]="envelopes"
     [accounts]="accounts"
+    [summaries]="summaries"
     (editRequested)="onEditRequested($event)"
     (deleteRequested)="onDeleteRequested($event)"
     (setDefaultRequested)="onSetDefaultRequested($event)"

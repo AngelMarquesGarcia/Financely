@@ -1,0 +1,46 @@
+<div class="card">
+  <h2 class="card__title">Transfers</h2>
+
+  @if (transfers.length === 0) {
+    <app-empty-state icon="🔁" message="No transfers yet. Use the form above to move money between envelopes." />
+  } @else {
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>From</th>
+            <th>To</th>
+            <th>Amount</th>
+            <th>Date</th>
+            <th>Source</th>
+            <th>Notes</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (t of transfers; track t.id) {
+            <tr>
+              <td>{{ envelopeName(t.fromEnvelopeId) }}</td>
+              <td>{{ envelopeName(t.toEnvelopeId) }}</td>
+              <td class="amount">{{ t.quantityCents | money }}</td>
+              <td>{{ formatDate(t.date) }}</td>
+              <td>
+                @if (t.isAuto) {
+                  <span class="badge badge--auto">auto</span>
+                } @else {
+                  <span class="badge badge--manual">manual</span>
+                }
+              </td>
+              <td>{{ notesFor(t) }}</td>
+              <td>
+                <div class="actions">
+                  <button class="btn btn--delete" (click)="deleteRequested.emit(t.id)">Delete</button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

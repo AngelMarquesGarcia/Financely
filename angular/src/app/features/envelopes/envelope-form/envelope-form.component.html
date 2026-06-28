@@ -94,6 +94,17 @@
       <span class="form__hint">Caps accumulated savings for this envelope.</span>
     </div>
 
+    <div class="form__group">
+      <label class="form__label" for="overflowsTo">Overflow target</label>
+      <select id="overflowsTo" class="form__input" [(ngModel)]="overflowsTo" [disabled]="accountId === null">
+        <option [ngValue]="null">Account default</option>
+        @for (e of overflowTargets; track e.id) {
+          <option [ngValue]="e.id">{{ e.name }}</option>
+        }
+      </select>
+      <span class="form__hint">Where savings above the cap are sent.</span>
+    </div>
+
     <div class="form__actions">
       <button class="btn btn--primary" (click)="save()">
         {{ isEditing ? 'Update' : 'Create' }}

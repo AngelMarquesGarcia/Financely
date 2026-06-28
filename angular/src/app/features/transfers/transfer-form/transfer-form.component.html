@@ -1,0 +1,76 @@
+<div class="card">
+  <h2 class="card__title">New Transfer</h2>
+
+  <div class="form">
+    <div class="form__group">
+      <label class="form__label" for="tr-from">From envelope</label>
+      <select
+        id="tr-from"
+        class="form__input"
+        [class.form__input--error]="showErrors && fromEnvelopeId === null"
+        [(ngModel)]="fromEnvelopeId"
+        (ngModelChange)="onFromChange()"
+      >
+        <option [ngValue]="null" disabled>Select source…</option>
+        @for (e of envelopes; track e.id) {
+          <option [ngValue]="e.id">{{ e.name }}</option>
+        }
+      </select>
+      @if (showErrors && fromEnvelopeId === null) {
+        <span class="form__error">A source envelope is required.</span>
+      }
+    </div>
+
+    <div class="form__group">
+      <label class="form__label" for="tr-to">To envelope</label>
+      <select
+        id="tr-to"
+        class="form__input"
+        [class.form__input--error]="showErrors && toEnvelopeId === null"
+        [(ngModel)]="toEnvelopeId"
+        [disabled]="fromEnvelopeId === null"
+      >
+        <option [ngValue]="null" disabled>Select destination…</option>
+        @for (e of toOptions; track e.id) {
+          <option [ngValue]="e.id">{{ e.name }}</option>
+        }
+      </select>
+      <span class="form__hint">Only envelopes in the same account are shown.</span>
+      @if (showErrors && toEnvelopeId === null) {
+        <span class="form__error">A destination envelope is required.</span>
+      }
+    </div>
+
+    <div class="form__group">
+      <label class="form__label" for="tr-amount">Amount</label>
+      <app-amount-input
+        inputId="tr-amount"
+        [inputClass]="showErrors && !(amountCents && amountCents > 0) ? 'form__input form__input--error' : 'form__input'"
+        [amountCents]="amountCents"
+        (amountCentsChange)="amountCents = $event"
+      />
+      @if (showErrors && !(amountCents && amountCents > 0)) {
+        <span class="form__error">Must be positive and non-zero.</span>
+      }
+    </div>
+
+    <div class="form__group">
+      <label class="form__label" for="tr-date">Date</label>
+      <input id="tr-date" class="form__input" [(ngModel)]="date" type="date" />
+    </div>
+
+    <div class="form__group form__group--full">
+      <label class="form__label" for="tr-notes">Notes</label>
+      <input
+        id="tr-notes"
+        class="form__input"
+        [(ngModel)]="notes"
+        placeholder="Optional notes…"
+      />
+    </div>
+
+    <div class="form__actions form__group--full">
+      <button class="btn btn--primary" (click)="save()">Create</button>
+    </div>
+  </div>
+</div>

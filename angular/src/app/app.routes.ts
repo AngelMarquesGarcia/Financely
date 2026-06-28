@@ -4,6 +4,7 @@ import { CategoriesComponent } from './features/categories/categories.component'
 import { AccountsComponent } from './features/accounts/accounts.component';
 import { EnvelopesComponent } from './features/envelopes/envelopes.component';
 import { TagsComponent } from './features/tags/tags.component';
+import { TransfersComponent } from './features/transfers/transfers.component';
 import { SettingsComponent } from './features/settings/settings.component';
 import { MonthOverviewComponent } from './features/month-overview/month-overview.component';
 
@@ -13,6 +14,7 @@ export const routes: Routes = [
   { path: 'categories', component: CategoriesComponent },
   { path: 'accounts', component: AccountsComponent },
   { path: 'envelopes', component: EnvelopesComponent },
+  { path: 'transfers', component: TransfersComponent },
   { path: 'tags', component: TagsComponent },
   { path: 'settings', component: SettingsComponent },
   { path: 'month-overview', component: MonthOverviewComponent },

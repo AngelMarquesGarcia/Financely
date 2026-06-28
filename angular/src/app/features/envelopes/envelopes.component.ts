@@ -5,7 +5,7 @@ import { ConfirmService } from '../../core/services/confirm.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { ElectronService } from '../../core/services/electron.service';
 import { ErrorReporter } from '../../core/services/error-reporter.service';
-import { AccountT, CategoryT, EnvelopeT } from '@shared/types';
+import { AccountT, CategoryT, EnvelopeT, PeriodSummaryT } from '@shared/types';
 import { EnvelopeFormComponent } from './envelope-form/envelope-form.component';
 import { EnvelopesListComponent } from './envelopes-list/envelopes-list.component';
 
@@ -25,6 +25,8 @@ export class EnvelopesComponent implements OnInit {
   envelopes: EnvelopeT[] = [];
   accounts: AccountT[] = [];
   categories: CategoryT[] = [];
+  /** Latest period summary per envelope id, used to show balance + available budget. */
+  summaries: Record<number, PeriodSummaryT> = {};
   editingEnvelope: EnvelopeT | null = null;
 
   ngOnInit() {
@@ -37,11 +39,24 @@ export class EnvelopesComponent implements OnInit {
       accounts: this.electron.getAllAccounts(),
       categories: this.electron.getAllCategories(),
     })
-      .pipe(this.errors.toast(), takeUntilDestroyed(this.destroyRef))
-      .subscribe(({ envelopes, accounts, categories }) => {
-        this.envelopes = envelopes;
-        this.accounts = accounts;
-        this.categories = categories;
+      .pipe(
+        switchMap(({ envelopes, accounts, categories }) => {
+          this.envelopes = envelopes;
+          this.accounts = accounts;
+          this.categories = categories;
+          if (envelopes.length === 0) return of<(PeriodSummaryT | undefined)[]>([]);
+          return forkJoin(envelopes.map((e) => this.electron.getLatestPeriodSummary(e.id)));
+        }),
+        this.errors.toast(),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((latest) => {
+        const map: Record<number, PeriodSummaryT> = {};
+        this.envelopes.forEach((e, i) => {
+          const s = latest[i];
+          if (s) map[e.id] = s;
+        });
+        this.summaries = map;
       });
   }
 

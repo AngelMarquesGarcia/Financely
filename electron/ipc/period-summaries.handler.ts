@@ -26,6 +26,13 @@ export function registerPeriodSummaryHandlers(): void {
   );
 
   ipcMain.handle(
+    Channels.PERIOD_SUMMARY_GET_LATEST,
+    ipcHandle((_event: IpcMainInvokeEvent, envelopeId: number) =>
+      periodSummaryService.getLatestPeriodSummary(envelopeId),
+    ),
+  );
+
+  ipcMain.handle(
     Channels.PERIOD_SUMMARY_GET_BY_PERIOD,
     ipcHandle((_event: IpcMainInvokeEvent, period: PeriodT) =>
       periodSummaryService.getByPeriod(Period.from(period)),

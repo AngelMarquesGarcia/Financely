@@ -4,6 +4,7 @@
     "outDir": "./dist",
     "noEmit": false,
     "sourceMap": true,
+    "module": "commonjs",
     "moduleResolution": "node"
   },
   "include": [

@@ -1,0 +1,26 @@
+:host {
+  display: block;
+}
+
+.amount {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: var(--r-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+
+  &--auto {
+    background: var(--c-primary-bg-soft);
+    color: var(--c-primary);
+  }
+
+  &--manual {
+    background: var(--c-surface-alt);
+    color: var(--c-text-muted);
+  }
+}

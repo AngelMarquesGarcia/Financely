@@ -11,6 +11,8 @@
             <th>ID</th>
             <th>Name</th>
             <th>Account</th>
+            <th>Balance</th>
+            <th>Available budget</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -23,6 +25,10 @@
                 @if (e.isDefault) { <span class="default-badge">default</span> }
               </td>
               <td class="account-cell">{{ accountName(e.accountId) }}</td>
+              <td class="amount">{{ balanceCents(e) | money }}</td>
+              <td class="amount" [class.amount--negative]="(availableBudgetCents(e) ?? 0) < 0">
+                {{ availableBudgetCents(e) | money }}
+              </td>
               <td>
                 <div class="actions">
                   <button class="btn btn--edit" (click)="editRequested.emit(e)">Edit</button>

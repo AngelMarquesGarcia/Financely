@@ -120,6 +120,8 @@ contextBridge.exposeInMainWorld('periodSummaries', {
   upsert: (summary: PeriodSummaryT) =>
     ipcRenderer.invoke(Channels.PERIOD_SUMMARY_UPSERT, summary),
   getAll: () => ipcRenderer.invoke(Channels.PERIOD_SUMMARY_GET_ALL),
+  getLatest: (envelopeId: number) =>
+    ipcRenderer.invoke(Channels.PERIOD_SUMMARY_GET_LATEST, envelopeId),
   getByPeriod: (accountId: number, envelopeId: number | null, year: number, month: number) =>
     ipcRenderer.invoke(Channels.PERIOD_SUMMARY_GET_BY_PERIOD, { accountId, envelopeId, year, month }),
   update: (summary: PeriodSummaryT) => ipcRenderer.invoke(Channels.PERIOD_SUMMARY_UPDATE, summary),

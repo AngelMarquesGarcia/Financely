@@ -50,6 +50,7 @@ export const Channels = {
   PERIOD_SUMMARY_CREATE: 'periodSummary:create',
   PERIOD_SUMMARY_UPSERT: 'periodSummary:upsert',
   PERIOD_SUMMARY_GET_ALL: 'periodSummary:getAll',
+  PERIOD_SUMMARY_GET_LATEST: 'periodSummary:getLatest',
   PERIOD_SUMMARY_GET_BY_PERIOD: 'periodSummary:getByPeriod',
   PERIOD_SUMMARY_UPDATE: 'periodSummary:update',
   PERIOD_SUMMARY_DELETE: 'periodSummary:delete',

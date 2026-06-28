@@ -33,6 +33,20 @@ export class PeriodSummaryService {
     return periodSummary;
   }
 
+  /**
+   * The envelope's most recent summary, cleaned. Returns undefined when the envelope has no
+   * summary yet (no movements/transfers), so callers can fall back to the starting balance.
+   */
+  getLatestPeriodSummary(envelopeId: number): PeriodSummaryT | undefined {
+    const latest = periodSummaryRepository.getLatest(envelopeId);
+    if (latest == undefined) return undefined;
+    try {
+      return this.getByPeriod(Period.fromPeriodSummary(latest));
+    } catch {
+      return undefined;
+    }
+  }
+
   recalculateFromMovement(updatedMovementId: number): number | bigint {
     const mov = movementService.getById(updatedMovementId);
     if (mov == undefined) throw new AppError(AppErrorCode.MOVEMENT_NOT_FOUND);
