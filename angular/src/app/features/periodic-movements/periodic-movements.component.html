@@ -1,0 +1,9 @@
+<div class="periodic-movements-page">
+  <app-periodic-movements-list
+    [templates]="templates"
+    [accounts]="accounts"
+    [categories]="categories"
+    [envelopes]="envelopes"
+    (changed)="loadTemplates()"
+  />
+</div>

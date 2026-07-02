@@ -24,7 +24,8 @@ export class PeriodSummaryRepository {
     budget_cents              AS budgetCents,
     max_savings_cents         AS maxSavingsCents,
     notes,
-    dirty_state               AS dirtyState
+    dirty_state               AS dirtyState,
+    tentative
   `;
 
   insert(s: PeriodSummaryT): number | bigint {
@@ -35,13 +36,13 @@ export class PeriodSummaryRepository {
           cash_flow_cents, total_income_cents, total_expense_cents,
           avg_expense_cents, avg_income_cents, avg_movement_amount_cents,
           movement_count, ending_balance_cents, net_transfers_cents,
-          budget_cents, max_savings_cents, notes, dirty_state
+          budget_cents, max_savings_cents, notes, dirty_state, tentative
         ) VALUES (
           :accountId, :accountName, :envelopeId, :envelopeName, :year, :month,
           :cashFlowCents, :totalIncomeCents, :totalExpenseCents,
           :avgExpenseCents, :avgIncomeCents, :avgMovementAmountCents,
           :movementCount, :endingBalanceCents, :netTransfersCents,
-          :budgetCents, :maxSavingsCents, :notes, :dirtyState
+          :budgetCents, :maxSavingsCents, :notes, :dirtyState, :tentative
         )`,
       )
       .run(toRow(s)).lastInsertRowid;
@@ -97,7 +98,8 @@ export class PeriodSummaryRepository {
             budget_cents = :budgetCents,
             max_savings_cents = :maxSavingsCents,
             notes = :notes,
-            dirty_state = :dirtyState
+            dirty_state = :dirtyState,
+            tentative = :tentative
            WHERE account_id = :accountId
              AND year = :year
              AND month = :month
@@ -168,6 +170,7 @@ type RawRow = {
   maxSavingsCents: number | null;
   notes: string | null;
   dirtyState: string;
+  tentative: number;
 };
 
 function toSummary(r: RawRow): PeriodSummaryT {
@@ -191,6 +194,7 @@ function toSummary(r: RawRow): PeriodSummaryT {
     maxSavingsCents: r.maxSavingsCents ?? undefined,
     notes: r.notes ?? undefined,
     dirtyState: r.dirtyState as DirtyState,
+    tentative: r.tentative === 1,
   };
 }
 
@@ -215,6 +219,7 @@ function toRow(s: PeriodSummaryT): Record<string, unknown> {
     maxSavingsCents: s.maxSavingsCents ?? null,
     notes: s.notes ?? null,
     dirtyState: s.dirtyState,
+    tentative: s.tentative ? 1 : 0,
   };
 }
 

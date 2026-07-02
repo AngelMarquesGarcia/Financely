@@ -44,7 +44,33 @@ export const MovementSchema = `
   date TEXT NOT NULL,
   category_id INTEGER NOT NULL REFERENCES categories(id),
   envelope_id INTEGER NOT NULL REFERENCES envelopes(id) ON DELETE CASCADE,
-  additional_notes TEXT
+  additional_notes TEXT,
+  template_id INTEGER REFERENCES periodic_movements(id) ON DELETE SET NULL,
+  is_tentative INTEGER NOT NULL DEFAULT 0
+`;
+
+export const PeriodicMovementSchema = `
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  name TEXT NOT NULL UNIQUE,
+  concept TEXT,
+  quantity_cents INTEGER NOT NULL,
+  isPositive INTEGER NOT NULL,
+  day_of_month INTEGER NOT NULL CHECK(day_of_month >= 1 AND day_of_month <= 31),
+  category_id INTEGER NOT NULL REFERENCES categories(id),
+  envelope_id INTEGER NOT NULL REFERENCES envelopes(id) ON DELETE CASCADE,
+  additional_notes TEXT,
+  active INTEGER NOT NULL DEFAULT 1,
+  start_year INTEGER NOT NULL,
+  start_month INTEGER NOT NULL CHECK(start_month >= 0 AND start_month <= 11),
+  last_created_year INTEGER,
+  last_created_month INTEGER CHECK(last_created_month IS NULL OR (last_created_month >= 0 AND last_created_month <= 11))
+`;
+
+export const PeriodicMovementTagSchema = `
+  periodic_movement_id INTEGER NOT NULL REFERENCES periodic_movements(id) ON DELETE CASCADE,
+  tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+  PRIMARY KEY (periodic_movement_id, tag_id)
 `;
 
 export const TransferSchema = `
@@ -78,7 +104,8 @@ export const PeriodSummarySchema = `
   budget_cents INTEGER,
   max_savings_cents INTEGER,
   notes TEXT,
-  dirty_state TEXT NOT NULL DEFAULT 'CLEAN' CHECK(dirty_state IN ('CLEAN', 'MODIFIED', 'DIRTY'))
+  dirty_state TEXT NOT NULL DEFAULT 'CLEAN' CHECK(dirty_state IN ('CLEAN', 'MODIFIED', 'DIRTY')),
+  tentative INTEGER NOT NULL DEFAULT 0
 `;
 
 export const MovementTagSchema = `

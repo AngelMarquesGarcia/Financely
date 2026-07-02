@@ -13,6 +13,8 @@ const sampleMovementT: MovementT = {
   categoryId: 2,
   envelopeId: 4,
   additionalNotes: null,
+  templateId: null,
+  isTentative: false,
 };
 
 const sampleSummaryT: PeriodSummaryT = {
@@ -35,6 +37,7 @@ const sampleSummaryT: PeriodSummaryT = {
   maxSavingsCents: 10000,
   notes: 'note',
   dirtyState: 'CLEAN',
+  tentative: false,
 };
 
 describe('Period — navigation and factories', () => {

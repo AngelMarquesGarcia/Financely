@@ -31,6 +31,24 @@ tr.row--income:hover td { background: var(--c-income-bg-hover); }
 tr.row--expense:hover td { background: var(--c-expense-bg-hover); }
 tr.row--selected td { box-shadow: inset 3px 0 0 var(--c-primary); }
 
+/* Tentative (auto-generated, awaiting review) rows are tinted amber. */
+tr.row--tentative td { background: #fef9c3; }
+tr.row--tentative:hover td { background: #fef08a; }
+tr.row--tentative td:first-child { box-shadow: inset 3px 0 0 #f59e0b; }
+
+.badge--tentative {
+  margin-left: 0.5rem;
+  background: #fde68a;
+  color: #92400e;
+  font-size: 0.6875rem;
+  white-space: nowrap;
+}
+
+.btn--confirm {
+  background: var(--c-income-text, #16a34a);
+  color: #fff;
+}
+
 .amount {
   font-weight: 600;
   font-variant-numeric: tabular-nums;

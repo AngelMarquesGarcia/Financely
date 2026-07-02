@@ -16,9 +16,12 @@ export class MovementService {
     categoryId: number,
     envelopeId: number,
     additionalNotes: string | null,
+    templateId: number | null = null,
+    isTentative = false,
+    accountId?: number,
   ): number | bigint {
     if (!name.trim()) throw new AppError(AppErrorCode.MOVEMENT_NAME_REQUIRED);
-    if (!Number.isInteger(quantityCents) || quantityCents < 0) {
+    if (!Number.isInteger(quantityCents) || quantityCents <= 0) {
       throw new AppError(AppErrorCode.MOVEMENT_AMOUNT_INVALID);
     }
     if (!(date instanceof Date) || isNaN(date.getTime())) {
@@ -30,10 +33,10 @@ export class MovementService {
     if (!Number.isInteger(envelopeId) || envelopeId <= 0) {
       throw new AppError(AppErrorCode.MOVEMENT_ENVELOPE_REQUIRED);
     }
-    const accountId = accountRepository.getDefaultId()!;
+    const resolvedAccountId = accountId ?? accountRepository.getDefaultId()!;
     const movement = new Movement(
       -1,
-      accountId,
+      resolvedAccountId,
       name,
       concept,
       quantityCents,
@@ -42,13 +45,42 @@ export class MovementService {
       categoryId,
       envelopeId,
       additionalNotes,
+      templateId,
+      isTentative,
     );
+    // A confirmed movement may not open a new month while the previous one still has tentatives.
+    if (!isTentative) this.assertPreviousMonthConfirmed(movement);
     const returnValue = movementRepository.insertMovement(movement);
     const period = Period.fromMovement(movement);
     periodSummaryService.periodTouched(period);
-    // Income may push the envelope over its savings cap — redirect the surplus.
-    if (isPositive) transferService.redirectOverflowIfNeeded(period);
+    // Income may push the envelope over its savings cap — redirect the surplus. Deferred for
+    // tentative income (it has not really arrived yet); confirm() fires it later.
+    if (isPositive && !isTentative) transferService.redirectOverflowIfNeeded(period);
     return returnValue;
+  }
+
+  /** The suffix-invariant guard: throws if the account's previous month still holds a tentative. */
+  private assertPreviousMonthConfirmed(movement: Movement): void {
+    const prev = Period.fromMovement(movement).getPrevious();
+    if (movementRepository.hasTentativeInAccountMonth(movement.accountId, prev.year, prev.month)) {
+      throw new AppError(AppErrorCode.MOVEMENT_PREVIOUS_MONTH_TENTATIVE);
+    }
+  }
+
+  /** Clears the tentative flag on a generated instance after the user reviews it. */
+  confirm(id: number): boolean {
+    const stored = movementRepository.getMovementById(id);
+    if (stored == undefined) throw new AppError(AppErrorCode.MOVEMENT_NOT_FOUND);
+    if (!stored.isTentative) throw new AppError(AppErrorCode.MOVEMENT_NOT_TENTATIVE);
+    const movement = Movement.from(stored);
+    const period = Period.fromMovement(movement);
+    this.assertPreviousMonthConfirmed(movement);
+    const ok = movementRepository.confirm(id);
+    // No aggregate changed — just refresh the period's tentative display flag (no markDirty).
+    periodSummaryService.recomputeTentativeState(period);
+    // Now that the income is confirmed, apply the previously-deferred over-cap redirect.
+    if (movement.isPositive) transferService.redirectOverflowIfNeeded(period);
+    return ok;
   }
 
   getAll(filter?: MovementFilter): MovementT[] {
@@ -65,7 +97,7 @@ export class MovementService {
 
   update(movement: Movement): boolean {
     if (!movement.name.trim()) throw new AppError(AppErrorCode.MOVEMENT_NAME_REQUIRED);
-    if (!Number.isInteger(movement.quantityCents) || movement.quantityCents < 0) {
+    if (!Number.isInteger(movement.quantityCents) || movement.quantityCents <= 0) {
       throw new AppError(AppErrorCode.MOVEMENT_AMOUNT_INVALID);
     }
     if (!(movement.date instanceof Date) || isNaN(movement.date.getTime())) {
@@ -75,7 +107,12 @@ export class MovementService {
     periodSummaryService.markDirty(period);
     const result = movementRepository.updateMovement(movement);
     // Editing income (e.g. raising it) may push the envelope over its cap — re-check the redirect.
-    if (movement.isPositive) transferService.redirectOverflowIfNeeded(period);
+    // Gate on the STORED tentative state (update never changes it): a still-tentative instance
+    // must not trigger a redirect before it is confirmed.
+    const stored = movementRepository.getMovementById(movement.id);
+    if (movement.isPositive && stored != undefined && !stored.isTentative) {
+      transferService.redirectOverflowIfNeeded(period);
+    }
     return result;
   }
 
@@ -95,7 +132,10 @@ export class MovementService {
       const movement = movementRepository.getMovementById(id);
       if (movement != undefined) {
         const period = Period.fromMovement(movement);
-        periods.set(`${period.accountId}-${period.envelopeId}-${period.year}-${period.month}`, period);
+        periods.set(
+          `${period.accountId}-${period.envelopeId}-${period.year}-${period.month}`,
+          period,
+        );
       }
     }
     const count = movementRepository.deleteManyMovements(ids);

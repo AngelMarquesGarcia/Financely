@@ -1,5 +1,6 @@
 import { DatabaseService } from './repository/database.service';
 import { registerMovementHandlers } from './ipc/movements.handler';
+import { registerPeriodicMovementHandlers } from './ipc/periodic-movements.handler';
 import { registerTransferHandlers } from './ipc/transfers.handler';
 import { registerCategoryHandlers } from './ipc/categories.handler';
 import { registerAccountHandlers } from './ipc/accounts.handler';
@@ -30,6 +31,7 @@ const createWindow = () => {
 
 app.whenReady().then(() => {
   registerMovementHandlers();
+  registerPeriodicMovementHandlers();
   registerTransferHandlers();
   registerCategoryHandlers();
   registerAccountHandlers();

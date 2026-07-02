@@ -1,6 +1,11 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { Channels } from './ipc/channels';
-import { MovementT, CategoryT, MovementFilter, AppSettings, AccountT, EnvelopeT, TagT, PeriodSummaryT } from '../shared/types';
+import { MovementT, CategoryT, MovementFilter, AppSettings, AccountT, EnvelopeT, TagT, PeriodSummaryT, PeriodicMovementT } from '../shared/types';
+
+type NewPeriodicTemplate = Omit<
+  PeriodicMovementT,
+  'id' | 'active' | 'lastCreatedYear' | 'lastCreatedMonth' | 'startYear' | 'startMonth'
+>;
 
 contextBridge.exposeInMainWorld('movements', {
   create: (
@@ -28,8 +33,27 @@ contextBridge.exposeInMainWorld('movements', {
   update: (movement: MovementT) => ipcRenderer.invoke(Channels.MOVEMENT_UPDATE, movement),
   delete: (id: number) => ipcRenderer.invoke(Channels.MOVEMENT_DELETE, id),
   deleteMany: (ids: number[]) => ipcRenderer.invoke(Channels.MOVEMENT_DELETE_MANY, ids),
+  confirm: (id: number) => ipcRenderer.invoke(Channels.MOVEMENT_CONFIRM, id),
   suggestNames: (prefix: string, limit?: number) =>
     ipcRenderer.invoke(Channels.MOVEMENT_SUGGEST_NAMES, { prefix, limit }),
+});
+
+contextBridge.exposeInMainWorld('periodicMovements', {
+  create: (template: NewPeriodicTemplate, tagIds: number[]) =>
+    ipcRenderer.invoke(Channels.PERIODIC_CREATE, { template, tagIds }),
+  getAll: () => ipcRenderer.invoke(Channels.PERIODIC_GET_ALL),
+  getById: (id: number) => ipcRenderer.invoke(Channels.PERIODIC_GET_BY_ID, id),
+  getTagsForPeriodicMovement: (id: number) => ipcRenderer.invoke(Channels.PERIODIC_GET_TAGS, id),
+  update: (template: PeriodicMovementT, tagIds: number[]) =>
+    ipcRenderer.invoke(Channels.PERIODIC_UPDATE, { template, tagIds }),
+  delete: (id: number) => ipcRenderer.invoke(Channels.PERIODIC_DELETE, id),
+  setActive: (id: number, active: boolean) =>
+    ipcRenderer.invoke(Channels.PERIODIC_SET_ACTIVE, { id, active }),
+  runDue: () => ipcRenderer.invoke(Channels.PERIODIC_RUN_DUE),
+  instantiateCurrentMonthEarly: (id: number, date?: Date, amountCents?: number) =>
+    ipcRenderer.invoke(Channels.PERIODIC_INSTANTIATE_CURRENT, { id, date, amountCents }),
+  createAdditionalInstance: (id: number, date: Date, amountCents?: number) =>
+    ipcRenderer.invoke(Channels.PERIODIC_CREATE_ADDITIONAL, { id, date, amountCents }),
 });
 
 contextBridge.exposeInMainWorld('transfers', {

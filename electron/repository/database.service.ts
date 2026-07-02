@@ -8,6 +8,8 @@ import {
   EnvelopeSchema,
   MovementSchema,
   MovementTagSchema,
+  PeriodicMovementSchema,
+  PeriodicMovementTagSchema,
   PeriodSummarySchema,
   TagSchema,
   TransferSchema,
@@ -124,6 +126,35 @@ export class DatabaseService {
     addMov({ accountId: defaultAccountId, name: 'May rent', concept: 'ALQUILER MAY', quantityCents: 80000, isPositive: 0, date: '2026-05-01', categoryId: catId('Housing'), envelopeId: monthly, notes: null }, [recurring, urgent]);
     addMov({ accountId: defaultAccountId, name: 'Grocery run', concept: 'MERCADONA', quantityCents: 5400, isPositive: 0, date: '2026-05-06', categoryId: catId('Food'), envelopeId: monthly, notes: null }, [recurring]);
     addMov({ accountId: defaultAccountId, name: 'Freelance payment', concept: null, quantityCents: 35000, isPositive: 1, date: '2026-05-10', categoryId: catId('Salary'), envelopeId: unassigned, notes: 'Logo design project' }, [oneTime]);
+
+    // Seed periodic-movement templates. Cursor is left null and the start period is recent, so the
+    // first frontend-triggered runDue generates a couple of tentative instances for the current month.
+    const insertPeriodic = this.db.prepare(
+      `INSERT OR IGNORE INTO ${tables.periodicMovements}
+         (account_id, name, concept, quantity_cents, isPositive, day_of_month, category_id, envelope_id,
+          additional_notes, active, start_year, start_month, last_created_year, last_created_month)
+       VALUES (:accountId, :name, :concept, :quantityCents, :isPositive, :dayOfMonth, :categoryId, :envelopeId,
+          :notes, 1, :startYear, :startMonth, NULL, NULL)`,
+    );
+    const insertPeriodicTag = this.db.prepare(
+      `INSERT OR IGNORE INTO ${tables.periodicMovementTags} (periodic_movement_id, tag_id) VALUES (?, ?)`,
+    );
+    const salaryTemplateId = Number(
+      insertPeriodic.run({
+        accountId: defaultAccountId, name: 'Monthly salary', concept: 'NOMINA', quantityCents: 220000,
+        isPositive: 1, dayOfMonth: 28, categoryId: catId('Salary'), envelopeId: savings, notes: null,
+        startYear: 2026, startMonth: 5,
+      }).lastInsertRowid,
+    );
+    insertPeriodicTag.run(salaryTemplateId, recurring);
+    const karateTemplateId = Number(
+      insertPeriodic.run({
+        accountId: defaultAccountId, name: 'Karate fee', concept: null, quantityCents: 4500,
+        isPositive: 0, dayOfMonth: 5, categoryId: catId('Health'), envelopeId: monthly, notes: 'Dojo monthly fee',
+        startYear: 2026, startMonth: 5,
+      }).lastInsertRowid,
+    );
+    insertPeriodicTag.run(karateTemplateId, recurring);
   }
 
   migrate(): void {
@@ -132,8 +163,10 @@ export class DatabaseService {
     // Meta table is intentionally preserved so persisted settings survive restarts
     this.db.prepare(`DROP TABLE IF EXISTS ${tables.periodSummaries}`).run();
     this.db.prepare(`DROP TABLE IF EXISTS ${tables.movementTags}`).run();
+    this.db.prepare(`DROP TABLE IF EXISTS ${tables.periodicMovementTags}`).run();
     this.db.prepare(`DROP TABLE IF EXISTS ${tables.transfers}`).run();
     this.db.prepare(`DROP TABLE IF EXISTS ${tables.movements}`).run();
+    this.db.prepare(`DROP TABLE IF EXISTS ${tables.periodicMovements}`).run();
     this.db.prepare(`DROP TABLE IF EXISTS ${tables.categories}`).run();
     this.db.prepare(`DROP TABLE IF EXISTS ${tables.envelopes}`).run();
     this.db.prepare(`DROP TABLE IF EXISTS ${tables.accounts}`).run();
@@ -152,9 +185,13 @@ export class DatabaseService {
     this.db.prepare(`CREATE TABLE ${tables.tags} (${TagSchema})`).run();
     this.db.prepare(`CREATE TABLE ${tables.envelopes} (${EnvelopeSchema})`).run();
     this.db.prepare(`CREATE TABLE ${tables.categories} (${CategorySchema})`).run();
+    this.db.prepare(`CREATE TABLE ${tables.periodicMovements} (${PeriodicMovementSchema})`).run();
     this.db.prepare(`CREATE TABLE ${tables.movements} (${MovementSchema})`).run();
     this.db.prepare(`CREATE TABLE ${tables.transfers} (${TransferSchema})`).run();
     this.db.prepare(`CREATE TABLE ${tables.movementTags} (${MovementTagSchema})`).run();
+    this.db
+      .prepare(`CREATE TABLE ${tables.periodicMovementTags} (${PeriodicMovementTagSchema})`)
+      .run();
     this.db.prepare(`CREATE TABLE ${tables.periodSummaries} (${PeriodSummarySchema})`).run();
     //#endregion
 

@@ -2,6 +2,7 @@ import { BasicSummary, MovementT, PeriodSummaryT } from '@shared/types';
 import { Period, PeriodSummary } from '@shared/domain';
 import { periodSummaryRepository } from '../repository/period-summary-repository.service';
 import { transferRepository } from '../repository/transfer-repository.service';
+import { movementRepository } from '../repository/movement-repository.service';
 import { movementService } from './movement.service';
 import { accountService } from './account.service';
 import { envelopeService } from './envelope.service';
@@ -113,6 +114,20 @@ export class PeriodSummaryService {
     const summary = periodSummaryRepository.getByPeriod(period);
     if (summary == undefined) this.create(period);
     else this.markDirty(period);
+  }
+
+  /**
+   * Recomputes only the `tentative` display flag for a period from its movements, leaving every
+   * aggregate and `dirtyState` untouched. Used by confirm — which changes no amounts, so a full
+   * recalc/markDirty would be wasteful. No-op when the period has no summary.
+   */
+  recomputeTentativeState(period: Period): void {
+    const summary = periodSummaryRepository.getByPeriod(period);
+    if (summary == undefined) return;
+    const tentative = movementRepository.hasTentativeInPeriod(period);
+    if (summary.tentative === tentative) return;
+    summary.tentative = tentative;
+    periodSummaryRepository.update(summary);
   }
 
   private cleanPeriodSummary(period: Period): PeriodSummaryT | undefined {
@@ -249,6 +264,7 @@ export class PeriodSummaryService {
       maxSavingsCents: undefined, // stamped by calculatePeriodSummary (freeze existing vs. envelope)
       notes: undefined,
       dirtyState: 'CLEAN',
+      tentative: movements.some((m) => m.isTentative),
     };
   }
 

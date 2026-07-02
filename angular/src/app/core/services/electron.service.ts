@@ -8,13 +8,20 @@ import {
   AccountT,
   EnvelopeT,
   TagT,
+  PeriodicMovementT,
 } from '@shared/types';
+
+type NewPeriodicTemplate = Omit<
+  PeriodicMovementT,
+  'id' | 'active' | 'lastCreatedYear' | 'lastCreatedMonth' | 'startYear' | 'startMonth'
+>;
 
 @Injectable({
   providedIn: 'root',
 })
 export class ElectronService {
   private movements = window.movements;
+  private periodicMovements = window.periodicMovements;
   private transfers = window.transfers;
   private categories = window.categories;
   private accounts = window.accounts;
@@ -68,8 +75,53 @@ export class ElectronService {
     return from(this.movements.deleteMany(ids));
   }
 
+  confirmMovement(id: number) {
+    return from(this.movements.confirm(id));
+  }
+
   suggestMovementNames(prefix: string, limit?: number) {
     return from(this.movements.suggestNames(prefix, limit));
+  }
+
+  // Periodic movements
+  createPeriodicMovement(template: NewPeriodicTemplate, tagIds: number[]) {
+    return from(this.periodicMovements.create(template, tagIds));
+  }
+
+  getAllPeriodicMovements() {
+    return from(this.periodicMovements.getAll());
+  }
+
+  getPeriodicMovementById(id: number) {
+    return from(this.periodicMovements.getById(id));
+  }
+
+  getTagsForPeriodicMovement(id: number) {
+    return from(this.periodicMovements.getTagsForPeriodicMovement(id));
+  }
+
+  updatePeriodicMovement(template: PeriodicMovementT, tagIds: number[]) {
+    return from(this.periodicMovements.update(template, tagIds));
+  }
+
+  deletePeriodicMovement(id: number) {
+    return from(this.periodicMovements.delete(id));
+  }
+
+  setPeriodicMovementActive(id: number, active: boolean) {
+    return from(this.periodicMovements.setActive(id, active));
+  }
+
+  runDuePeriodicMovements() {
+    return from(this.periodicMovements.runDue());
+  }
+
+  instantiatePeriodicMovementCurrentMonth(id: number, date?: Date, amountCents?: number) {
+    return from(this.periodicMovements.instantiateCurrentMonthEarly(id, date, amountCents));
+  }
+
+  createAdditionalPeriodicInstance(id: number, date: Date, amountCents?: number) {
+    return from(this.periodicMovements.createAdditionalInstance(id, date, amountCents));
   }
 
   // Transfers

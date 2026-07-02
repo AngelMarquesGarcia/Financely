@@ -18,6 +18,7 @@ export const SAMPLE_ACCOUNT_SUMMARY: PeriodSummaryT = {
   netTransfersCents: 0,
   notes: 'Good month overall. Big grocery run mid-month skewed food expenses.',
   dirtyState: 'CLEAN',
+  tentative: false,
 };
 
 export const SAMPLE_FOOD_SUMMARY: PeriodSummaryT = {
@@ -38,6 +39,7 @@ export const SAMPLE_FOOD_SUMMARY: PeriodSummaryT = {
   netTransfersCents: 0,
   budgetCents: 100000,
   dirtyState: 'CLEAN',
+  tentative: false,
 };
 
 export const SAMPLE_TRANSPORT_SUMMARY: PeriodSummaryT = {
@@ -58,6 +60,7 @@ export const SAMPLE_TRANSPORT_SUMMARY: PeriodSummaryT = {
   netTransfersCents: 0,
   budgetCents: 50000,
   dirtyState: 'CLEAN',
+  tentative: false,
 };
 
 export const SAMPLE_SAVINGS_SUMMARY: PeriodSummaryT = {
@@ -79,6 +82,7 @@ export const SAMPLE_SAVINGS_SUMMARY: PeriodSummaryT = {
   maxSavingsCents: 1000000,
   notes: 'Monthly transfer in.',
   dirtyState: 'CLEAN',
+  tentative: false,
 };
 
 export const SAMPLE_SUMMARIES: PeriodSummaryT[] = [

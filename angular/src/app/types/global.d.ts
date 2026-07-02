@@ -1,5 +1,6 @@
 import type {
   Movements,
+  PeriodicMovements,
   Transfers,
   Categories,
   Accounts,
@@ -12,6 +13,7 @@ import type {
 declare global {
   interface Window {
     movements: Movements;
+    periodicMovements: PeriodicMovements;
     transfers: Transfers;
     categories: Categories;
     accounts: Accounts;

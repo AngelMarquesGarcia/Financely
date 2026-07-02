@@ -1,4 +1,4 @@
-import { MovementT, CategoryT, MovementFilter, AppSettings, AccountT, AccountStats, EnvelopeT, TagT, TransferT, PeriodSummaryT } from './types';
+import { MovementT, CategoryT, MovementFilter, AppSettings, AccountT, AccountStats, EnvelopeT, TagT, TransferT, PeriodSummaryT, PeriodicMovementT } from './types';
 
 export interface Movements {
   create(
@@ -17,8 +17,37 @@ export interface Movements {
   delete(id: number): Promise<boolean>;
   /** Bulk delete. Returns the number of rows removed. Atomic (single transaction). */
   deleteMany(ids: number[]): Promise<number>;
+  /** Clears the tentative flag on a generated instance (review approved). */
+  confirm(id: number): Promise<boolean>;
   /** Returns distinct movement names matching the prefix, alphabetical, capped at `limit`. */
   suggestNames(prefix: string, limit?: number): Promise<string[]>;
+}
+
+export interface PeriodicMovements {
+  create(
+    template: Omit<
+      PeriodicMovementT,
+      'id' | 'active' | 'lastCreatedYear' | 'lastCreatedMonth' | 'startYear' | 'startMonth'
+    >,
+    tagIds: number[],
+  ): Promise<number | bigint>;
+  getAll(): Promise<PeriodicMovementT[]>;
+  getById(id: number): Promise<PeriodicMovementT | undefined>;
+  getTagsForPeriodicMovement(id: number): Promise<TagT[]>;
+  update(template: PeriodicMovementT, tagIds: number[]): Promise<boolean>;
+  /** Hard-deletes a template; rejects if it has generated instances (deactivate instead). */
+  delete(id: number): Promise<boolean>;
+  setActive(id: number, active: boolean): Promise<boolean>;
+  /** Generates all due instances across active templates (frontend-triggered). Returns count created. */
+  runDue(): Promise<number>;
+  /** Creates this month's instance early, born confirmed. Rejects future dates. */
+  instantiateCurrentMonthEarly(
+    id: number,
+    date?: Date,
+    amountCents?: number,
+  ): Promise<number | bigint>;
+  /** Creates an extra confirmed instance (does not advance the cursor). Rejects future dates. */
+  createAdditionalInstance(id: number, date: Date, amountCents?: number): Promise<number | bigint>;
 }
 
 export interface Categories {

@@ -10,6 +10,35 @@ export type MovementT = {
   categoryId: number;
   envelopeId: number;
   additionalNotes: string | null;
+  /** Template this instance was generated from, or null for a manual movement. System-owned. */
+  templateId: number | null;
+  /** Auto-generated and awaiting user review. System-owned (set at creation / cleared by confirm). */
+  isTentative: boolean;
+};
+
+/** A recurring-movement blueprint. Not a real movement — it has a day-of-month, no date, and no
+ *  balance impact of its own. Generates real `MovementT` instances as time passes. */
+export type PeriodicMovementT = {
+  id: number;
+  /** Target account for generated instances (may differ per template). */
+  accountId: number;
+  name: string;
+  concept: string | null;
+  /** Default amount in integer cents for generated instances. */
+  quantityCents: number;
+  isPositive: boolean;
+  /** Expected day of month (1-31); clamped to the month's length at instantiation. */
+  dayOfMonth: number;
+  categoryId: number;
+  envelopeId: number;
+  additionalNotes: string | null;
+  /** false → generation is paused but history is preserved. */
+  active: boolean;
+  startYear: number;
+  startMonth: number; // 0-11
+  /** Generation cursor: the last period an instance was created for. null = nothing generated yet. */
+  lastCreatedYear: number | null;
+  lastCreatedMonth: number | null; // 0-11
 };
 
 export type CategoryT = {
@@ -141,6 +170,8 @@ export type PeriodSummaryT = {
   maxSavingsCents?: number;
   notes?: string;
   dirtyState: DirtyState;
+  /** True when the period holds at least one tentative (unreviewed) movement. Display-only. */
+  tentative: boolean;
 };
 
 export type PeriodT = {

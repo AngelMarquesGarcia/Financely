@@ -24,6 +24,7 @@ export class MovementsListComponent {
   @Input() movementTags: Record<number, TagT[]> = {};
   @Output() editRequested = new EventEmitter<MovementT>();
   @Output() deleteRequested = new EventEmitter<number>();
+  @Output() confirmRequested = new EventEmitter<number>();
   @Output() bulkDeleteRequested = new EventEmitter<number[]>();
   @Output() filterChanged = new EventEmitter<MovementFilter>();
 

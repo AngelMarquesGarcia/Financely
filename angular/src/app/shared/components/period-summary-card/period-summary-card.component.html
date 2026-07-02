@@ -1,6 +1,11 @@
 <div class="psc card">
   <button class="psc__header" type="button" (click)="toggle()">
-    <span class="psc__label">{{ label }}</span>
+    <span class="psc__label">
+      {{ label }}
+      @if (summary.tentative) {
+        <span class="psc__badge" title="Includes movements awaiting review">⚠ unconfirmed</span>
+      }
+    </span>
     <span
       class="psc__cashflow"
       [class.psc__cashflow--positive]="summary.cashFlowCents >= 0"

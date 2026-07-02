@@ -50,6 +50,11 @@ export function registerMovementHandlers(): void {
   );
 
   ipcMain.handle(
+    Channels.MOVEMENT_CONFIRM,
+    ipcHandle((_event: IpcMainInvokeEvent, id: number) => movementService.confirm(id)),
+  );
+
+  ipcMain.handle(
     Channels.MOVEMENT_SUGGEST_NAMES,
     ipcHandle((_event: IpcMainInvokeEvent, arg: { prefix: string; limit?: number }) =>
       movementService.suggestNames(arg.prefix, arg.limit),

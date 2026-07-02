@@ -1,0 +1,147 @@
+.card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.card__title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.add-wrap {
+  position: relative;
+}
+
+.add-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: var(--c-primary, #3b82f6);
+  color: #fff;
+  cursor: pointer;
+}
+
+.popover-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-popover, 1000);
+}
+
+.popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: calc(var(--z-popover, 1000) + 1);
+  background: var(--c-surface, #fff);
+  border: 1px solid var(--c-border, #e2e8f0);
+  border-radius: 0.75rem;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+  padding: 1rem;
+  width: 22rem;
+
+  &--wide {
+    width: 32rem;
+    max-width: 90vw;
+  }
+}
+
+.amount {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+tr.row--inactive td {
+  opacity: 0.55;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+
+  &--active {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  &--inactive {
+    background: var(--c-border-soft, #e2e8f0);
+    color: var(--c-text-faint, #94a3b8);
+  }
+}
+
+.instance-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: calc(var(--z-popover, 1000) + 2);
+  width: 22rem;
+  max-width: 90vw;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+
+  &__title {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 0.5rem;
+    padding-top: 0.25rem;
+  }
+}
+
+.form__group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.form__label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.form__input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  background: #f8fafc;
+  color: #0f172a;
+
+  &:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    background: #fff;
+  }
+}

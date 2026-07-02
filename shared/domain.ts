@@ -2,6 +2,7 @@ import type {
   PeriodT,
   MovementT,
   PeriodSummaryT,
+  PeriodicMovementT,
   AccountT,
   CategoryT,
   EnvelopeT,
@@ -53,10 +54,16 @@ export class Movement implements MovementT {
     public readonly categoryId: number,
     public readonly envelopeId: number,
     public readonly additionalNotes: string | null,
+    public readonly templateId: number | null = null,
+    public readonly isTentative: boolean = false,
   ) {}
 
   getPeriod(): Period {
     return Period.fromMovement(this);
+  }
+
+  isPeriodic(): boolean {
+    return this.templateId != null;
   }
 
   static from(d: MovementT): Movement {
@@ -71,6 +78,8 @@ export class Movement implements MovementT {
       d.categoryId,
       d.envelopeId,
       d.additionalNotes,
+      d.templateId,
+      d.isTentative,
     );
   }
 }
@@ -96,6 +105,7 @@ export class PeriodSummary implements PeriodSummaryT {
     public readonly maxSavingsCents: number | undefined,
     public readonly notes: string | undefined,
     public readonly dirtyState: DirtyState,
+    public readonly tentative: boolean = false,
   ) {}
 
   getPeriod(): Period {
@@ -127,6 +137,7 @@ export class PeriodSummary implements PeriodSummaryT {
       d.maxSavingsCents,
       d.notes,
       d.dirtyState,
+      d.tentative,
     );
   }
 }
@@ -232,6 +243,89 @@ export class Transfer implements TransferT {
       d.date,
       d.isAuto,
       d.notes,
+    );
+  }
+}
+
+export class PeriodicMovement implements PeriodicMovementT {
+  constructor(
+    public readonly id: number,
+    public readonly accountId: number,
+    public readonly name: string,
+    public readonly concept: string | null,
+    public readonly quantityCents: number,
+    public readonly isPositive: boolean,
+    public readonly dayOfMonth: number,
+    public readonly categoryId: number,
+    public readonly envelopeId: number,
+    public readonly additionalNotes: string | null,
+    public readonly active: boolean,
+    public readonly startYear: number,
+    public readonly startMonth: number,
+    public readonly lastCreatedYear: number | null,
+    public readonly lastCreatedMonth: number | null,
+  ) {}
+
+  /** Last calendar day of the given month (handles leap years). */
+  lastDayOfMonth(year: number, month: number): number {
+    return new Date(year, month + 1, 0).getDate();
+  }
+
+  /** The expected instance date for a period, clamping the day to the month's length. */
+  expectedDate(year: number, month: number): Date {
+    return new Date(year, month, Math.min(this.dayOfMonth, this.lastDayOfMonth(year, month)));
+  }
+
+  /** The period one before this template's start anchor — the cursor's implicit floor. */
+  startPeriod(): Period {
+    return new Period(this.accountId, this.envelopeId, this.startYear, this.startMonth);
+  }
+
+  /** The generation cursor as a Period, or null when nothing has been generated yet. */
+  cursorPeriod(): Period | null {
+    if (this.lastCreatedYear == null || this.lastCreatedMonth == null) return null;
+    return new Period(this.accountId, this.envelopeId, this.lastCreatedYear, this.lastCreatedMonth);
+  }
+
+  /**
+   * Builds (but does not persist) a real movement instance for the given date. Inherits the
+   * template's account, category, envelope and sign; `concept` falls back to the name; amount
+   * defaults to the template's. Stamped with `templateId` so the instance is traceable.
+   */
+  generateInstance(date: Date, isTentative: boolean, amountCents?: number): Movement {
+    return new Movement(
+      -1,
+      this.accountId,
+      this.name,
+      this.concept ?? this.name,
+      amountCents ?? this.quantityCents,
+      this.isPositive,
+      date,
+      this.categoryId,
+      this.envelopeId,
+      this.additionalNotes,
+      this.id,
+      isTentative,
+    );
+  }
+
+  static from(d: PeriodicMovementT): PeriodicMovement {
+    return new PeriodicMovement(
+      d.id,
+      d.accountId,
+      d.name,
+      d.concept,
+      d.quantityCents,
+      d.isPositive,
+      d.dayOfMonth,
+      d.categoryId,
+      d.envelopeId,
+      d.additionalNotes,
+      d.active,
+      d.startYear,
+      d.startMonth,
+      d.lastCreatedYear,
+      d.lastCreatedMonth,
     );
   }
 }

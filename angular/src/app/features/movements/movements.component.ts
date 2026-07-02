@@ -119,6 +119,19 @@ export class MovementsComponent implements OnInit {
       });
   }
 
+  onConfirmRequested(id: number) {
+    const target = this.movements.find((m) => m.id === id);
+    this.electron
+      .confirmMovement(id)
+      .pipe(this.errors.toast(), takeUntilDestroyed(this.destroyRef))
+      .subscribe((ok) => {
+        if (ok) {
+          this.notify.success(`Movement "${target?.name ?? ''}" confirmed.`);
+          this.loadMovements();
+        }
+      });
+  }
+
   onSaved() {
     this.editingMovement = null;
     this.loadMovements();

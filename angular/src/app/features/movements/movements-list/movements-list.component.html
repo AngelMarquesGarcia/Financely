@@ -56,7 +56,7 @@
             } @else {
               @let m = row.movement;
               @let cat = getCategory(m.categoryId);
-              <tr [class.row--income]="m.isPositive" [class.row--expense]="!m.isPositive" [class.row--selected]="isRowSelected(m.id)">
+              <tr [class.row--income]="m.isPositive" [class.row--expense]="!m.isPositive" [class.row--selected]="isRowSelected(m.id)" [class.row--tentative]="m.isTentative">
                 <td class="select-col">
                   <input
                     type="checkbox"
@@ -65,7 +65,12 @@
                     [attr.aria-label]="'Select movement ' + m.name"
                   />
                 </td>
-                <td>{{ m.name }}</td>
+                <td>
+                  {{ m.name }}
+                  @if (m.isTentative) {
+                    <span class="badge badge--tentative" title="Auto-generated — awaiting your review">⚠ Review</span>
+                  }
+                </td>
                 <td class="amount">{{ signedCents(m) | money }}</td>
                 <td>
                   @if (cat) {
@@ -106,8 +111,13 @@
                 </td>
                 <td>
                   <div class="actions">
+                    @if (m.isTentative) {
+                      <button class="btn btn--confirm" (click)="confirmRequested.emit(m.id)">Confirm</button>
+                    }
                     <button class="btn btn--edit" (click)="editRequested.emit(m)">Edit</button>
-                    <button class="btn btn--delete" (click)="deleteRequested.emit(m.id)">Delete</button>
+                    <button class="btn btn--delete" (click)="deleteRequested.emit(m.id)">
+                      {{ m.isTentative ? 'Cancel' : 'Delete' }}
+                    </button>
                   </div>
                 </td>
               </tr>

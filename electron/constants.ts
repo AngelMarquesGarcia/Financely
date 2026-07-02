@@ -6,6 +6,8 @@ export const tables = {
   transfers: 'transfers',
   tags: 'tags',
   movementTags: 'movement_tags',
+  periodicMovements: 'periodic_movements',
+  periodicMovementTags: 'periodic_movement_tags',
   periodSummaries: 'period_summaries',
   metadata: 'meta',
 } as const;

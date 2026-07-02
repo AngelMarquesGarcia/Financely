@@ -15,6 +15,8 @@ function makeMovement(overrides: Partial<MovementT> = {}): MovementT {
     categoryId: 1,
     envelopeId: 1,
     additionalNotes: null,
+    templateId: null,
+    isTentative: false,
     ...overrides,
   };
 }

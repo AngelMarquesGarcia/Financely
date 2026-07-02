@@ -14,6 +14,8 @@ type RawMovement = {
   categoryId: number;
   envelopeId: number;
   additionalNotes: string | null;
+  templateId: number | null;
+  isTentative: number;
 };
 
 function toMovement(r: RawMovement): MovementT {
@@ -28,6 +30,8 @@ function toMovement(r: RawMovement): MovementT {
     categoryId: r.categoryId,
     envelopeId: r.envelopeId,
     additionalNotes: r.additionalNotes,
+    templateId: r.templateId,
+    isTentative: r.isTentative === 1,
   };
 }
 
@@ -36,13 +40,15 @@ export class MovementRepository {
 
   private readonly selectCols = `id, account_id as accountId, name, concept, quantity_cents as quantityCents,
     isPositive, date, category_id as categoryId, envelope_id as envelopeId,
-    additional_notes as additionalNotes`;
+    additional_notes as additionalNotes, template_id as templateId, is_tentative as isTentative`;
 
   insertMovement(mov: Omit<MovementT, 'id'>): number | bigint {
     const stmt = this.db.prepare(
       `INSERT INTO ${tables.movements}
-         (account_id, name, concept, quantity_cents, isPositive, date, category_id, envelope_id, additional_notes)
-       VALUES (:accountId, :name, :concept, :quantityCents, :isPositive, :date, :categoryId, :envelopeId, :additionalNotes)`,
+         (account_id, name, concept, quantity_cents, isPositive, date, category_id, envelope_id,
+          additional_notes, template_id, is_tentative)
+       VALUES (:accountId, :name, :concept, :quantityCents, :isPositive, :date, :categoryId, :envelopeId,
+          :additionalNotes, :templateId, :isTentative)`,
     );
     return stmt.run({
       accountId: mov.accountId,
@@ -54,6 +60,8 @@ export class MovementRepository {
       categoryId: mov.categoryId,
       envelopeId: mov.envelopeId,
       additionalNotes: mov.additionalNotes ?? null,
+      templateId: mov.templateId ?? null,
+      isTentative: mov.isTentative ? 1 : 0,
     }).lastInsertRowid;
   }
 
@@ -140,6 +148,58 @@ export class MovementRepository {
         )
         .all(period.accountId, period.envelopeId, period.year, period.month) as RawMovement[]
     ).map(toMovement);
+  }
+
+  /** Clears the tentative flag (review approved). The only transition we support. */
+  confirm(id: number): boolean {
+    return (
+      this.db.prepare(`UPDATE ${tables.movements} SET is_tentative = 0 WHERE id = ?`).run(id)
+        .changes > 0
+    );
+  }
+
+  /** Guard source: does any tentative movement exist in this account for the given month? */
+  hasTentativeInAccountMonth(accountId: number, year: number, month: number): boolean {
+    const row = this.db
+      .prepare(
+        `SELECT 1 FROM ${tables.movements}
+         WHERE account_id = ? AND is_tentative = 1
+           AND CAST(strftime('%Y', date) AS INTEGER) = ?
+           AND CAST(strftime('%m', date) AS INTEGER) - 1 = ?
+         LIMIT 1`,
+      )
+      .get(accountId, year, month);
+    return row != undefined;
+  }
+
+  /** Drives the period summary's `tentative` flag: any tentative movement in this exact period? */
+  hasTentativeInPeriod(period: PeriodT): boolean {
+    const row = this.db
+      .prepare(
+        `SELECT 1 FROM ${tables.movements}
+         WHERE account_id = ? AND envelope_id IS ? AND is_tentative = 1
+           AND CAST(strftime('%Y', date) AS INTEGER) = ?
+           AND CAST(strftime('%m', date) AS INTEGER) - 1 = ?
+         LIMIT 1`,
+      )
+      .get(period.accountId, period.envelopeId, period.year, period.month);
+    return row != undefined;
+  }
+
+  getByTemplate(templateId: number): MovementT[] {
+    return (
+      this.db
+        .prepare(`SELECT ${this.selectCols} FROM ${tables.movements} WHERE template_id = ?`)
+        .all(templateId) as RawMovement[]
+    ).map(toMovement);
+  }
+
+  countByTemplate(templateId: number): number {
+    return (
+      this.db
+        .prepare(`SELECT COUNT(*) AS n FROM ${tables.movements} WHERE template_id = ?`)
+        .get(templateId) as { n: number }
+    ).n;
   }
 
   private getMovementIdsByTags(tagIds: number[], matchAll: boolean): number[] {
