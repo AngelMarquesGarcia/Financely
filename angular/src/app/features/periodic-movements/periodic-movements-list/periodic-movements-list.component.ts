@@ -61,6 +61,14 @@ export class PeriodicMovementsListComponent {
     return this.envelopes.find((e) => e.id === id)?.name ?? '—';
   }
 
+  /** Envelope column label: the single envelope's name, or "Multiple (N)" for a split template. */
+  templateEnvelopeLabel(t: PeriodicMovementT): string {
+    const ids = [...t.envelopeIdMap.keys()];
+    if (ids.length === 0) return '—';
+    if (ids.length === 1) return this.envelopeName(ids[0]);
+    return `Multiple (${ids.length})`;
+  }
+
   accountName(id: number): string {
     return this.accounts.find((a) => a.id === id)?.name ?? '—';
   }

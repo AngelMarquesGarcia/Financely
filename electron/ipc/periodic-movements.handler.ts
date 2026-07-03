@@ -61,15 +61,32 @@ export function registerPeriodicMovementHandlers(): void {
   ipcMain.handle(
     Channels.PERIODIC_INSTANTIATE_CURRENT,
     ipcHandle(
-      (_event: IpcMainInvokeEvent, arg: { id: number; date?: Date; amountCents?: number }) =>
-        periodicMovementService.instantiateCurrentMonthEarly(arg.id, arg.date, arg.amountCents),
+      (
+        _event: IpcMainInvokeEvent,
+        arg: { id: number; date?: Date; amountCents?: number; envelopeIdMap?: Map<number, number> },
+      ) =>
+        periodicMovementService.instantiateCurrentMonthEarly(
+          arg.id,
+          arg.date,
+          arg.amountCents,
+          arg.envelopeIdMap,
+        ),
     ),
   );
 
   ipcMain.handle(
     Channels.PERIODIC_CREATE_ADDITIONAL,
-    ipcHandle((_event: IpcMainInvokeEvent, arg: { id: number; date: Date; amountCents?: number }) =>
-      periodicMovementService.createAdditionalInstance(arg.id, arg.date, arg.amountCents),
+    ipcHandle(
+      (
+        _event: IpcMainInvokeEvent,
+        arg: { id: number; date: Date; amountCents?: number; envelopeIdMap?: Map<number, number> },
+      ) =>
+        periodicMovementService.createAdditionalInstance(
+          arg.id,
+          arg.date,
+          arg.amountCents,
+          arg.envelopeIdMap,
+        ),
     ),
   );
 }

@@ -44,6 +44,16 @@ tr.row--tentative td:first-child { box-shadow: inset 3px 0 0 #f59e0b; }
   white-space: nowrap;
 }
 
+.badge--split {
+  margin-left: 0.5rem;
+  background: #e0e7ff;
+  color: #3730a3;
+  font-size: 0.6875rem;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
 .btn--confirm {
   background: var(--c-income-text, #16a34a);
   color: #fff;

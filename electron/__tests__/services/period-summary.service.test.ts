@@ -20,7 +20,8 @@ import { periodSummaryRepository } from '../../repository/period-summary-reposit
 import { envelopeRepository } from '../../repository/envelope-repository.service';
 import { movementService } from '../../services/movement.service';
 import { envelopeService } from '../../services/envelope.service';
-import { Period, PeriodSummary, Envelope } from '@shared/domain';
+import { accountService } from '../../services/account.service';
+import { Period, PeriodSummary, Envelope, Movement } from '@shared/domain';
 import { AppErrorCode } from '@shared/error-codes';
 
 // Seeded movements (see database.service.ts#initDatabase) land in April (month 3) and
@@ -44,6 +45,9 @@ function firstCategoryId(): number {
   const db = DatabaseService.getInstance().db;
   return Number((db.prepare('SELECT id FROM categories LIMIT 1').get() as { id: number }).id);
 }
+
+/** A single-envelope allocation `{ envelopeId → amount }` — the normal (non-split) case. */
+const one = (envelopeId: number, amount: number) => new Map([[envelopeId, amount]]);
 
 describe('PeriodSummaryService', () => {
   beforeAll(() => {
@@ -117,7 +121,7 @@ describe('PeriodSummaryService', () => {
   it('stamps budgetCents and maxSavingsCents from the envelope on create', () => {
     const accId = defaultAccountId();
     const envId = Number(envelopeService.create('Groceries', accId, 0, 30000, 60000));
-    movementService.create('Shop', null, 5000, false, new Date(2026, 3, 5), firstCategoryId(), envId, null);
+    movementService.create('Shop', null, 5000, false, new Date(2026, 3, 5), firstCategoryId(), one(envId, 5000), null);
 
     const stored = periodSummaryRepository.getByPeriod(new Period(accId, envId, 2026, 3))!;
     expect(stored.budgetCents).toBe(30000);
@@ -127,7 +131,7 @@ describe('PeriodSummaryService', () => {
   it('preserves the snapshots on recalc even when the envelope changes', () => {
     const accId = defaultAccountId();
     const envId = Number(envelopeService.create('Groceries', accId, 0, 30000, 60000));
-    movementService.create('Shop', null, 5000, false, new Date(2026, 3, 5), firstCategoryId(), envId, null);
+    movementService.create('Shop', null, 5000, false, new Date(2026, 3, 5), firstCategoryId(), one(envId, 5000), null);
     const period = new Period(accId, envId, 2026, 3);
 
     // Change the envelope directly (bypassing the service re-stamp), then force a recalc.
@@ -157,8 +161,8 @@ describe('PeriodSummaryService', () => {
     const now = new Date();
     const pastDate = new Date(now.getFullYear(), now.getMonth() - 1, 5);
     const curDate = new Date(now.getFullYear(), now.getMonth(), 5);
-    movementService.create('Past shop', null, 5000, false, pastDate, firstCategoryId(), envId, null);
-    movementService.create('Current shop', null, 5000, false, curDate, firstCategoryId(), envId, null);
+    movementService.create('Past shop', null, 5000, false, pastDate, firstCategoryId(), one(envId, 5000), null);
+    movementService.create('Current shop', null, 5000, false, curDate, firstCategoryId(), one(envId, 5000), null);
 
     const pastP = new Period(accId, envId, pastDate.getFullYear(), pastDate.getMonth());
     const curP = new Period(accId, envId, curDate.getFullYear(), curDate.getMonth());
@@ -201,7 +205,7 @@ describe('PeriodSummaryService', () => {
   it('anchors the first period ending balance on the envelope startingBalance', () => {
     const accId = defaultAccountId();
     const envId = Number(envelopeService.create('Anchored Envelope', accId, 50000));
-    movementService.create('Deposit', null, 30000, true, new Date(2026, 5, 10), firstCategoryId(), envId, null);
+    movementService.create('Deposit', null, 30000, true, new Date(2026, 5, 10), firstCategoryId(), one(envId, 30000), null);
 
     const stored = periodSummaryRepository.getByPeriod(new Period(accId, envId, 2026, 5))!;
     expect(stored.cashFlowCents).toBe(30000);
@@ -211,7 +215,7 @@ describe('PeriodSummaryService', () => {
   // ── movement-driven auto-create + markDirty ───────────────────────────────
   it('movementService.create auto-creates a CLEAN summary for a new period', () => {
     const envId = envByName('Monthly Expenses').id;
-    movementService.create('June expense', null, 5000, false, new Date(2026, 5, 5), firstCategoryId(), envId, null);
+    movementService.create('June expense', null, 5000, false, new Date(2026, 5, 5), firstCategoryId(), one(envId, 5000), null);
 
     const period = new Period(defaultAccountId(), envId, 2026, 5);
     expect(periodSummaryService.checkExists(period)).toBe(true);
@@ -221,8 +225,8 @@ describe('PeriodSummaryService', () => {
   it('a second movement in the same period marks the summary MODIFIED', () => {
     const envId = envByName('Monthly Expenses').id;
     const catId = firstCategoryId();
-    movementService.create('June 1', null, 5000, false, new Date(2026, 5, 5), catId, envId, null);
-    movementService.create('June 2', null, 3000, false, new Date(2026, 5, 6), catId, envId, null);
+    movementService.create('June 1', null, 5000, false, new Date(2026, 5, 5), catId, one(envId, 5000), null);
+    movementService.create('June 2', null, 3000, false, new Date(2026, 5, 6), catId, one(envId, 3000), null);
 
     const period = new Period(defaultAccountId(), envId, 2026, 5);
     expect(periodSummaryRepository.getByPeriod(period)!.dirtyState).toBe('MODIFIED');
@@ -277,7 +281,7 @@ describe('PeriodSummaryService', () => {
   it('recalculateForPeriod deletes the summary when its movements are gone', () => {
     const envId = envByName('Monthly Expenses').id;
     const movId = Number(
-      movementService.create('Solo', null, 5000, false, new Date(2026, 6, 5), firstCategoryId(), envId, null),
+      movementService.create('Solo', null, 5000, false, new Date(2026, 6, 5), firstCategoryId(), one(envId, 5000), null),
     );
     const period = new Period(defaultAccountId(), envId, 2026, 6);
     expect(periodSummaryService.checkExists(period)).toBe(true);
@@ -364,5 +368,73 @@ describe('PeriodSummaryService', () => {
   it('getLatestPeriodSummary returns undefined when the envelope has no summary', () => {
     const savings = envByName('Savings');
     expect(periodSummaryService.getLatestPeriodSummary(savings.id)).toBeUndefined();
+  });
+
+  // ── split movements (CU3) ──────────────────────────────────────────────────
+  it('a split movement contributes its partial amount to each envelope summary', () => {
+    const accId = defaultAccountId();
+    const envA = Number(envelopeService.create('SplitA', accId));
+    const envB = Number(envelopeService.create('SplitB', accId));
+    movementService.create(
+      'Paycheck', null, 2000, true, new Date(2026, 7, 10), firstCategoryId(),
+      new Map([[envA, 1500], [envB, 500]]), null,
+    );
+
+    const a = periodSummaryRepository.getByPeriod(new Period(accId, envA, 2026, 7))!;
+    const b = periodSummaryRepository.getByPeriod(new Period(accId, envB, 2026, 7))!;
+    expect(a.totalIncomeCents).toBe(1500);
+    expect(a.cashFlowCents).toBe(1500);
+    expect(a.movementCount).toBe(1);
+    expect(b.totalIncomeCents).toBe(500);
+    expect(b.cashFlowCents).toBe(500);
+    expect(b.movementCount).toBe(1);
+  });
+
+  // The exact read the Envelopes page performs (getLatestPeriodSummary → endingBalanceCents).
+  it('getLatestPeriodSummary reflects a split share on create and on edit', () => {
+    const accId = defaultAccountId();
+    const envA = Number(envelopeService.create('LatestSplitA', accId));
+    const envB = Number(envelopeService.create('LatestSplitB', accId));
+    const id = Number(
+      movementService.create(
+        'Paycheck', null, 2000, true, new Date(2026, 7, 10), firstCategoryId(),
+        new Map([[envA, 1500], [envB, 500]]), null,
+      ),
+    );
+    expect(periodSummaryService.getLatestPeriodSummary(envA)!.endingBalanceCents).toBe(1500);
+    expect(periodSummaryService.getLatestPeriodSummary(envB)!.endingBalanceCents).toBe(500);
+
+    // Re-split 1200/800 and confirm the page read picks up the new balances.
+    const stored = movementService.getById(id)!;
+    movementService.update(Movement.from({ ...stored, envelopeIdMap: new Map([[envA, 1200], [envB, 800]]) }));
+    expect(periodSummaryService.getLatestPeriodSummary(envA)!.endingBalanceCents).toBe(1200);
+    expect(periodSummaryService.getLatestPeriodSummary(envB)!.endingBalanceCents).toBe(800);
+  });
+
+  // Uses a fresh account so its default envelope starts clean (balance 0, no seeded activity).
+  function freshDefault(accountName: string): { acc: number; def: number } {
+    const acc = Number(accountService.create(accountName));
+    const def = envelopeService.getAll().find((e) => e.accountId === acc && e.isDefault)!.id;
+    return { acc, def };
+  }
+
+  it('carries the ending balance across a month with no activity (gap)', () => {
+    const { acc, def } = freshDefault('GapAcc');
+    const cat = firstCategoryId();
+    movementService.create('May in', null, 35000, true, new Date(2026, 4, 10), cat, new Map([[def, 35000]]), null, null, false, acc);
+    // June has no activity.
+    movementService.create('Jul in', null, 5000, true, new Date(2026, 6, 10), cat, new Map([[def, 5000]]), null, null, false, acc);
+    // The July balance must still include May → 40000, not just 5000.
+    expect(periodSummaryService.getLatestPeriodSummary(def)!.endingBalanceCents).toBe(40000);
+  });
+
+  it('refreshes the default envelope balance when a split envelope is deleted', () => {
+    const { acc, def } = freshDefault('DelAcc');
+    const a = Number(envelopeService.create('DA', acc));
+    const b = Number(envelopeService.create('DB', acc));
+    const cat = firstCategoryId();
+    movementService.create('Pay', null, 2000, true, new Date(2026, 6, 10), cat, new Map([[a, 1200], [b, 800]]), null, null, false, acc);
+    envelopeService.delete(b); // b's 800 share merges into the account default
+    expect(periodSummaryService.getLatestPeriodSummary(def)!.endingBalanceCents).toBe(800);
   });
 });

@@ -78,6 +78,58 @@ export class PeriodSummaryRepository {
     return row ? toSummary(row) : undefined;
   }
 
+  /**
+   * Most recent summary strictly before (year, month) for the same account+envelope — the correct
+   * anchor for the ending-balance chain, which must skip months with no activity (gaps) rather than
+   * only looking at the immediately-preceding month.
+   */
+  getLatestBefore(period: PeriodT): PeriodSummaryT | undefined {
+    const row = this.db
+      .prepare(
+        `SELECT ${this.selectCols} FROM ${tables.periodSummaries}
+         WHERE account_id = ? AND (envelope_id IS ?)
+           AND (year < ? OR (year = ? AND month < ?))
+         ORDER BY year DESC, month DESC
+         LIMIT 1`,
+      )
+      .get(
+        period.accountId,
+        period.envelopeId,
+        period.year,
+        period.year,
+        period.month,
+      ) as RawRow | undefined;
+    return row ? toSummary(row) : undefined;
+  }
+
+  /**
+   * Marks every later CLEAN summary of the same account+envelope DIRTY so its ending balance is
+   * re-chained on next read. Gap-safe (updates all later months in one statement, not just the
+   * contiguous run). MODIFIED summaries are left as-is — they already force a full recompute.
+   */
+  markLaterDirty(period: PeriodT): void {
+    this.db
+      .prepare(
+        `UPDATE ${tables.periodSummaries} SET dirty_state = 'DIRTY'
+         WHERE account_id = :accountId AND (envelope_id IS :envelopeId)
+           AND (year > :year OR (year = :year AND month > :month))
+           AND dirty_state = 'CLEAN'`,
+      )
+      .run({
+        accountId: period.accountId,
+        envelopeId: period.envelopeId,
+        year: period.year,
+        month: period.month,
+      });
+  }
+
+  /** Removes every summary for an envelope — used when the envelope itself is deleted. */
+  deleteAllForEnvelope(envelopeId: number): void {
+    this.db
+      .prepare(`DELETE FROM ${tables.periodSummaries} WHERE envelope_id = ?`)
+      .run(envelopeId);
+  }
+
   update(s: PeriodSummaryT): boolean {
     return (
       this.db

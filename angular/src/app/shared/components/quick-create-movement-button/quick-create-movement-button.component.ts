@@ -4,6 +4,7 @@ import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { take } from 'rxjs';
 import { DialogService } from '../../../core/services/dialog.service';
+import { DataRefreshService } from '../../../core/services/data-refresh.service';
 import { MovementFormComponent } from '../../../features/movements/movement-form/movement-form.component';
 
 /**
@@ -34,6 +35,7 @@ import { MovementFormComponent } from '../../../features/movements/movement-form
 })
 export class QuickCreateMovementButtonComponent {
   private dialog = inject(DialogService);
+  private refresh = inject(DataRefreshService);
 
   @Input() label = 'Add movement';
   @Input() buttonClass = 'btn btn--primary';
@@ -45,6 +47,11 @@ export class QuickCreateMovementButtonComponent {
       .open<MovementFormComponent, undefined, void>(MovementFormComponent)
       .afterClosed()
       .pipe(take(1))
-      .subscribe(() => this.created.emit());
+      .subscribe(() => {
+        this.created.emit();
+        // Fired from anywhere (e.g. the navbar) — signal balance views to reload even though the
+        // host page never navigated.
+        this.refresh.notifyMovementsChanged();
+      });
   }
 }

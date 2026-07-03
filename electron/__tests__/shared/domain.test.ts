@@ -11,7 +11,7 @@ const sampleMovementT: MovementT = {
   isPositive: false,
   date: new Date(2026, 3, 15), // April (month index 3) 2026
   categoryId: 2,
-  envelopeId: 4,
+  envelopeIdMap: new Map([[4, 1200]]),
   additionalNotes: null,
   templateId: null,
   isTentative: false,
@@ -74,8 +74,8 @@ describe('Period — navigation and factories', () => {
     );
   });
 
-  it('fromMovement derives 0-indexed year/month from the date', () => {
-    expect(Period.fromMovement(sampleMovementT)).toEqual(new Period(1, 4, 2026, 3));
+  it('fromMovement derives 0-indexed year/month from the date for the given envelope', () => {
+    expect(Period.fromMovement(sampleMovementT, 4)).toEqual(new Period(1, 4, 2026, 3));
   });
 
   it('fromPeriodSummary maps account/envelope/year/month', () => {
@@ -84,8 +84,25 @@ describe('Period — navigation and factories', () => {
 });
 
 describe('Movement', () => {
-  it('getPeriod returns the movement period', () => {
-    expect(Movement.from(sampleMovementT).getPeriod()).toEqual(new Period(1, 4, 2026, 3));
+  it('getPeriods returns one period per attributed envelope', () => {
+    expect(Movement.from(sampleMovementT).getPeriods()).toEqual([new Period(1, 4, 2026, 3)]);
+  });
+
+  it('getPeriods yields a period per envelope for a split movement', () => {
+    const split = Movement.from({
+      ...sampleMovementT,
+      quantityCents: 3000,
+      envelopeIdMap: new Map([
+        [4, 1000],
+        [6, 2000],
+      ]),
+    });
+    expect(split.getPeriods()).toEqual([
+      new Period(1, 4, 2026, 3),
+      new Period(1, 6, 2026, 3),
+    ]);
+    expect(split.isSplitMovement()).toBe(true);
+    expect(split.amountFor(6)).toBe(2000);
   });
 
   it('from round-trips every field', () => {

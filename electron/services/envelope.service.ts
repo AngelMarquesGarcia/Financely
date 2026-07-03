@@ -1,8 +1,10 @@
 import { DatabaseService } from '../repository/database.service';
 import { envelopeRepository } from '../repository/envelope-repository.service';
 import { periodSummaryRepository } from '../repository/period-summary-repository.service';
+import { movementRepository } from '../repository/movement-repository.service';
+import { periodSummaryService } from './period-summary.service';
 import { EnvelopeT } from '@shared/types';
-import { Envelope } from '@shared/domain';
+import { Envelope, Period } from '@shared/domain';
 import { AppError, AppErrorCode } from '@shared/error-codes';
 
 export class EnvelopeService {
@@ -77,11 +79,25 @@ export class EnvelopeService {
       throw new AppError(AppErrorCode.ENVELOPE_ACCOUNT_NO_DEFAULT);
     }
 
+    // The doomed envelope's allocations move to the default — collect the default-envelope periods
+    // they land in (before the move) so we can recompute their balances afterward.
+    const affected = new Map<string, Period>();
+    for (const m of movementRepository.getAllMovements({ envelopeId: id })) {
+      const p = new Period(accountId, defaultId, m.date.getFullYear(), m.date.getMonth());
+      affected.set(`${p.year}-${p.month}`, p);
+    }
+
     const tx = this.db.transaction((fromId: number, toId: number) => {
       envelopeRepository.reassignMovements(fromId, toId);
       return envelopeRepository.deleteEnvelope(fromId);
     });
-    return tx(id, defaultId);
+    const result = tx(id, defaultId);
+
+    // Drop the deleted envelope's now-orphaned summaries, then refresh the default's balances so the
+    // redirected money shows up immediately (create-or-dirty + re-chain later months).
+    periodSummaryRepository.deleteAllForEnvelope(id);
+    for (const period of affected.values()) periodSummaryService.periodTouched(period);
+    return result;
   }
 
   setDefault(id: number): void {

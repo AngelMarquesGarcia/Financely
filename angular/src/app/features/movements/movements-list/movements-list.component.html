@@ -71,7 +71,14 @@
                     <span class="badge badge--tentative" title="Auto-generated — awaiting your review">⚠ Review</span>
                   }
                 </td>
-                <td class="amount">{{ signedCents(m) | money }}</td>
+                <td class="amount">
+                  {{ displayAmountCents(m) | money }}
+                  @if (isPartial(m)) {
+                    <span class="badge badge--split" title="Part of a split movement">partial</span>
+                  } @else if (isSplit(m)) {
+                    <span class="badge badge--split" title="Split across envelopes">split</span>
+                  }
+                </td>
                 <td>
                   @if (cat) {
                     <span
@@ -83,7 +90,7 @@
                     <span class="badge badge--none">—</span>
                   }
                 </td>
-                <td>{{ getEnvelope(m.envelopeId)?.name ?? '—' }}</td>
+                <td>{{ envelopeLabel(m) }}</td>
                 <td>{{ formatDate(m.date) }}</td>
                 <td class="tags-cell">
                   @let tags = getMovementTags(m.id);

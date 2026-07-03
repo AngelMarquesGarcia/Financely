@@ -13,7 +13,7 @@ function makeMovement(overrides: Partial<MovementT> = {}): MovementT {
     isPositive: true,
     date: new Date('2024-01-15'),
     categoryId: 1,
-    envelopeId: 1,
+    envelopeIdMap: new Map([[1, 1000]]),
     additionalNotes: null,
     templateId: null,
     isTentative: false,
@@ -72,10 +72,34 @@ describe('MovementsListComponent', () => {
     const cat: CategoryT = { id: 1, name: 'Food', isDefault: false, envelopeId: null };
     comp.envelopes = [env];
     comp.categories = [cat];
-    comp.movements = [makeMovement({ envelopeId: 1, categoryId: 1 })];
+    comp.movements = [makeMovement({ envelopeIdMap: new Map([[1, 1000]]), categoryId: 1 })];
     comp.movementTags = { 1: [] };
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Monthly');
+  });
+
+  // ── split display (CU3) ────────────────────────────────────────────────────
+  it('shows the full total and "Multiple" for a split when unscoped', () => {
+    const fixture = createComponent();
+    const comp = fixture.componentInstance;
+    const split = makeMovement({ quantityCents: 2000, envelopeIdMap: new Map([[1, 1500], [2, 500]]) });
+    expect(comp.isSplit(split)).toBe(true);
+    expect(comp.isPartial(split)).toBe(false);
+    expect(comp.displayAmountCents(split)).toBe(2000);
+    expect(comp.envelopeLabel(split)).toBe('Multiple');
+  });
+
+  it('shows the partial share when scoped to one envelope of a split', () => {
+    const fixture = createComponent();
+    const comp = fixture.componentInstance;
+    comp.envelopes = [
+      { id: 2, name: 'Food', accountId: 1, isDefault: false, startingBalance: 0, budgetCents: null, maxSavingsCents: null, overflowsTo: null },
+    ];
+    comp.scopedEnvelopeId = 2;
+    const split = makeMovement({ quantityCents: 2000, isPositive: false, envelopeIdMap: new Map([[1, 1500], [2, 500]]) });
+    expect(comp.isPartial(split)).toBe(true);
+    expect(comp.displayAmountCents(split)).toBe(-500); // expense → negative partial share
+    expect(comp.envelopeLabel(split)).toBe('Food');
   });
 
   it('renders empty state when movements is empty', () => {

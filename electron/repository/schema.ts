@@ -43,10 +43,18 @@ export const MovementSchema = `
   isPositive INTEGER NOT NULL,
   date TEXT NOT NULL,
   category_id INTEGER NOT NULL REFERENCES categories(id),
-  envelope_id INTEGER NOT NULL REFERENCES envelopes(id) ON DELETE CASCADE,
   additional_notes TEXT,
   template_id INTEGER REFERENCES periodic_movements(id) ON DELETE SET NULL,
   is_tentative INTEGER NOT NULL DEFAULT 0
+`;
+
+/** Per-envelope allocation for a movement. Every movement has ≥1 row; a split has several. The
+ *  amounts sum to the movement's quantity_cents (enforced in the service, not the schema). */
+export const MovementEnvelopeSchema = `
+  movement_id INTEGER NOT NULL REFERENCES movements(id) ON DELETE CASCADE,
+  envelope_id INTEGER NOT NULL REFERENCES envelopes(id) ON DELETE CASCADE,
+  amount_cents INTEGER NOT NULL CHECK(amount_cents > 0),
+  PRIMARY KEY (movement_id, envelope_id)
 `;
 
 export const PeriodicMovementSchema = `
@@ -58,7 +66,6 @@ export const PeriodicMovementSchema = `
   isPositive INTEGER NOT NULL,
   day_of_month INTEGER NOT NULL CHECK(day_of_month >= 1 AND day_of_month <= 31),
   category_id INTEGER NOT NULL REFERENCES categories(id),
-  envelope_id INTEGER NOT NULL REFERENCES envelopes(id) ON DELETE CASCADE,
   additional_notes TEXT,
   active INTEGER NOT NULL DEFAULT 1,
   start_year INTEGER NOT NULL,
@@ -71,6 +78,14 @@ export const PeriodicMovementTagSchema = `
   periodic_movement_id INTEGER NOT NULL REFERENCES periodic_movements(id) ON DELETE CASCADE,
   tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
   PRIMARY KEY (periodic_movement_id, tag_id)
+`;
+
+/** Per-envelope allocation for a periodic template — the default split copied onto each instance. */
+export const PeriodicMovementEnvelopeSchema = `
+  periodic_movement_id INTEGER NOT NULL REFERENCES periodic_movements(id) ON DELETE CASCADE,
+  envelope_id INTEGER NOT NULL REFERENCES envelopes(id) ON DELETE CASCADE,
+  amount_cents INTEGER NOT NULL CHECK(amount_cents > 0),
+  PRIMARY KEY (periodic_movement_id, envelope_id)
 `;
 
 export const TransferSchema = `

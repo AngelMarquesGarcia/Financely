@@ -11,6 +11,11 @@ const ERROR_MESSAGES: Record<string, string> = {
   [AppErrorCode.MOVEMENT_PREVIOUS_MONTH_TENTATIVE]:
     'A previous month still has movements awaiting review. Confirm or cancel those first.',
   [AppErrorCode.MOVEMENT_NOT_TENTATIVE]: 'This movement is not awaiting review.',
+  [AppErrorCode.MOVEMENT_SPLIT_SUM_MISMATCH]:
+    'The amounts assigned to each envelope must add up to the movement total.',
+  [AppErrorCode.MOVEMENT_SPLIT_AMOUNT_INVALID]:
+    'Each envelope share must be a positive whole number of cents.',
+  [AppErrorCode.MOVEMENT_SPLIT_ENVELOPE_INVALID]: 'A split references an invalid envelope.',
   [AppErrorCode.PERIODIC_NAME_REQUIRED]: 'Periodic movement name cannot be empty.',
   [AppErrorCode.PERIODIC_NAME_DUPLICATE]: 'A periodic movement with this name already exists.',
   [AppErrorCode.PERIODIC_AMOUNT_INVALID]: 'Amount must be a positive whole number of cents.',
@@ -55,7 +60,19 @@ const FALLBACK = 'Something went wrong.';
 
 @Injectable({ providedIn: 'root' })
 export class ErrorTextService {
-  resolve(code: string): string {
-    return ERROR_MESSAGES[code] ?? FALLBACK;
+  /**
+   * Maps an error to a human-readable message. Accepts a bare `AppErrorCode` (the `ipcHandle`
+   * contract) or a wrapped message — Electron rejects IPC calls with e.g.
+   * `"Error invoking remote method 'movement:create': Error: MOVEMENT_PREVIOUS_MONTH_TENTATIVE"`,
+   * so we also recover the code from any UPPER_SNAKE_CASE token in the string (trailing wins).
+   */
+  resolve(codeOrMessage: string): string {
+    const direct = ERROR_MESSAGES[codeOrMessage];
+    if (direct) return direct;
+    const token = codeOrMessage
+      .match(/[A-Z][A-Z0-9_]{2,}/g)
+      ?.reverse()
+      .find((t) => t in ERROR_MESSAGES);
+    return token ? ERROR_MESSAGES[token] : FALLBACK;
   }
 }

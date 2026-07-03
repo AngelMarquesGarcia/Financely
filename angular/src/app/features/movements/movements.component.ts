@@ -6,6 +6,7 @@ import { ConfirmService } from '../../core/services/confirm.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { ElectronService } from '../../core/services/electron.service';
 import { ErrorReporter } from '../../core/services/error-reporter.service';
+import { DataRefreshService } from '../../core/services/data-refresh.service';
 import { CategoryT, EnvelopeT, MovementT, MovementFilter, TagT } from '@shared/types';
 import { MovementFormComponent } from './movement-form/movement-form.component';
 import { MovementsListComponent } from './movements-list/movements-list.component';
@@ -23,6 +24,7 @@ export class MovementsComponent implements OnInit {
   private confirm = inject(ConfirmService);
   private notify = inject(NotificationService);
   private errors = inject(ErrorReporter);
+  private refresh = inject(DataRefreshService);
   private destroyRef = inject(DestroyRef);
 
   movements: MovementT[] = [];
@@ -33,6 +35,11 @@ export class MovementsComponent implements OnInit {
   editingMovement: MovementT | null = null;
 
   private currentFilter: MovementFilter = {};
+
+  /** Envelope the list is currently filtered to (drives split movements' partial display), or null. */
+  get scopedEnvelopeId(): number | null {
+    return this.currentFilter.envelopeId ?? null;
+  }
 
   ngOnInit() {
     this.loadMovements();
@@ -92,6 +99,7 @@ export class MovementsComponent implements OnInit {
         if (result !== null) {
           this.notify.success(`Movement "${target.name}" deleted.`);
           this.loadMovements();
+          this.refresh.notifyMovementsChanged();
         }
       });
   }
@@ -115,6 +123,7 @@ export class MovementsComponent implements OnInit {
         if (deleted != null) {
           this.notify.success(`${deleted} movement${deleted === 1 ? '' : 's'} deleted.`);
           this.loadMovements();
+          this.refresh.notifyMovementsChanged();
         }
       });
   }
@@ -128,6 +137,7 @@ export class MovementsComponent implements OnInit {
         if (ok) {
           this.notify.success(`Movement "${target?.name ?? ''}" confirmed.`);
           this.loadMovements();
+          this.refresh.notifyMovementsChanged();
         }
       });
   }
@@ -135,6 +145,7 @@ export class MovementsComponent implements OnInit {
   onSaved() {
     this.editingMovement = null;
     this.loadMovements();
+    this.refresh.notifyMovementsChanged();
   }
 
   onCancelled() {

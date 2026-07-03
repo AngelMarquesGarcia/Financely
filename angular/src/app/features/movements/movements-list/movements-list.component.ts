@@ -22,6 +22,8 @@ export class MovementsListComponent {
   @Input() envelopes: EnvelopeT[] = [];
   @Input() tags: TagT[] = [];
   @Input() movementTags: Record<number, TagT[]> = {};
+  /** When the list is scoped to one envelope, split movements show only that envelope's share. */
+  @Input() scopedEnvelopeId: number | null = null;
   @Output() editRequested = new EventEmitter<MovementT>();
   @Output() deleteRequested = new EventEmitter<number>();
   @Output() confirmRequested = new EventEmitter<number>();
@@ -115,6 +117,37 @@ export class MovementsListComponent {
 
   signedCents(m: MovementT): number {
     return m.isPositive ? m.quantityCents : -m.quantityCents;
+  }
+
+  /** A movement is split when it is divided across more than one envelope (CU3). */
+  isSplit(m: MovementT): boolean {
+    return m.envelopeIdMap.size > 1;
+  }
+
+  /** True when the row shows only part of a split (list scoped to one of its envelopes). */
+  isPartial(m: MovementT): boolean {
+    return this.scopedEnvelopeId != null && this.isSplit(m);
+  }
+
+  /**
+   * Signed amount to display: when scoped to an envelope, a split shows that envelope's share;
+   * otherwise the full total.
+   */
+  displayAmountCents(m: MovementT): number {
+    const base =
+      this.scopedEnvelopeId != null
+        ? (m.envelopeIdMap.get(this.scopedEnvelopeId) ?? m.quantityCents)
+        : m.quantityCents;
+    return m.isPositive ? base : -base;
+  }
+
+  /** Envelope column label: the scoped envelope, the single envelope, or "Multiple" for a split. */
+  envelopeLabel(m: MovementT): string {
+    if (this.scopedEnvelopeId != null) return this.getEnvelope(this.scopedEnvelopeId)?.name ?? '—';
+    const ids = [...m.envelopeIdMap.keys()];
+    if (ids.length === 0) return '—';
+    if (ids.length === 1) return this.getEnvelope(ids[0])?.name ?? '—';
+    return 'Multiple';
   }
 
   formatDate(date: unknown): string {

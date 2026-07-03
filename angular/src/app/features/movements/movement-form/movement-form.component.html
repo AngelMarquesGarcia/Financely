@@ -83,21 +83,41 @@
       }
     </div>
 
-    <div class="form__group">
-      <label class="form__label" for="mov-envelope">Envelope</label>
-      <select
-        id="mov-envelope"
-        class="form__input"
-        [class.form__input--error]="showErrors && !selectedEnvelopeId"
-        [(ngModel)]="selectedEnvelopeId"
-      >
-        <option [ngValue]="null" disabled>Select envelope…</option>
-        @for (e of envelopes; track e.id) {
-          <option [ngValue]="e.id">{{ e.name }}</option>
+    <div class="form__group form__group--full">
+      <div class="form__label-row">
+        <label class="form__label" for="mov-envelope">Envelope</label>
+        <label class="form__check">
+          <input type="checkbox" [(ngModel)]="splitMode" />
+          Split across envelopes
+        </label>
+      </div>
+
+      @if (!splitMode) {
+        <select
+          id="mov-envelope"
+          class="form__input"
+          [class.form__input--error]="showErrors && !selectedEnvelopeId"
+          [(ngModel)]="selectedEnvelopeId"
+        >
+          <option [ngValue]="null" disabled>Select envelope…</option>
+          @for (e of envelopes; track e.id) {
+            <option [ngValue]="e.id">{{ e.name }}</option>
+          }
+        </select>
+        @if (showErrors && !selectedEnvelopeId) {
+          <span class="form__error">An envelope must be selected.</span>
         }
-      </select>
-      @if (showErrors && !selectedEnvelopeId) {
-        <span class="form__error">An envelope must be selected.</span>
+      } @else {
+        <app-envelope-split-editor
+          [envelopes]="envelopes"
+          [totalCents]="amountCents"
+          [initial]="initialSplit"
+          (valueChange)="splitMap = $event"
+          (validChange)="splitValid = $event"
+        />
+        @if (showErrors && !splitValid) {
+          <span class="form__error">Split amounts must add up to the total.</span>
+        }
       }
     </div>
 

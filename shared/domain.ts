@@ -33,8 +33,8 @@ export class Period implements PeriodT {
     return new Period(d.accountId, d.envelopeId, d.year, d.month);
   }
 
-  static fromMovement(m: MovementT): Period {
-    return new Period(m.accountId, m.envelopeId, m.date.getFullYear(), m.date.getMonth());
+  static fromMovement(m: MovementT, envelopeId: number): Period {
+    return new Period(m.accountId, envelopeId, m.date.getFullYear(), m.date.getMonth());
   }
 
   static fromPeriodSummary(ps: PeriodSummaryT): Period {
@@ -52,14 +52,27 @@ export class Movement implements MovementT {
     public readonly isPositive: boolean,
     public readonly date: Date,
     public readonly categoryId: number,
-    public readonly envelopeId: number,
+    public readonly envelopeIdMap: Map<number, number>,
     public readonly additionalNotes: string | null,
     public readonly templateId: number | null = null,
     public readonly isTentative: boolean = false,
   ) {}
 
-  getPeriod(): Period {
-    return Period.fromMovement(this);
+  /** True when the movement is divided across more than one envelope. */
+  isSplitMovement(): boolean {
+    return this.envelopeIdMap.size > 1;
+  }
+
+  /** This movement's allocation to a given envelope, or undefined if it isn't attributed there. */
+  amountFor(envelopeId: number): number | undefined {
+    return this.envelopeIdMap.get(envelopeId);
+  }
+
+  /** One period per envelope the movement is attributed to (a split touches several). */
+  getPeriods(): Period[] {
+    return [...this.envelopeIdMap.keys()].map((envelopeId) =>
+      Period.fromMovement(this, envelopeId),
+    );
   }
 
   isPeriodic(): boolean {
@@ -76,7 +89,7 @@ export class Movement implements MovementT {
       d.isPositive,
       d.date,
       d.categoryId,
-      d.envelopeId,
+      d.envelopeIdMap,
       d.additionalNotes,
       d.templateId,
       d.isTentative,
@@ -257,7 +270,7 @@ export class PeriodicMovement implements PeriodicMovementT {
     public readonly isPositive: boolean,
     public readonly dayOfMonth: number,
     public readonly categoryId: number,
-    public readonly envelopeId: number,
+    public readonly envelopeIdMap: Map<number, number>,
     public readonly additionalNotes: string | null,
     public readonly active: boolean,
     public readonly startYear: number,
@@ -276,23 +289,18 @@ export class PeriodicMovement implements PeriodicMovementT {
     return new Date(year, month, Math.min(this.dayOfMonth, this.lastDayOfMonth(year, month)));
   }
 
-  /** The period one before this template's start anchor — the cursor's implicit floor. */
-  startPeriod(): Period {
-    return new Period(this.accountId, this.envelopeId, this.startYear, this.startMonth);
-  }
-
-  /** The generation cursor as a Period, or null when nothing has been generated yet. */
-  cursorPeriod(): Period | null {
-    if (this.lastCreatedYear == null || this.lastCreatedMonth == null) return null;
-    return new Period(this.accountId, this.envelopeId, this.lastCreatedYear, this.lastCreatedMonth);
-  }
-
   /**
    * Builds (but does not persist) a real movement instance for the given date. Inherits the
-   * template's account, category, envelope and sign; `concept` falls back to the name; amount
-   * defaults to the template's. Stamped with `templateId` so the instance is traceable.
+   * template's account, category, sign and envelope split; `concept` falls back to the name; amount
+   * defaults to the template's. `envelopeIdMap` overrides the template's default split (used for
+   * custom-amount instances whose distribution the frontend supplied). Stamped with `templateId`.
    */
-  generateInstance(date: Date, isTentative: boolean, amountCents?: number): Movement {
+  generateInstance(
+    date: Date,
+    isTentative: boolean,
+    amountCents?: number,
+    envelopeIdMap?: Map<number, number>,
+  ): Movement {
     return new Movement(
       -1,
       this.accountId,
@@ -302,7 +310,7 @@ export class PeriodicMovement implements PeriodicMovementT {
       this.isPositive,
       date,
       this.categoryId,
-      this.envelopeId,
+      envelopeIdMap ? new Map(envelopeIdMap) : new Map(this.envelopeIdMap),
       this.additionalNotes,
       this.id,
       isTentative,
@@ -319,7 +327,7 @@ export class PeriodicMovement implements PeriodicMovementT {
       d.isPositive,
       d.dayOfMonth,
       d.categoryId,
-      d.envelopeId,
+      d.envelopeIdMap,
       d.additionalNotes,
       d.active,
       d.startYear,

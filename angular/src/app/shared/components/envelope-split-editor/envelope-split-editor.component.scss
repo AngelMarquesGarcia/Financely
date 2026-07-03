@@ -1,0 +1,41 @@
+.split {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.split__row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.split__envelope {
+  flex: 1;
+  min-width: 0;
+}
+
+.split__amount {
+  width: 8rem;
+}
+
+.split__remove {
+  padding: 0 0.5rem;
+}
+
+.split__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.split__remaining {
+  font-size: 0.85rem;
+  color: var(--c-text-muted, #64748b);
+
+  &--bad {
+    color: var(--c-danger, #ef4444);
+    font-weight: 600;
+  }
+}

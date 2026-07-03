@@ -44,7 +44,7 @@ describe('EnvelopeService — delete, setDefault, and account-create side effect
 
     const db = DatabaseService.getInstance().db;
     const movRow = db
-      .prepare('SELECT id FROM movements WHERE envelope_id = ? LIMIT 1')
+      .prepare('SELECT movement_id AS id FROM movement_envelopes WHERE envelope_id = ? LIMIT 1')
       .get(monthly.id) as { id: number } | undefined;
     expect(movRow).toBeDefined();
     const movId = movRow!.id;
@@ -52,8 +52,32 @@ describe('EnvelopeService — delete, setDefault, and account-create side effect
     expect(envelopeService.delete(monthly.id)).toBe(true);
 
     const after = movementService.getById(movId)!;
-    expect(after.envelopeId).toBe(unassigned.id);
+    expect(after.envelopeIdMap.has(unassigned.id)).toBe(true);
+    expect(after.envelopeIdMap.has(monthly.id)).toBe(false);
     expect(envelopeService.getAll().find((e) => e.id === monthly.id)).toBeUndefined();
+  });
+
+  it('delete merges a split allocation when the movement already targets the account default', () => {
+    const envs = envelopeService.getAll();
+    const monthly = envs.find((e) => e.name === 'Monthly Expenses')!;
+    const unassigned = envs.find((e) => e.name === 'Unassigned' && e.isDefault)!;
+    const db = DatabaseService.getInstance().db;
+    const catId = Number((db.prepare('SELECT id FROM categories LIMIT 1').get() as { id: number }).id);
+
+    // A movement split across the doomed envelope and the account default.
+    const movId = Number(
+      movementService.create(
+        'Split', null, 3000, false, new Date(2026, 3, 9), catId,
+        new Map([[monthly.id, 2000], [unassigned.id, 1000]]), null,
+      ),
+    );
+
+    expect(envelopeService.delete(monthly.id)).toBe(true);
+
+    const after = movementService.getById(movId)!;
+    // The two allocations collapse into one on the default, preserving the total.
+    expect(after.envelopeIdMap.size).toBe(1);
+    expect(after.envelopeIdMap.get(unassigned.id)).toBe(3000);
   });
 
   it('setDefault clears the previous default in the same account', () => {

@@ -38,7 +38,7 @@ export class ElectronService {
     isPositive: boolean,
     date: Date,
     categoryId: number,
-    envelopeId: number,
+    envelopeIdMap: Map<number, number>,
     additionalNotes: string | null,
   ) {
     return from(
@@ -49,7 +49,7 @@ export class ElectronService {
         isPositive,
         date,
         categoryId,
-        envelopeId,
+        envelopeIdMap,
         additionalNotes,
       ),
     );
@@ -116,12 +116,26 @@ export class ElectronService {
     return from(this.periodicMovements.runDue());
   }
 
-  instantiatePeriodicMovementCurrentMonth(id: number, date?: Date, amountCents?: number) {
-    return from(this.periodicMovements.instantiateCurrentMonthEarly(id, date, amountCents));
+  instantiatePeriodicMovementCurrentMonth(
+    id: number,
+    date?: Date,
+    amountCents?: number,
+    envelopeIdMap?: Map<number, number>,
+  ) {
+    return from(
+      this.periodicMovements.instantiateCurrentMonthEarly(id, date, amountCents, envelopeIdMap),
+    );
   }
 
-  createAdditionalPeriodicInstance(id: number, date: Date, amountCents?: number) {
-    return from(this.periodicMovements.createAdditionalInstance(id, date, amountCents));
+  createAdditionalPeriodicInstance(
+    id: number,
+    date: Date,
+    amountCents?: number,
+    envelopeIdMap?: Map<number, number>,
+  ) {
+    return from(
+      this.periodicMovements.createAdditionalInstance(id, date, amountCents, envelopeIdMap),
+    );
   }
 
   // Transfers

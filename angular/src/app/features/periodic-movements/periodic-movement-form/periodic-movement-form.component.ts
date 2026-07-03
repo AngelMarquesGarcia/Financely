@@ -18,10 +18,11 @@ import { ErrorTextService } from '../../../core/services/error-text.service';
 import { AccountT, CategoryT, EnvelopeT, PeriodicMovementT, TagT } from '@shared/types';
 import { TagPickerComponent } from '../../../shared/components/tag-picker/tag-picker.component';
 import { AmountInputComponent } from '../../../shared/components/amount-input/amount-input.component';
+import { EnvelopeSplitEditorComponent } from '../../../shared/components/envelope-split-editor/envelope-split-editor.component';
 
 @Component({
   selector: 'app-periodic-movement-form',
-  imports: [FormsModule, TagPickerComponent, AmountInputComponent],
+  imports: [FormsModule, TagPickerComponent, AmountInputComponent, EnvelopeSplitEditorComponent],
   templateUrl: './periodic-movement-form.component.html',
   styleUrl: './periodic-movement-form.component.scss',
 })
@@ -52,6 +53,12 @@ export class PeriodicMovementFormComponent implements OnInit, OnChanges {
   selectedTagIds: number[] = [];
   additionalNotes: string | null = null;
 
+  /** Split-across-envelopes mode (CU3). The default split is copied onto every generated instance. */
+  splitMode = false;
+  splitMap = new Map<number, number>();
+  splitValid = false;
+  initialSplit: Map<number, number> | null = null;
+
   showErrors = false;
 
   get isEditing() {
@@ -65,7 +72,11 @@ export class PeriodicMovementFormComponent implements OnInit, OnChanges {
     if (!Number.isInteger(this.dayOfMonth) || this.dayOfMonth < 1 || this.dayOfMonth > 31)
       errors.push('Day must be between 1 and 31.');
     if (!this.selectedAccountId) errors.push('An account must be selected.');
-    if (!this.selectedEnvelopeId) errors.push('An envelope must be selected.');
+    if (this.splitMode) {
+      if (!this.splitValid) errors.push('Split amounts must add up to the total.');
+    } else if (!this.selectedEnvelopeId) {
+      errors.push('An envelope must be selected.');
+    }
     if (!this.selectedCategoryId) errors.push('A category must be selected.');
     return errors;
   }
@@ -127,7 +138,15 @@ export class PeriodicMovementFormComponent implements OnInit, OnChanges {
         this.selectedAccountId = t.accountId;
         this.selectedCategoryId = t.categoryId;
         this.selectedCategoryName = this.categories.find((c) => c.id === t.categoryId)?.name ?? '';
-        this.selectedEnvelopeId = t.envelopeId;
+        if (t.envelopeIdMap.size > 1) {
+          this.splitMode = true;
+          this.initialSplit = t.envelopeIdMap;
+          this.selectedEnvelopeId = null;
+        } else {
+          this.splitMode = false;
+          this.initialSplit = null;
+          this.selectedEnvelopeId = [...t.envelopeIdMap.keys()][0] ?? null;
+        }
         this.additionalNotes = t.additionalNotes;
         this.showErrors = false;
         this.electron
@@ -162,15 +181,19 @@ export class PeriodicMovementFormComponent implements OnInit, OnChanges {
     this.showErrors = true;
     if (!this.isValid) return;
 
+    const quantityCents = this.amountCents!;
+    const envelopeIdMap = this.splitMode
+      ? this.splitMap
+      : new Map([[this.selectedEnvelopeId!, quantityCents]]);
     const fields = {
       accountId: this.selectedAccountId!,
       name: this.name.trim(),
       concept: this.concept || null,
-      quantityCents: this.amountCents!,
+      quantityCents,
       isPositive: this.type === 'income',
       dayOfMonth: this.dayOfMonth,
       categoryId: this.selectedCategoryId!,
-      envelopeId: this.selectedEnvelopeId!,
+      envelopeIdMap,
       additionalNotes: this.additionalNotes || null,
     };
 
@@ -204,6 +227,10 @@ export class PeriodicMovementFormComponent implements OnInit, OnChanges {
     this.selectedCategoryName = '';
     this.selectedCategoryId = null;
     this.selectedEnvelopeId = this.envelopes.find((e) => e.isDefault)?.id ?? null;
+    this.splitMode = false;
+    this.splitMap = new Map();
+    this.splitValid = false;
+    this.initialSplit = null;
     this.selectedTagIds = [];
     this.additionalNotes = null;
     this.showErrors = false;

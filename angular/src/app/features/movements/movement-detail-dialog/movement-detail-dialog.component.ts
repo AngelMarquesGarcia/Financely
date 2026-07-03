@@ -31,8 +31,24 @@ export class MovementDetailDialogComponent {
     return this.data.categories.find((c) => c.id === this.movement.categoryId);
   }
 
+  /** True when the movement is divided across more than one envelope (CU3). */
+  get isSplit(): boolean {
+    return this.movement.envelopeIdMap.size > 1;
+  }
+
+  /** The sole envelope for a non-split movement (undefined for a split — the breakdown is shown). */
   get envelope(): EnvelopeT | undefined {
-    return this.data.envelopes.find((e) => e.id === this.movement.envelopeId);
+    if (this.isSplit) return undefined;
+    const id = [...this.movement.envelopeIdMap.keys()][0];
+    return this.data.envelopes.find((e) => e.id === id);
+  }
+
+  /** Per-envelope rows for a split movement's breakdown. */
+  get splitRows(): { name: string; amountCents: number }[] {
+    return [...this.movement.envelopeIdMap].map(([id, amountCents]) => ({
+      name: this.data.envelopes.find((e) => e.id === id)?.name ?? '—',
+      amountCents,
+    }));
   }
 
   get tags(): TagT[] {

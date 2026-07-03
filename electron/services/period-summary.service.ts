@@ -1,5 +1,5 @@
 import { BasicSummary, MovementT, PeriodSummaryT } from '@shared/types';
-import { Period, PeriodSummary } from '@shared/domain';
+import { Movement, Period, PeriodSummary } from '@shared/domain';
 import { periodSummaryRepository } from '../repository/period-summary-repository.service';
 import { transferRepository } from '../repository/transfer-repository.service';
 import { movementRepository } from '../repository/movement-repository.service';
@@ -48,10 +48,11 @@ export class PeriodSummaryService {
     }
   }
 
-  recalculateFromMovement(updatedMovementId: number): number | bigint {
+  recalculateFromMovement(updatedMovementId: number): void {
     const mov = movementService.getById(updatedMovementId);
     if (mov == undefined) throw new AppError(AppErrorCode.MOVEMENT_NOT_FOUND);
-    return this.recalculateForPeriod(Period.fromMovement(mov));
+    // A split movement lands in several envelope periods — recalc each.
+    for (const period of Movement.from(mov).getPeriods()) this.recalculateForPeriod(period);
   }
 
   recalculateForPeriod(period: Period): number | bigint {
@@ -98,22 +99,20 @@ export class PeriodSummaryService {
     if (periodSum == undefined) throw new AppError(AppErrorCode.PERIODSUMMARY_NOT_FOUND);
     periodSum.dirtyState = 'MODIFIED';
     periodSummaryRepository.update(periodSum);
-
-    let nextPeriod = period.getNext();
-    let nextSum = periodSummaryRepository.getByPeriod(nextPeriod);
-    while (nextSum != undefined) {
-      nextSum.dirtyState = 'DIRTY';
-      periodSummaryRepository.update(nextSum);
-      nextPeriod = nextPeriod.getNext();
-      nextSum = periodSummaryRepository.getByPeriod(nextPeriod);
-    }
+    // Every later month's ending balance depends on this one — mark them all DIRTY (gap-safe).
+    periodSummaryRepository.markLaterDirty(period);
   }
 
   /** A movement or transfer landed in this period: create its summary if absent, else mark dirty. */
   periodTouched(period: Period) {
     const summary = periodSummaryRepository.getByPeriod(period);
-    if (summary == undefined) this.create(period);
-    else this.markDirty(period);
+    if (summary == undefined) {
+      this.create(period);
+      // A newly-created (possibly past) period shifts every later month's balance — re-chain them.
+      periodSummaryRepository.markLaterDirty(period);
+    } else {
+      this.markDirty(period);
+    }
   }
 
   /**
@@ -142,8 +141,8 @@ export class PeriodSummaryService {
   ): PeriodSummaryT | undefined {
     if (periodSummary.dirtyState == 'CLEAN') return periodSummary;
 
-    const prevSum = this.cleanPeriodSummary(period.getPrevious());
     if (periodSummary.dirtyState == 'MODIFIED') {
+      // Aggregates changed: recompute everything from movements (anchor handled internally).
       try {
         const updatedSum = this.calculatePeriodSummary(period);
         periodSummaryRepository.update(updatedSum);
@@ -153,11 +152,17 @@ export class PeriodSummaryService {
         return undefined;
       }
     }
-    if (prevSum == undefined) {
-      throw new AppError(AppErrorCode.PERIODSUMMARY_NOT_FOUND);
-    }
+
+    // DIRTY: aggregates are still valid; only re-anchor the ending balance on the most recent prior
+    // summary (cleaning it first), skipping any gap months. No prior → the envelope/account start.
+    const prevRaw = periodSummaryRepository.getLatestBefore(period);
+    const prevSum = prevRaw
+      ? this.cleanPeriodSummary(Period.fromPeriodSummary(prevRaw))
+      : undefined;
+    const anchor =
+      prevSum != undefined ? prevSum.endingBalanceCents : this.startingBalanceFor(period);
     periodSummary.endingBalanceCents =
-      prevSum.endingBalanceCents + periodSummary.cashFlowCents + periodSummary.netTransfersCents;
+      anchor + periodSummary.cashFlowCents + periodSummary.netTransfersCents;
     periodSummary.dirtyState = 'CLEAN';
     periodSummaryRepository.update(periodSummary);
     return periodSummary;
@@ -200,7 +205,9 @@ export class PeriodSummaryService {
       }
     }
 
-    const prevPeriodSummary = periodSummaryRepository.getByPeriod(period.getPrevious());
+    // Anchor on the most recent prior summary, skipping months with no activity (gaps), so an
+    // isolated earlier month's balance still carries forward.
+    const prevPeriodSummary = periodSummaryRepository.getLatestBefore(period);
     const anchor =
       prevPeriodSummary != undefined
         ? prevPeriodSummary.endingBalanceCents
@@ -238,11 +245,10 @@ export class PeriodSummaryService {
     }
 
     movements.forEach((m) => {
-      if (m.accountId != period.accountId || m.envelopeId != period.envelopeId)
-        throw new AppError(AppErrorCode.INCORRECT_PARAMETERS);
+      if (m.accountId != period.accountId) throw new AppError(AppErrorCode.INCORRECT_PARAMETERS);
     });
 
-    const sum = this.getBasicSummary(movements);
+    const sum = this.getBasicSummary(movements, period.envelopeId);
 
     return {
       accountId: period.accountId,
@@ -268,17 +274,30 @@ export class PeriodSummaryService {
     };
   }
 
-  private getBasicSummary(movements: MovementT[]): BasicSummary {
+  /**
+   * A movement's contribution to a specific envelope. `getMovementsByPeriod` only returns movements
+   * attributed to `envelopeId`, so the allocation is always present; a missing entry signals a
+   * data-integrity bug rather than a legitimate case (a full-total fallback would over-count a split).
+   */
+  private amountForEnvelope(m: MovementT, envelopeId: number | null): number {
+    if (envelopeId == null) return m.quantityCents;
+    const amount = m.envelopeIdMap.get(envelopeId);
+    if (amount == undefined) throw new AppError(AppErrorCode.INCORRECT_PARAMETERS);
+    return amount;
+  }
+
+  private getBasicSummary(movements: MovementT[], envelopeId: number | null): BasicSummary {
     let totalIncomeCents = 0;
     let incomeCount = 0;
     let totalExpenseCents = 0;
     let expenseCount = 0;
     for (const movement of movements) {
+      const amount = this.amountForEnvelope(movement, envelopeId);
       if (movement.isPositive) {
-        totalIncomeCents += movement.quantityCents;
+        totalIncomeCents += amount;
         incomeCount++;
       } else {
-        totalExpenseCents += movement.quantityCents;
+        totalExpenseCents += amount;
         expenseCount++;
       }
     }

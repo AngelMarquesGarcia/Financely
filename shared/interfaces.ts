@@ -8,7 +8,7 @@ export interface Movements {
     isPositive: boolean,
     date: Date,
     categoryId: number,
-    envelopeId: number,
+    envelopeIdMap: Map<number, number>,
     additionalNotes: string | null,
   ): Promise<number | bigint>;
   getAll(filter?: MovementFilter): Promise<MovementT[]>;
@@ -40,14 +40,21 @@ export interface PeriodicMovements {
   setActive(id: number, active: boolean): Promise<boolean>;
   /** Generates all due instances across active templates (frontend-triggered). Returns count created. */
   runDue(): Promise<number>;
-  /** Creates this month's instance early, born confirmed. Rejects future dates. */
+  /** Creates this month's instance early, born confirmed. Rejects future dates. `envelopeIdMap`
+   *  overrides the template split (required when a custom amount changes a multi-envelope split). */
   instantiateCurrentMonthEarly(
     id: number,
     date?: Date,
     amountCents?: number,
+    envelopeIdMap?: Map<number, number>,
   ): Promise<number | bigint>;
   /** Creates an extra confirmed instance (does not advance the cursor). Rejects future dates. */
-  createAdditionalInstance(id: number, date: Date, amountCents?: number): Promise<number | bigint>;
+  createAdditionalInstance(
+    id: number,
+    date: Date,
+    amountCents?: number,
+    envelopeIdMap?: Map<number, number>,
+  ): Promise<number | bigint>;
 }
 
 export interface Categories {

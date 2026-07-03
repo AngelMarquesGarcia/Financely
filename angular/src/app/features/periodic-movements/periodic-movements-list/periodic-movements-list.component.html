@@ -47,7 +47,7 @@
               <td class="amount">{{ t.quantityCents | money }}</td>
               <td>{{ t.dayOfMonth }}</td>
               <td>{{ accountName(t.accountId) }}</td>
-              <td>{{ envelopeName(t.envelopeId) }}</td>
+              <td>{{ templateEnvelopeLabel(t) }}</td>
               <td>
                 <span class="badge" [class.badge--active]="t.active" [class.badge--inactive]="!t.active">
                   {{ t.active ? 'Active' : 'Inactive' }}

@@ -16,7 +16,7 @@ export function registerMovementHandlers(): void {
         arg.isPositive,
         arg.date,
         arg.categoryId,
-        arg.envelopeId,
+        arg.envelopeIdMap,
         arg.additionalNotes,
       ),
     ),

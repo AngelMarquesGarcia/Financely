@@ -5,6 +5,7 @@ import { ConfirmService } from '../../core/services/confirm.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { ElectronService } from '../../core/services/electron.service';
 import { ErrorReporter } from '../../core/services/error-reporter.service';
+import { DataRefreshService } from '../../core/services/data-refresh.service';
 import { AccountT, CategoryT, EnvelopeT, PeriodSummaryT } from '@shared/types';
 import { EnvelopeFormComponent } from './envelope-form/envelope-form.component';
 import { EnvelopesListComponent } from './envelopes-list/envelopes-list.component';
@@ -20,6 +21,7 @@ export class EnvelopesComponent implements OnInit {
   private confirm = inject(ConfirmService);
   private notify = inject(NotificationService);
   private errors = inject(ErrorReporter);
+  private refresh = inject(DataRefreshService);
   private destroyRef = inject(DestroyRef);
 
   envelopes: EnvelopeT[] = [];
@@ -31,6 +33,11 @@ export class EnvelopesComponent implements OnInit {
 
   ngOnInit() {
     this.loadAll();
+    // A movement created elsewhere (e.g. the navbar quick-create, without navigating here) changes
+    // envelope balances — reload so the list reflects it instead of showing stale figures.
+    this.refresh.movementsChanged$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.loadAll());
   }
 
   loadAll() {

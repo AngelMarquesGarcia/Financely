@@ -25,10 +25,18 @@ import { TagPickerComponent } from '../../../shared/components/tag-picker/tag-pi
 import { SettingsComponent } from '../../settings/settings.component';
 import { AmountInputComponent } from '../../../shared/components/amount-input/amount-input.component';
 import { AutocompleteInputComponent } from '../../../shared/components/autocomplete-input/autocomplete-input.component';
+import { EnvelopeSplitEditorComponent } from '../../../shared/components/envelope-split-editor/envelope-split-editor.component';
 
 @Component({
   selector: 'app-movement-form',
-  imports: [FormsModule, FaIconComponent, TagPickerComponent, AmountInputComponent, AutocompleteInputComponent],
+  imports: [
+    FormsModule,
+    FaIconComponent,
+    TagPickerComponent,
+    AmountInputComponent,
+    AutocompleteInputComponent,
+    EnvelopeSplitEditorComponent,
+  ],
   templateUrl: './movement-form.component.html',
   styleUrl: './movement-form.component.scss',
 })
@@ -66,6 +74,14 @@ export class MovementFormComponent implements OnInit, OnChanges {
   selectedTagIds: number[] = [];
   additionalNotes: string | null = null;
 
+  /** Split-across-envelopes mode (CU3). When on, the split editor drives envelope attribution. */
+  splitMode = false;
+  /** The latest allocation emitted by the split editor, and whether it sums to the total. */
+  splitMap = new Map<number, number>();
+  splitValid = false;
+  /** Allocation to seed the editor with when editing an existing split. */
+  initialSplit: Map<number, number> | null = null;
+
   private currentTagIds: number[] = [];
   showErrors = false;
 
@@ -85,7 +101,11 @@ export class MovementFormComponent implements OnInit, OnChanges {
     if (this.amountCents == null || this.amountCents <= 0) {
       errors.push('Amount must be positive and non-zero.');
     }
-    if (!this.selectedEnvelopeId) errors.push('An envelope must be selected.');
+    if (this.splitMode) {
+      if (!this.splitValid) errors.push('Split amounts must add up to the total.');
+    } else if (!this.selectedEnvelopeId) {
+      errors.push('An envelope must be selected.');
+    }
     if (this.date > this.todayString()) errors.push('Date cannot be in the future.');
     if (!this.selectedCategoryId) errors.push('A category must be selected.');
     return errors;
@@ -153,7 +173,15 @@ export class MovementFormComponent implements OnInit, OnChanges {
         const cat = this.categories.find((c) => c.id === m.categoryId);
         this.selectedCategoryName = cat?.name ?? '';
         this.selectedCategoryId = m.categoryId;
-        this.selectedEnvelopeId = m.envelopeId;
+        if (m.envelopeIdMap.size > 1) {
+          this.splitMode = true;
+          this.initialSplit = m.envelopeIdMap;
+          this.selectedEnvelopeId = null;
+        } else {
+          this.splitMode = false;
+          this.initialSplit = null;
+          this.selectedEnvelopeId = [...m.envelopeIdMap.keys()][0] ?? null;
+        }
         this.additionalNotes = m.additionalNotes;
         this.showErrors = false;
         this.electron
@@ -232,7 +260,10 @@ export class MovementFormComponent implements OnInit, OnChanges {
     const quantityCents = this.amountCents!;
     const date = new Date(this.date + 'T00:00:00');
     const isPositive = this.type === 'income';
-    const envelopeId = this.selectedEnvelopeId!;
+    // Non-split → a single-entry allocation; split → the editor's map (already summing to the total).
+    const envelopeIdMap = this.splitMode
+      ? this.splitMap
+      : new Map([[this.selectedEnvelopeId!, quantityCents]]);
     const categoryId = this.selectedCategoryId!;
 
     if (this.isEditing) {
@@ -245,7 +276,7 @@ export class MovementFormComponent implements OnInit, OnChanges {
         isPositive,
         date,
         categoryId,
-        envelopeId,
+        envelopeIdMap,
         additionalNotes: this.additionalNotes || null,
         // System-owned: preserved as-is (the backend ignores them on update).
         templateId: this.editingMovement!.templateId,
@@ -278,7 +309,7 @@ export class MovementFormComponent implements OnInit, OnChanges {
           isPositive,
           date,
           categoryId,
-          envelopeId,
+          envelopeIdMap,
           this.additionalNotes || null,
         )
         .pipe(
@@ -352,6 +383,10 @@ export class MovementFormComponent implements OnInit, OnChanges {
     this.selectedCategoryName = '';
     this.selectedCategoryId = null;
     this.selectedEnvelopeId = null;
+    this.splitMode = false;
+    this.splitMap = new Map();
+    this.splitValid = false;
+    this.initialSplit = null;
     this.selectedTagIds = [];
     this.currentTagIds = [];
     this.additionalNotes = null;

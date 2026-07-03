@@ -38,6 +38,9 @@ function firstCategoryId(): number {
   return Number((db.prepare('SELECT id FROM categories LIMIT 1').get() as { id: number }).id);
 }
 
+/** A single-envelope allocation `{ envelopeId → amount }` — the normal (non-split) case. */
+const one = (envelopeId: number, amount: number) => new Map([[envelopeId, amount]]);
+
 describe('TransferService', () => {
   beforeAll(() => {
     DatabaseService.getInstance().migrate();
@@ -177,7 +180,7 @@ describe('TransferService', () => {
     const capped = Number(envelopeService.create('Capped', acc, 0, 30000, 60000)); // threshold 90000
     const cat = firstCategoryId();
 
-    movementService.create('Big income', null, 100000, true, new Date(2026, 3, 10), cat, capped, null);
+    movementService.create('Big income', null, 100000, true, new Date(2026, 3, 10), cat, one(capped, 100000), null);
 
     const transfers = transferService.getAll();
     expect(transfers).toHaveLength(1);
@@ -196,7 +199,7 @@ describe('TransferService', () => {
     const acc = defaultAccountId();
     const capped = Number(envelopeService.create('Capped', acc, 0, 30000, 60000)); // threshold 90000
     const cat = firstCategoryId();
-    movementService.create('Modest', null, 50000, true, new Date(2026, 3, 10), cat, capped, null);
+    movementService.create('Modest', null, 50000, true, new Date(2026, 3, 10), cat, one(capped, 50000), null);
     expect(transferService.getAll()).toHaveLength(0);
   });
 
@@ -204,7 +207,7 @@ describe('TransferService', () => {
     const acc = defaultAccountId();
     const env = Number(envelopeService.create('Uncapped', acc, 0, 30000, null));
     const cat = firstCategoryId();
-    movementService.create('Huge', null, 999999, true, new Date(2026, 3, 10), cat, env, null);
+    movementService.create('Huge', null, 999999, true, new Date(2026, 3, 10), cat, one(env, 999999), null);
     expect(transferService.getAll()).toHaveLength(0);
   });
 
@@ -213,7 +216,7 @@ describe('TransferService', () => {
     const sink = Number(envelopeService.create('Sink', acc));
     const capped = Number(envelopeService.create('Capped', acc, 0, 30000, 60000, sink));
     const cat = firstCategoryId();
-    movementService.create('Big income', null, 100000, true, new Date(2026, 3, 10), cat, capped, null);
+    movementService.create('Big income', null, 100000, true, new Date(2026, 3, 10), cat, one(capped, 100000), null);
 
     const transfers = transferService.getAll();
     expect(transfers).toHaveLength(1);
@@ -226,12 +229,15 @@ describe('TransferService', () => {
     const capped = Number(envelopeService.create('Capped', acc, 0, 30000, 60000)); // threshold 90000
     const cat = firstCategoryId();
     const movId = Number(
-      movementService.create('Income', null, 50000, true, new Date(2026, 3, 10), cat, capped, null),
+      movementService.create('Income', null, 50000, true, new Date(2026, 3, 10), cat, one(capped, 50000), null),
     );
     expect(transferService.getAll()).toHaveLength(0); // 50000 < 90000
 
     const mov = movementService.getById(movId)!;
-    movementService.update(Movement.from({ ...mov, quantityCents: 120000 }));
+    // Raising the amount must also update the single-envelope allocation so it still sums to the total.
+    movementService.update(
+      Movement.from({ ...mov, quantityCents: 120000, envelopeIdMap: one(capped, 120000) }),
+    );
 
     const transfers = transferService.getAll();
     expect(transfers).toHaveLength(1);

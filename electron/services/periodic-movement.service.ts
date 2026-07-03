@@ -131,7 +131,12 @@ export class PeriodicMovementService {
   }
 
   /** Creates this month's instance early (born confirmed). Rejects future dates. */
-  instantiateCurrentMonthEarly(id: number, date?: Date, amountCents?: number): number | bigint {
+  instantiateCurrentMonthEarly(
+    id: number,
+    date?: Date,
+    amountCents?: number,
+    envelopeIdMap?: Map<number, number>,
+  ): number | bigint {
     const t = periodicMovementRepository.getById(id);
     if (t == undefined) throw new AppError(AppErrorCode.PERIODIC_NOT_FOUND);
     const now = new Date();
@@ -153,20 +158,25 @@ export class PeriodicMovementService {
       throw new AppError(AppErrorCode.PERIODIC_ALREADY_INSTANTIATED);
     }
 
-    const newId = this.instantiate(PeriodicMovement.from(t), target, false, amountCents);
+    const newId = this.instantiate(PeriodicMovement.from(t), target, false, amountCents, envelopeIdMap);
     periodicMovementRepository.setCursor(id, now.getFullYear(), now.getMonth());
     return newId;
   }
 
   /** Creates an extra confirmed instance without advancing the cursor. Rejects future dates. */
-  createAdditionalInstance(id: number, date: Date, amountCents?: number): number | bigint {
+  createAdditionalInstance(
+    id: number,
+    date: Date,
+    amountCents?: number,
+    envelopeIdMap?: Map<number, number>,
+  ): number | bigint {
     const t = periodicMovementRepository.getById(id);
     if (t == undefined) throw new AppError(AppErrorCode.PERIODIC_NOT_FOUND);
     if (!(date instanceof Date) || isNaN(date.getTime())) {
       throw new AppError(AppErrorCode.MOVEMENT_DATE_INVALID);
     }
     if (date > new Date()) throw new AppError(AppErrorCode.PERIODIC_DATE_FUTURE);
-    return this.instantiate(PeriodicMovement.from(t), date, false, amountCents);
+    return this.instantiate(PeriodicMovement.from(t), date, false, amountCents, envelopeIdMap);
   }
 
   /** Persists one instance through the movement service (so the guard/summary/overflow logic runs)
@@ -176,8 +186,10 @@ export class PeriodicMovementService {
     date: Date,
     isTentative: boolean,
     amountCents?: number,
+    envelopeIdMap?: Map<number, number>,
   ): number | bigint {
-    const mov = template.generateInstance(date, isTentative, amountCents);
+    const map = this.resolveInstanceMap(template, amountCents, envelopeIdMap);
+    const mov = template.generateInstance(date, isTentative, amountCents, map);
     const newId = movementService.create(
       mov.name,
       mov.concept,
@@ -185,7 +197,7 @@ export class PeriodicMovementService {
       mov.isPositive,
       mov.date,
       mov.categoryId,
-      mov.envelopeId,
+      mov.envelopeIdMap,
       mov.additionalNotes,
       mov.templateId,
       mov.isTentative,
@@ -195,6 +207,26 @@ export class PeriodicMovementService {
       tagRepository.addTagToMovement(tagId, Number(newId));
     }
     return newId;
+  }
+
+  /**
+   * Resolves the envelope split for a generated instance. Default amount → copy the template's split
+   * (returns undefined; the domain copies it). A caller-supplied split (custom amount adjusted in the
+   * frontend) is used as-is. A custom amount with no explicit split can only be auto-applied to a
+   * single-envelope template; a multi-envelope template needs the frontend to supply the new shares.
+   */
+  private resolveInstanceMap(
+    template: PeriodicMovement,
+    amountCents?: number,
+    envelopeIdMap?: Map<number, number>,
+  ): Map<number, number> | undefined {
+    if (envelopeIdMap != undefined) return envelopeIdMap;
+    if (amountCents == undefined || amountCents === template.quantityCents) return undefined;
+    if (template.envelopeIdMap.size === 1) {
+      const [envelopeId] = template.envelopeIdMap.keys();
+      return new Map([[envelopeId, amountCents]]);
+    }
+    throw new AppError(AppErrorCode.MOVEMENT_SPLIT_SUM_MISMATCH);
   }
 
   /**
@@ -224,13 +256,32 @@ export class PeriodicMovementService {
     ) {
       throw new AppError(AppErrorCode.PERIODIC_CATEGORY_REQUIRED);
     }
-    if (
-      !Number.isInteger(fields.envelopeId) ||
-      fields.envelopeId <= 0 ||
-      envelopeRepository.getEnvelopeById(fields.envelopeId) == undefined
-    ) {
+    this.validateEnvelopeMap(fields.envelopeIdMap, fields.quantityCents);
+  }
+
+  /**
+   * Validates a template's envelope split: non-empty, each envelope existing, each share a positive
+   * integer, and the shares summing exactly to the template total. A single entry for a non-split template.
+   */
+  private validateEnvelopeMap(map: Map<number, number>, quantityCents: number): void {
+    if (!(map instanceof Map) || map.size === 0) {
       throw new AppError(AppErrorCode.PERIODIC_ENVELOPE_REQUIRED);
     }
+    let sum = 0;
+    for (const [envelopeId, amount] of map) {
+      if (
+        !Number.isInteger(envelopeId) ||
+        envelopeId <= 0 ||
+        envelopeRepository.getEnvelopeById(envelopeId) == undefined
+      ) {
+        throw new AppError(AppErrorCode.PERIODIC_ENVELOPE_REQUIRED);
+      }
+      if (!Number.isInteger(amount) || amount <= 0) {
+        throw new AppError(AppErrorCode.MOVEMENT_SPLIT_AMOUNT_INVALID);
+      }
+      sum += amount;
+    }
+    if (sum !== quantityCents) throw new AppError(AppErrorCode.MOVEMENT_SPLIT_SUM_MISMATCH);
   }
 }
 

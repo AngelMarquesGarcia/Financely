@@ -8,7 +8,9 @@ export type MovementT = {
   isPositive: boolean;
   date: Date;
   categoryId: number;
-  envelopeId: number;
+  /** Per-envelope allocation `{ envelopeId → amountCents }`. Sums to `quantityCents`. A normal
+   *  movement has a single entry; a split has several (`size > 1`). */
+  envelopeIdMap: Map<number, number>;
   additionalNotes: string | null;
   /** Template this instance was generated from, or null for a manual movement. System-owned. */
   templateId: number | null;
@@ -30,7 +32,9 @@ export type PeriodicMovementT = {
   /** Expected day of month (1-31); clamped to the month's length at instantiation. */
   dayOfMonth: number;
   categoryId: number;
-  envelopeId: number;
+  /** Default per-envelope allocation `{ envelopeId → amountCents }`, summing to `quantityCents`.
+   *  Copied verbatim onto generated instances. A single entry for a non-split template. */
+  envelopeIdMap: Map<number, number>;
   additionalNotes: string | null;
   /** false → generation is paused but history is preserved. */
   active: boolean;

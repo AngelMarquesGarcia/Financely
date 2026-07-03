@@ -41,9 +41,16 @@ function baseFields(over: Partial<ReturnType<typeof ids>> & { day?: number; name
     isPositive: false,
     dayOfMonth: over.day ?? 10,
     categoryId: over.categoryId ?? categoryId,
-    envelopeId: over.envelopeId ?? envelopeId,
+    envelopeIdMap: new Map([[over.envelopeId ?? envelopeId, 5000]]),
     additionalNotes: null,
   };
+}
+
+/** Two distinct envelope ids from the seed, for split-template tests. */
+function twoEnvelopes(): [number, number] {
+  const db = DatabaseService.getInstance().db;
+  const envs = db.prepare('SELECT id FROM envelopes ORDER BY id LIMIT 2').all() as { id: number }[];
+  return [envs[0].id, envs[1].id];
 }
 
 /** A period n months before the current one. */
@@ -293,5 +300,60 @@ describe('PeriodicMovementService', () => {
     // and a generation run then produces nothing for the dormant gap
     periodicMovementService.generateDueForAll();
     expect(movementRepository.getByTemplate(id).length).toBe(0);
+  });
+
+  // ── Split templates (CU3) ──────────────────────────────────────────────────
+
+  const splitTemplate = (over: Partial<{ name: string }> = {}) => {
+    const [e1, e2] = twoEnvelopes();
+    const id = Number(
+      periodicMovementService.create(
+        {
+          ...baseFields({ name: over.name ?? 'Split salary' }),
+          quantityCents: 2000,
+          isPositive: true,
+          envelopeIdMap: new Map([[e1, 1500], [e2, 500]]),
+        },
+        [],
+      ),
+    );
+    return { id, e1, e2 };
+  };
+
+  it('rejects a split template whose shares do not sum to the total', () => {
+    const [e1, e2] = twoEnvelopes();
+    expect(() =>
+      periodicMovementService.create(
+        { ...baseFields({ name: 'Bad split' }), quantityCents: 2000, envelopeIdMap: new Map([[e1, 1500], [e2, 400]]) },
+        [],
+      ),
+    ).toThrow(AppErrorCode.MOVEMENT_SPLIT_SUM_MISMATCH);
+  });
+
+  it('generates instances carrying the template split (default amount)', () => {
+    const { id, e1, e2 } = splitTemplate();
+    periodicMovementService.createAdditionalInstance(id, new Date('2020-03-15'));
+    const [inst] = movementRepository.getByTemplate(id);
+    expect(inst.quantityCents).toBe(2000);
+    expect(inst.envelopeIdMap.get(e1)).toBe(1500);
+    expect(inst.envelopeIdMap.get(e2)).toBe(500);
+  });
+
+  it('rejects a custom-amount instance of a split template without an explicit split', () => {
+    const { id } = splitTemplate();
+    expect(() =>
+      periodicMovementService.createAdditionalInstance(id, new Date('2020-03-15'), 3000),
+    ).toThrow(AppErrorCode.MOVEMENT_SPLIT_SUM_MISMATCH);
+  });
+
+  it('accepts a custom-amount instance when a matching split is supplied', () => {
+    const { id, e1, e2 } = splitTemplate();
+    periodicMovementService.createAdditionalInstance(
+      id, new Date('2020-03-15'), 3000, new Map([[e1, 2000], [e2, 1000]]),
+    );
+    const [inst] = movementRepository.getByTemplate(id);
+    expect(inst.quantityCents).toBe(3000);
+    expect(inst.envelopeIdMap.get(e1)).toBe(2000);
+    expect(inst.envelopeIdMap.get(e2)).toBe(1000);
   });
 });

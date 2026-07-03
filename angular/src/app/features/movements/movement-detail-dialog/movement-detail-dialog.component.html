@@ -32,10 +32,24 @@
       </span>
     </div>
 
-    <div class="detail-row">
-      <span class="detail-label">Envelope</span>
-      <span class="detail-value">{{ envelope?.name ?? '—' }}</span>
-    </div>
+    @if (!isSplit) {
+      <div class="detail-row">
+        <span class="detail-label">Envelope</span>
+        <span class="detail-value">{{ envelope?.name ?? '—' }}</span>
+      </div>
+    } @else {
+      <div class="detail-row detail-row--split">
+        <span class="detail-label">Split across</span>
+        <div class="detail-value detail-split">
+          @for (row of splitRows; track row.name) {
+            <div class="detail-split__row">
+              <span class="detail-split__name">{{ row.name }}</span>
+              <span class="detail-split__amount">{{ row.amountCents | money }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    }
 
     @if (movement.concept) {
       <div class="detail-row">

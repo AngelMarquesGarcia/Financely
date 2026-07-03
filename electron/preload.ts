@@ -15,7 +15,7 @@ contextBridge.exposeInMainWorld('movements', {
     isPositive: boolean,
     date: Date,
     categoryId: number,
-    envelopeId: number,
+    envelopeIdMap: Map<number, number>,
     additionalNotes: string | null,
   ) =>
     ipcRenderer.invoke(Channels.MOVEMENT_CREATE, {
@@ -25,7 +25,7 @@ contextBridge.exposeInMainWorld('movements', {
       isPositive,
       date,
       categoryId,
-      envelopeId,
+      envelopeIdMap,
       additionalNotes,
     }),
   getAll: (filter?: MovementFilter) => ipcRenderer.invoke(Channels.MOVEMENT_GET_ALL, filter),
@@ -50,10 +50,25 @@ contextBridge.exposeInMainWorld('periodicMovements', {
   setActive: (id: number, active: boolean) =>
     ipcRenderer.invoke(Channels.PERIODIC_SET_ACTIVE, { id, active }),
   runDue: () => ipcRenderer.invoke(Channels.PERIODIC_RUN_DUE),
-  instantiateCurrentMonthEarly: (id: number, date?: Date, amountCents?: number) =>
-    ipcRenderer.invoke(Channels.PERIODIC_INSTANTIATE_CURRENT, { id, date, amountCents }),
-  createAdditionalInstance: (id: number, date: Date, amountCents?: number) =>
-    ipcRenderer.invoke(Channels.PERIODIC_CREATE_ADDITIONAL, { id, date, amountCents }),
+  instantiateCurrentMonthEarly: (
+    id: number,
+    date?: Date,
+    amountCents?: number,
+    envelopeIdMap?: Map<number, number>,
+  ) =>
+    ipcRenderer.invoke(Channels.PERIODIC_INSTANTIATE_CURRENT, {
+      id,
+      date,
+      amountCents,
+      envelopeIdMap,
+    }),
+  createAdditionalInstance: (
+    id: number,
+    date: Date,
+    amountCents?: number,
+    envelopeIdMap?: Map<number, number>,
+  ) =>
+    ipcRenderer.invoke(Channels.PERIODIC_CREATE_ADDITIONAL, { id, date, amountCents, envelopeIdMap }),
 });
 
 contextBridge.exposeInMainWorld('transfers', {

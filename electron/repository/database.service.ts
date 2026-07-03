@@ -6,8 +6,10 @@ import {
   AccountSchema,
   CategorySchema,
   EnvelopeSchema,
+  MovementEnvelopeSchema,
   MovementSchema,
   MovementTagSchema,
+  PeriodicMovementEnvelopeSchema,
   PeriodicMovementSchema,
   PeriodicMovementTagSchema,
   PeriodSummarySchema,
@@ -101,8 +103,11 @@ export class DatabaseService {
     const urgent = tagId('Urgent');
 
     const insertMov = this.db.prepare(
-      `INSERT INTO ${tables.movements} (account_id, name, concept, quantity_cents, isPositive, date, category_id, envelope_id, additional_notes)
-       VALUES (:accountId, :name, :concept, :quantityCents, :isPositive, :date, :categoryId, :envelopeId, :notes)`,
+      `INSERT INTO ${tables.movements} (account_id, name, concept, quantity_cents, isPositive, date, category_id, additional_notes)
+       VALUES (:accountId, :name, :concept, :quantityCents, :isPositive, :date, :categoryId, :notes)`,
+    );
+    const insertMovEnv = this.db.prepare(
+      `INSERT INTO ${tables.movementEnvelopes} (movement_id, envelope_id, amount_cents) VALUES (?, ?, ?)`,
     );
     const insertMovTag = this.db.prepare(
       `INSERT OR IGNORE INTO ${tables.movementTags} (movement_id, tag_id) VALUES (?, ?)`,
@@ -110,50 +115,62 @@ export class DatabaseService {
 
     const addMov = (
       m: Parameters<typeof insertMov.run>[0],
+      envelopes: Map<number, number>,
       tags: number[] = [],
     ) => {
       const id = Number(insertMov.run(m).lastInsertRowid);
+      for (const [envId, amount] of envelopes) insertMovEnv.run(id, envId, amount);
       for (const t of tags) insertMovTag.run(id, t);
     };
 
-    addMov({ accountId: defaultAccountId, name: 'April salary', concept: 'NOMINA ABRIL', quantityCents: 220000, isPositive: 1, date: '2026-04-28', categoryId: catId('Salary'), envelopeId: savings, notes: null }, [recurring]);
-    addMov({ accountId: defaultAccountId, name: 'April rent', concept: 'ALQUILER ABR', quantityCents: 80000, isPositive: 0, date: '2026-04-01', categoryId: catId('Housing'), envelopeId: monthly, notes: null }, [recurring, urgent]);
-    addMov({ accountId: defaultAccountId, name: 'Grocery run', concept: 'MERCADONA', quantityCents: 6700, isPositive: 0, date: '2026-04-04', categoryId: catId('Food'), envelopeId: monthly, notes: null }, [recurring]);
-    addMov({ accountId: defaultAccountId, name: 'Bus monthly pass', concept: null, quantityCents: 4000, isPositive: 0, date: '2026-04-02', categoryId: catId('Transport'), envelopeId: monthly, notes: null }, [recurring]);
-    addMov({ accountId: defaultAccountId, name: 'Cinema tickets', concept: 'CINESA', quantityCents: 2200, isPositive: 0, date: '2026-04-12', categoryId: catId('Entertainment'), envelopeId: monthly, notes: null }, [oneTime]);
-    addMov({ accountId: defaultAccountId, name: 'Pharmacy', concept: null, quantityCents: 1800, isPositive: 0, date: '2026-04-15', categoryId: catId('Health'), envelopeId: monthly, notes: 'Ibuprofen and vitamins' }, [oneTime]);
-    addMov({ accountId: defaultAccountId, name: 'May salary', concept: 'NOMINA MAYO', quantityCents: 220000, isPositive: 1, date: '2026-05-28', categoryId: catId('Salary'), envelopeId: savings, notes: null }, [recurring]);
-    addMov({ accountId: defaultAccountId, name: 'May rent', concept: 'ALQUILER MAY', quantityCents: 80000, isPositive: 0, date: '2026-05-01', categoryId: catId('Housing'), envelopeId: monthly, notes: null }, [recurring, urgent]);
-    addMov({ accountId: defaultAccountId, name: 'Grocery run', concept: 'MERCADONA', quantityCents: 5400, isPositive: 0, date: '2026-05-06', categoryId: catId('Food'), envelopeId: monthly, notes: null }, [recurring]);
-    addMov({ accountId: defaultAccountId, name: 'Freelance payment', concept: null, quantityCents: 35000, isPositive: 1, date: '2026-05-10', categoryId: catId('Salary'), envelopeId: unassigned, notes: 'Logo design project' }, [oneTime]);
+    addMov({ accountId: defaultAccountId, name: 'April salary', concept: 'NOMINA ABRIL', quantityCents: 220000, isPositive: 1, date: '2026-04-28', categoryId: catId('Salary'), notes: null }, new Map([[savings, 220000]]), [recurring]);
+    addMov({ accountId: defaultAccountId, name: 'April rent', concept: 'ALQUILER ABR', quantityCents: 80000, isPositive: 0, date: '2026-04-01', categoryId: catId('Housing'), notes: null }, new Map([[monthly, 80000]]), [recurring, urgent]);
+    addMov({ accountId: defaultAccountId, name: 'Grocery run', concept: 'MERCADONA', quantityCents: 6700, isPositive: 0, date: '2026-04-04', categoryId: catId('Food'), notes: null }, new Map([[monthly, 6700]]), [recurring]);
+    addMov({ accountId: defaultAccountId, name: 'Bus monthly pass', concept: null, quantityCents: 4000, isPositive: 0, date: '2026-04-02', categoryId: catId('Transport'), notes: null }, new Map([[monthly, 4000]]), [recurring]);
+    addMov({ accountId: defaultAccountId, name: 'Cinema tickets', concept: 'CINESA', quantityCents: 2200, isPositive: 0, date: '2026-04-12', categoryId: catId('Entertainment'), notes: null }, new Map([[monthly, 2200]]), [oneTime]);
+    addMov({ accountId: defaultAccountId, name: 'Pharmacy', concept: null, quantityCents: 1800, isPositive: 0, date: '2026-04-15', categoryId: catId('Health'), notes: 'Ibuprofen and vitamins' }, new Map([[monthly, 1800]]), [oneTime]);
+    addMov({ accountId: defaultAccountId, name: 'May salary', concept: 'NOMINA MAYO', quantityCents: 220000, isPositive: 1, date: '2026-05-28', categoryId: catId('Salary'), notes: null }, new Map([[savings, 220000]]), [recurring]);
+    addMov({ accountId: defaultAccountId, name: 'May rent', concept: 'ALQUILER MAY', quantityCents: 80000, isPositive: 0, date: '2026-05-01', categoryId: catId('Housing'), notes: null }, new Map([[monthly, 80000]]), [recurring, urgent]);
+    addMov({ accountId: defaultAccountId, name: 'Grocery run', concept: 'MERCADONA', quantityCents: 5400, isPositive: 0, date: '2026-05-06', categoryId: catId('Food'), notes: null }, new Map([[monthly, 5400]]), [recurring]);
+    addMov({ accountId: defaultAccountId, name: 'Freelance payment', concept: null, quantityCents: 35000, isPositive: 1, date: '2026-05-10', categoryId: catId('Salary'), notes: 'Logo design project' }, new Map([[unassigned, 35000]]), [oneTime]);
+    // The split CU3 demo is the periodic "Monthly salary" template below (savings + monthly), whose
+    // generated instances are divided across two envelopes — kept out of the one-off seed so the
+    // deterministic period-summary fixtures (April/May Savings & Monthly Expenses) stay stable.
 
     // Seed periodic-movement templates. Cursor is left null and the start period is recent, so the
     // first frontend-triggered runDue generates a couple of tentative instances for the current month.
     const insertPeriodic = this.db.prepare(
       `INSERT OR IGNORE INTO ${tables.periodicMovements}
-         (account_id, name, concept, quantity_cents, isPositive, day_of_month, category_id, envelope_id,
+         (account_id, name, concept, quantity_cents, isPositive, day_of_month, category_id,
           additional_notes, active, start_year, start_month, last_created_year, last_created_month)
-       VALUES (:accountId, :name, :concept, :quantityCents, :isPositive, :dayOfMonth, :categoryId, :envelopeId,
+       VALUES (:accountId, :name, :concept, :quantityCents, :isPositive, :dayOfMonth, :categoryId,
           :notes, 1, :startYear, :startMonth, NULL, NULL)`,
+    );
+    const insertPeriodicEnv = this.db.prepare(
+      `INSERT OR IGNORE INTO ${tables.periodicMovementEnvelopes} (periodic_movement_id, envelope_id, amount_cents) VALUES (?, ?, ?)`,
     );
     const insertPeriodicTag = this.db.prepare(
       `INSERT OR IGNORE INTO ${tables.periodicMovementTags} (periodic_movement_id, tag_id) VALUES (?, ?)`,
     );
+    // The flagship split template: salary divided across savings + monthly on each generated instance.
     const salaryTemplateId = Number(
       insertPeriodic.run({
         accountId: defaultAccountId, name: 'Monthly salary', concept: 'NOMINA', quantityCents: 220000,
-        isPositive: 1, dayOfMonth: 28, categoryId: catId('Salary'), envelopeId: savings, notes: null,
+        isPositive: 1, dayOfMonth: 28, categoryId: catId('Salary'), notes: null,
         startYear: 2026, startMonth: 5,
       }).lastInsertRowid,
     );
+    insertPeriodicEnv.run(salaryTemplateId, savings, 170000);
+    insertPeriodicEnv.run(salaryTemplateId, monthly, 50000);
     insertPeriodicTag.run(salaryTemplateId, recurring);
     const karateTemplateId = Number(
       insertPeriodic.run({
         accountId: defaultAccountId, name: 'Karate fee', concept: null, quantityCents: 4500,
-        isPositive: 0, dayOfMonth: 5, categoryId: catId('Health'), envelopeId: monthly, notes: 'Dojo monthly fee',
+        isPositive: 0, dayOfMonth: 5, categoryId: catId('Health'), notes: 'Dojo monthly fee',
         startYear: 2026, startMonth: 5,
       }).lastInsertRowid,
     );
+    insertPeriodicEnv.run(karateTemplateId, monthly, 4500);
     insertPeriodicTag.run(karateTemplateId, recurring);
   }
 
@@ -164,6 +181,8 @@ export class DatabaseService {
     this.db.prepare(`DROP TABLE IF EXISTS ${tables.periodSummaries}`).run();
     this.db.prepare(`DROP TABLE IF EXISTS ${tables.movementTags}`).run();
     this.db.prepare(`DROP TABLE IF EXISTS ${tables.periodicMovementTags}`).run();
+    this.db.prepare(`DROP TABLE IF EXISTS ${tables.movementEnvelopes}`).run();
+    this.db.prepare(`DROP TABLE IF EXISTS ${tables.periodicMovementEnvelopes}`).run();
     this.db.prepare(`DROP TABLE IF EXISTS ${tables.transfers}`).run();
     this.db.prepare(`DROP TABLE IF EXISTS ${tables.movements}`).run();
     this.db.prepare(`DROP TABLE IF EXISTS ${tables.periodicMovements}`).run();
@@ -186,13 +205,31 @@ export class DatabaseService {
     this.db.prepare(`CREATE TABLE ${tables.envelopes} (${EnvelopeSchema})`).run();
     this.db.prepare(`CREATE TABLE ${tables.categories} (${CategorySchema})`).run();
     this.db.prepare(`CREATE TABLE ${tables.periodicMovements} (${PeriodicMovementSchema})`).run();
+    this.db
+      .prepare(
+        `CREATE TABLE ${tables.periodicMovementEnvelopes} (${PeriodicMovementEnvelopeSchema})`,
+      )
+      .run();
     this.db.prepare(`CREATE TABLE ${tables.movements} (${MovementSchema})`).run();
+    this.db.prepare(`CREATE TABLE ${tables.movementEnvelopes} (${MovementEnvelopeSchema})`).run();
     this.db.prepare(`CREATE TABLE ${tables.transfers} (${TransferSchema})`).run();
     this.db.prepare(`CREATE TABLE ${tables.movementTags} (${MovementTagSchema})`).run();
     this.db
       .prepare(`CREATE TABLE ${tables.periodicMovementTags} (${PeriodicMovementTagSchema})`)
       .run();
     this.db.prepare(`CREATE TABLE ${tables.periodSummaries} (${PeriodSummarySchema})`).run();
+
+    // Per-envelope allocation lookups (listing an envelope's movements joins on envelope_id).
+    this.db
+      .prepare(
+        `CREATE INDEX IF NOT EXISTS idx_movement_envelopes_envelope ON ${tables.movementEnvelopes}(envelope_id)`,
+      )
+      .run();
+    this.db
+      .prepare(
+        `CREATE INDEX IF NOT EXISTS idx_periodic_movement_envelopes_envelope ON ${tables.periodicMovementEnvelopes}(envelope_id)`,
+      )
+      .run();
     //#endregion
 
     //#region Partial unique indexes (enforce single default per scope)

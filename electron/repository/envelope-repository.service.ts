@@ -87,11 +87,45 @@ export class EnvelopeRepository {
     tx(id, accountId);
   }
 
-  /** Reassigns all movements from one envelope to another. */
+  /** Reassigns all movement and periodic-template allocations from one envelope to another. */
   reassignMovements(fromId: number, toId: number): void {
+    this.reassignAllocations(tables.movementEnvelopes, 'movement_id', fromId, toId);
+    this.reassignAllocations(tables.periodicMovementEnvelopes, 'periodic_movement_id', fromId, toId);
+  }
+
+  /**
+   * Moves `fromId` allocation rows to `toId` in an allocation table. When an owner already has a
+   * `toId` row (a split touching both envelopes), the amounts are merged so the total is preserved
+   * and the `(owner, envelope)` primary key stays unique.
+   */
+  private reassignAllocations(
+    table: string,
+    ownerCol: string,
+    fromId: number,
+    toId: number,
+  ): void {
+    // Owners with both rows: fold the fromId amount into the existing toId row...
     this.db
-      .prepare(`UPDATE ${tables.movements} SET envelope_id = ? WHERE envelope_id = ?`)
-      .run(toId, fromId);
+      .prepare(
+        `UPDATE ${table} SET amount_cents = amount_cents + (
+           SELECT src.amount_cents FROM ${table} src
+           WHERE src.${ownerCol} = ${table}.${ownerCol} AND src.envelope_id = :fromId
+         )
+         WHERE envelope_id = :toId
+           AND ${ownerCol} IN (SELECT ${ownerCol} FROM ${table} WHERE envelope_id = :fromId)`,
+      )
+      .run({ fromId, toId });
+    // ...then drop the now-merged fromId rows.
+    this.db
+      .prepare(
+        `DELETE FROM ${table} WHERE envelope_id = :fromId
+           AND ${ownerCol} IN (SELECT ${ownerCol} FROM ${table} WHERE envelope_id = :toId)`,
+      )
+      .run({ fromId, toId });
+    // Remaining fromId rows belong to owners with no toId allocation → straight reassign.
+    this.db
+      .prepare(`UPDATE ${table} SET envelope_id = :toId WHERE envelope_id = :fromId`)
+      .run({ fromId, toId });
   }
 
   getAccountId(id: number): number | null {

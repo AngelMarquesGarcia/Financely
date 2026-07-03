@@ -11,7 +11,6 @@ type RawPeriodic = {
   isPositive: number;
   dayOfMonth: number;
   categoryId: number;
-  envelopeId: number;
   additionalNotes: string | null;
   active: number;
   startYear: number;
@@ -20,6 +19,7 @@ type RawPeriodic = {
   lastCreatedMonth: number | null;
 };
 
+/** Builds a wire template with an empty allocation map; `hydrateEnvelopeMaps` fills it in. */
 function toPeriodic(r: RawPeriodic): PeriodicMovementT {
   return {
     id: r.id,
@@ -30,7 +30,7 @@ function toPeriodic(r: RawPeriodic): PeriodicMovementT {
     isPositive: r.isPositive === 1,
     dayOfMonth: r.dayOfMonth,
     categoryId: r.categoryId,
-    envelopeId: r.envelopeId,
+    envelopeIdMap: new Map(),
     additionalNotes: r.additionalNotes,
     active: r.active === 1,
     startYear: r.startYear,
@@ -45,101 +45,149 @@ export class PeriodicMovementRepository {
 
   private readonly selectCols = `id, account_id as accountId, name, concept,
     quantity_cents as quantityCents, isPositive, day_of_month as dayOfMonth,
-    category_id as categoryId, envelope_id as envelopeId, additional_notes as additionalNotes,
+    category_id as categoryId, additional_notes as additionalNotes,
     active, start_year as startYear, start_month as startMonth,
     last_created_year as lastCreatedYear, last_created_month as lastCreatedMonth`;
 
-  insert(t: Omit<PeriodicMovementT, 'id'>): number | bigint {
-    return this.db
+  /** Populates each template's `envelopeIdMap` from `periodic_movement_envelopes` (batched). */
+  private hydrateEnvelopeMaps(templates: PeriodicMovementT[]): PeriodicMovementT[] {
+    if (templates.length === 0) return templates;
+    const ids = templates.map((t) => t.id);
+    const placeholders = ids.map(() => '?').join(',');
+    const rows = this.db
       .prepare(
-        `INSERT INTO ${tables.periodicMovements}
-           (account_id, name, concept, quantity_cents, isPositive, day_of_month, category_id,
-            envelope_id, additional_notes, active, start_year, start_month,
-            last_created_year, last_created_month)
-         VALUES (:accountId, :name, :concept, :quantityCents, :isPositive, :dayOfMonth, :categoryId,
-            :envelopeId, :additionalNotes, :active, :startYear, :startMonth,
-            :lastCreatedYear, :lastCreatedMonth)`,
+        `SELECT periodic_movement_id as templateId, envelope_id as envelopeId, amount_cents as amountCents
+         FROM ${tables.periodicMovementEnvelopes} WHERE periodic_movement_id IN (${placeholders})`,
       )
-      .run({
-        accountId: t.accountId,
-        name: t.name,
-        concept: t.concept ?? null,
-        quantityCents: t.quantityCents,
-        isPositive: t.isPositive ? 1 : 0,
-        dayOfMonth: t.dayOfMonth,
-        categoryId: t.categoryId,
-        envelopeId: t.envelopeId,
-        additionalNotes: t.additionalNotes ?? null,
-        active: t.active ? 1 : 0,
-        startYear: t.startYear,
-        startMonth: t.startMonth,
-        lastCreatedYear: t.lastCreatedYear ?? null,
-        lastCreatedMonth: t.lastCreatedMonth ?? null,
+      .all(...ids) as { templateId: number; envelopeId: number; amountCents: number }[];
+
+    const byTemplate = new Map<number, Map<number, number>>();
+    for (const r of rows) {
+      let map = byTemplate.get(r.templateId);
+      if (map == undefined) {
+        map = new Map<number, number>();
+        byTemplate.set(r.templateId, map);
+      }
+      map.set(r.envelopeId, r.amountCents);
+    }
+    for (const t of templates) t.envelopeIdMap = byTemplate.get(t.id) ?? new Map();
+    return templates;
+  }
+
+  insert(t: Omit<PeriodicMovementT, 'id'>): number | bigint {
+    const insertTemplate = this.db.prepare(
+      `INSERT INTO ${tables.periodicMovements}
+         (account_id, name, concept, quantity_cents, isPositive, day_of_month, category_id,
+          additional_notes, active, start_year, start_month,
+          last_created_year, last_created_month)
+       VALUES (:accountId, :name, :concept, :quantityCents, :isPositive, :dayOfMonth, :categoryId,
+          :additionalNotes, :active, :startYear, :startMonth,
+          :lastCreatedYear, :lastCreatedMonth)`,
+    );
+    const insertAlloc = this.db.prepare(
+      `INSERT INTO ${tables.periodicMovementEnvelopes} (periodic_movement_id, envelope_id, amount_cents) VALUES (?, ?, ?)`,
+    );
+    return this.db.transaction((template: Omit<PeriodicMovementT, 'id'>) => {
+      const id = insertTemplate.run({
+        accountId: template.accountId,
+        name: template.name,
+        concept: template.concept ?? null,
+        quantityCents: template.quantityCents,
+        isPositive: template.isPositive ? 1 : 0,
+        dayOfMonth: template.dayOfMonth,
+        categoryId: template.categoryId,
+        additionalNotes: template.additionalNotes ?? null,
+        active: template.active ? 1 : 0,
+        startYear: template.startYear,
+        startMonth: template.startMonth,
+        lastCreatedYear: template.lastCreatedYear ?? null,
+        lastCreatedMonth: template.lastCreatedMonth ?? null,
       }).lastInsertRowid;
+      for (const [envelopeId, amount] of template.envelopeIdMap) {
+        insertAlloc.run(Number(id), envelopeId, amount);
+      }
+      return id;
+    })(t);
   }
 
   getAll(): PeriodicMovementT[] {
-    return (
-      this.db
-        .prepare(`SELECT ${this.selectCols} FROM ${tables.periodicMovements} ORDER BY name`)
-        .all() as RawPeriodic[]
-    ).map(toPeriodic);
+    return this.hydrateEnvelopeMaps(
+      (
+        this.db
+          .prepare(`SELECT ${this.selectCols} FROM ${tables.periodicMovements} ORDER BY name`)
+          .all() as RawPeriodic[]
+      ).map(toPeriodic),
+    );
   }
 
   getActive(): PeriodicMovementT[] {
-    return (
-      this.db
-        .prepare(`SELECT ${this.selectCols} FROM ${tables.periodicMovements} WHERE active = 1`)
-        .all() as RawPeriodic[]
-    ).map(toPeriodic);
+    return this.hydrateEnvelopeMaps(
+      (
+        this.db
+          .prepare(`SELECT ${this.selectCols} FROM ${tables.periodicMovements} WHERE active = 1`)
+          .all() as RawPeriodic[]
+      ).map(toPeriodic),
+    );
   }
 
   getById(id: number): PeriodicMovementT | undefined {
     const row = this.db
       .prepare(`SELECT ${this.selectCols} FROM ${tables.periodicMovements} WHERE id = ?`)
       .get(id) as RawPeriodic | undefined;
-    return row ? toPeriodic(row) : undefined;
+    if (row == undefined) return undefined;
+    return this.hydrateEnvelopeMaps([toPeriodic(row)])[0];
   }
 
   getByName(name: string): PeriodicMovementT | undefined {
     const row = this.db
       .prepare(`SELECT ${this.selectCols} FROM ${tables.periodicMovements} WHERE name = ?`)
       .get(name) as RawPeriodic | undefined;
-    return row ? toPeriodic(row) : undefined;
+    if (row == undefined) return undefined;
+    return this.hydrateEnvelopeMaps([toPeriodic(row)])[0];
   }
 
-  /** Updates editable fields; the cursor and active flag come along but are normally driven by
-   *  setCursor/setActive. */
+  /** Updates editable fields (incl. the envelope split); the cursor and active flag come along but
+   *  are normally driven by setCursor/setActive. */
   update(t: PeriodicMovementT): boolean {
-    return (
-      this.db
-        .prepare(
-          `UPDATE ${tables.periodicMovements} SET
-             account_id = :accountId, name = :name, concept = :concept,
-             quantity_cents = :quantityCents, isPositive = :isPositive, day_of_month = :dayOfMonth,
-             category_id = :categoryId, envelope_id = :envelopeId, additional_notes = :additionalNotes,
-             active = :active, start_year = :startYear, start_month = :startMonth,
-             last_created_year = :lastCreatedYear, last_created_month = :lastCreatedMonth
-           WHERE id = :id`,
-        )
-        .run({
-          id: t.id,
-          accountId: t.accountId,
-          name: t.name,
-          concept: t.concept ?? null,
-          quantityCents: t.quantityCents,
-          isPositive: t.isPositive ? 1 : 0,
-          dayOfMonth: t.dayOfMonth,
-          categoryId: t.categoryId,
-          envelopeId: t.envelopeId,
-          additionalNotes: t.additionalNotes ?? null,
-          active: t.active ? 1 : 0,
-          startYear: t.startYear,
-          startMonth: t.startMonth,
-          lastCreatedYear: t.lastCreatedYear ?? null,
-          lastCreatedMonth: t.lastCreatedMonth ?? null,
-        }).changes > 0
+    const updateTemplate = this.db.prepare(
+      `UPDATE ${tables.periodicMovements} SET
+         account_id = :accountId, name = :name, concept = :concept,
+         quantity_cents = :quantityCents, isPositive = :isPositive, day_of_month = :dayOfMonth,
+         category_id = :categoryId, additional_notes = :additionalNotes,
+         active = :active, start_year = :startYear, start_month = :startMonth,
+         last_created_year = :lastCreatedYear, last_created_month = :lastCreatedMonth
+       WHERE id = :id`,
     );
+    const delAlloc = this.db.prepare(
+      `DELETE FROM ${tables.periodicMovementEnvelopes} WHERE periodic_movement_id = ?`,
+    );
+    const insertAlloc = this.db.prepare(
+      `INSERT INTO ${tables.periodicMovementEnvelopes} (periodic_movement_id, envelope_id, amount_cents) VALUES (?, ?, ?)`,
+    );
+    return this.db.transaction((template: PeriodicMovementT) => {
+      const changed =
+        updateTemplate.run({
+          id: template.id,
+          accountId: template.accountId,
+          name: template.name,
+          concept: template.concept ?? null,
+          quantityCents: template.quantityCents,
+          isPositive: template.isPositive ? 1 : 0,
+          dayOfMonth: template.dayOfMonth,
+          categoryId: template.categoryId,
+          additionalNotes: template.additionalNotes ?? null,
+          active: template.active ? 1 : 0,
+          startYear: template.startYear,
+          startMonth: template.startMonth,
+          lastCreatedYear: template.lastCreatedYear ?? null,
+          lastCreatedMonth: template.lastCreatedMonth ?? null,
+        }).changes > 0;
+      delAlloc.run(template.id);
+      for (const [envelopeId, amount] of template.envelopeIdMap) {
+        insertAlloc.run(template.id, envelopeId, amount);
+      }
+      return changed;
+    })(t);
   }
 
   setActive(id: number, active: boolean): boolean {
@@ -161,11 +209,14 @@ export class PeriodicMovementRepository {
     );
   }
 
-  /** Removes the template and its tag links (junction cleared explicitly — FK cascade is not relied on). */
+  /** Removes the template and its tag + allocation links (junctions cleared explicitly — FK cascade is not relied on). */
   delete(id: number): boolean {
     const tx = this.db.transaction((templateId: number) => {
       this.db
         .prepare(`DELETE FROM ${tables.periodicMovementTags} WHERE periodic_movement_id = ?`)
+        .run(templateId);
+      this.db
+        .prepare(`DELETE FROM ${tables.periodicMovementEnvelopes} WHERE periodic_movement_id = ?`)
         .run(templateId);
       return (
         this.db.prepare(`DELETE FROM ${tables.periodicMovements} WHERE id = ?`).run(templateId)

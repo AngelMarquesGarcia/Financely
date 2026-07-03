@@ -14,7 +14,7 @@ export class MockElectronService implements Partial<ElectronService> {
       _isPositive: boolean,
       _date: Date,
       _categoryId: number,
-      _envelopeId: number,
+      _envelopeIdMap: Map<number, number>,
       _additionalNotes: string | null,
     ): Observable<number> => of(1),
   );

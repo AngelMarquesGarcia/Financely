@@ -76,8 +76,8 @@ describe('AccountService', () => {
     const envelopeId = Number(
       (db.prepare('SELECT id FROM envelopes WHERE account_id = ?').get(accountId) as { id: number }).id,
     );
-    movementService.create('Income1', null, 10000, true, new Date('2024-04-01'), catId, envelopeId, null);
-    movementService.create('Expense1', null, 2500, false, new Date('2024-04-02'), catId, envelopeId, null);
+    movementService.create('Income1', null, 10000, true, new Date('2024-04-01'), catId, new Map([[envelopeId, 10000]]), null);
+    movementService.create('Expense1', null, 2500, false, new Date('2024-04-02'), catId, new Map([[envelopeId, 2500]]), null);
     const after = accountService.getStats();
     expect(after.totalIncomeCents - before.totalIncomeCents).toBe(10000);
     expect(after.totalExpenseCents - before.totalExpenseCents).toBe(2500);

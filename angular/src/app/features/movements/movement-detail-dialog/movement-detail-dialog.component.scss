@@ -1,3 +1,26 @@
+.detail-split {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: stretch;
+  width: 100%;
+
+  &__row {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  &__name {
+    color: #475569;
+  }
+
+  &__amount {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+  }
+}
+
 .detail {
   background: #fff;
   border-radius: 0.75rem;
