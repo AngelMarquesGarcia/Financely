@@ -45,7 +45,8 @@ export const MovementSchema = `
   category_id INTEGER NOT NULL REFERENCES categories(id),
   additional_notes TEXT,
   template_id INTEGER REFERENCES periodic_movements(id) ON DELETE SET NULL,
-  is_tentative INTEGER NOT NULL DEFAULT 0
+  is_tentative INTEGER NOT NULL DEFAULT 0,
+  is_anomalous INTEGER NOT NULL DEFAULT 0
 `;
 
 /** Per-envelope allocation for a movement. Every movement has ≥1 row; a split has several. The
@@ -120,7 +121,14 @@ export const PeriodSummarySchema = `
   max_savings_cents INTEGER,
   notes TEXT,
   dirty_state TEXT NOT NULL DEFAULT 'CLEAN' CHECK(dirty_state IN ('CLEAN', 'MODIFIED', 'DIRTY')),
-  tentative INTEGER NOT NULL DEFAULT 0
+  tentative INTEGER NOT NULL DEFAULT 0,
+  without_anom_cash_flow_cents INTEGER,
+  without_anom_total_income_cents INTEGER,
+  without_anom_total_expense_cents INTEGER,
+  without_anom_avg_expense_cents INTEGER,
+  without_anom_avg_income_cents INTEGER,
+  without_anom_avg_movement_amount_cents INTEGER,
+  without_anom_movement_count INTEGER
 `;
 
 export const MovementTagSchema = `

@@ -444,6 +444,62 @@ Tres fases incrementales sobre el modelo de envelopes. El plan detallado vive en
 
 ---
 
+## Julio 2026 (04/07)
+
+### Movimientos anómalos
+
+Marca un movimiento como **anómalo** (`isAnomalous`) para excluirlo de las estadísticas de "lo que pasa
+normalmente" (medias y agregados de income/expense/cashflow), sin sacarlo nunca del balance real. Prepara el
+terreno para `CompoundMovement`, cuyos casos de uso marcan sus movimientos hijos como anómalos.
+
+**Invariante de diseño:** el flag nunca mueve dinero real; solo particiona las estadísticas. Como
+`endingBalanceCents = anchor + cashFlowCents + netTransfers` y `cashFlowCents` sigue siendo all-inclusive,
+marcar/desmarcar anómalo no altera ningún balance, la cadena de ending-balance, `netTransfers` ni la
+redirección de excedente de ahorro.
+
+**Modelo de datos:**
+
+- `MovementT.isAnomalous: boolean` (user-owned). Columna `is_anomalous` en `movements`. A diferencia de
+  `is_tentative` (system-owned, preservado), `updateMovement` **sí** persiste `is_anomalous`.
+- `PeriodSummaryT.summaryWithoutAnomalies: BasicSummary | null` — los mismos agregados recomputados sin los
+  anómalos, o `null` cuando el periodo no tiene ninguno (la vista sin-anómalos coincide entonces con los
+  campos top-level, que siguen siendo all-inclusive). Almacenado como 7 columnas planas `without_anom_*`
+  (todas NULL juntas ⟺ `null`), mapeadas a/desde el objeto anidado en el repositorio.
+- `AccountStats` gana `totalIncomeWithoutAnomaliesCents` / `totalExpenseWithoutAnomaliesCents` (SUM con
+  `is_anomalous = 0` en `getStats`); `balanceCents` sigue siendo all-inclusive.
+
+**Cálculo:** `buildSummary` computa el mirror en el mismo pase `MODIFIED` (filtra los anómalos y reutiliza
+`getBasicSummary`) — no hay ruta de cálculo en tiempo real separada.
+
+**Optimización de `markLaterDirty`:** `movement.update` diffea contra el movimiento almacenado
+(`balanceInputsChanged`: cantidad, signo, mes, split). Si solo cambian campos no-balance (incl. `isAnomalous`,
+nombre, notas, categoría), el periodo se marca `MODIFIED` (para recomputar el mirror) pero **no** se
+re-encadenan los meses posteriores. `markDirty` / `periodTouched` ganan un parámetro `rechain`.
+
+**`month-overview` con datos reales:** el seed inserta movimientos con SQL crudo, saltándose el hook
+`periodTouched`, así que `period_summaries` quedaba vacía y el overview mostraba `SAMPLE_SUMMARIES`. Nuevo
+`periodSummaryService.backfillPeriodSummaries()`, llamado desde `main.ts` tras `migrate()`, construye los
+summaries de todos los movimientos existentes. `month-overview` ahora hace fetch real vía
+`getAllPeriodSummaries()`, agrupa por mes (navegación prev/next) y ofrece un toggle "Include anomalous
+movements" (por defecto excluye) que se propaga a cada `period-summary-card`.
+
+**Fix de `getAll` (cleaning):** `periodSummaryService.getAll()` limpia cada summary sucio y **omite** (en vez
+de lanzar) los que se auto-eliminan al limpiarse (huérfanos de un periodo cuyo último movimiento se borró).
+
+**Frontend:** checkbox "Mark as anomalous" en `movement-form`; badge `✷ anomalous` + acento violeta en
+`movements-list`; fila en `movement-detail-dialog`; `period-summary-card` con `@Input() showAnomalies` + getter
+`effective` (un único `??` que cae al summary cuando no hay mirror) que conmuta income/expense/medias y
+**availableBudget** (el gasto anómalo sale del ahorro, no del presupuesto mensual); tira de stats de Accounts
+con el mismo toggle.
+
+**Tests:** +7 (movement: persistencia del flag en create/update; period-summary: mirror correcto, `null` sin
+anómalos, exclusión del mirror pero inclusión en balance, no-rechain en edición balance-neutral vs rechain en
+edición de importe, `getAll` omite huérfanos; account: `getStats` sin-anómalos). Fixtures actualizados
+(`sample-summaries.ts`, specs; call-sites de `create` por el nuevo parámetro posicional). **154/154 Jest,
+79/79 Vitest verdes.**
+
+---
+
 ## Pasos siguientes
 
 ### Pendientes arrastrados de auditorías previas
@@ -479,6 +535,7 @@ Generados directamente por el trabajo de esta iteración.
 - PeriodicMovement: The guard only checks the immediately previous month, so the "tentatives form a suffix" invariant it's enforcing has a gap. If month N has a tentative, N+1 is empty/confirmed, and you book a confirmed movement in N+2, then getPrevious(N+2) = N+1 has no tentative → it's allowed, stranding an unconfirmed tentative behind confirmed months. Reachable by deactivating a template after N (so N+1 gets no instance) or deleting N+1's tentative. The ending-balance chain then carries unconfirmed money underneath confirmed periods — exactly what the invariant is meant to prevent. Either scan "any earlier month has a tentative" or document the limitation. No test covers the gap.
   - No se puede confirmar un movimiento en un mes si los meses anteriores tienen movimientos tentativos. Esto se comprueba mirando sólo el mes anterior, que por defecto no es problema, porque entras 5 meses tarde, y te genera tentativos para esos 5 meses, y no te deja confirmarlos hasta que confirmes los anteriores. Sin embargo, sí los puedes borrar. Si entras 5 meses tarde, y borras los movimientos que se creen, hay un hueco de 5 meses sin tentativos. Cuando la guarda compruebe si el mes anterior tiene tentativos, verá que no, y fallará.
 - Habrá que añadir un equivalente a PeriodSummary para tags/categorías. El PeriodSummary es la forma de ver las stats de un grupo concreto a lo largo del tiempo. Es interesante poder hacer esto con categorías y tags. Podría ser tan fácil como añadir un tagId a PeriodSummary y forzar que if (tagId!=null and envelopeId != null) throw error.
+- Los `PeriodSummary` a nivel de cuenta (`envelopeId = null`) **no se mantienen**. `Movement.getPeriods()` solo emite periodos a nivel de envelope, así que el flujo de movimientos nunca crea ni actualiza summaries de cuenta (`backfillPeriodSummaries` tampoco, por el mismo motivo). Por eso `month-overview` muestra solo tarjetas de envelope y los agregados a nivel de cuenta se derivan de `Accounts.getStats()` (SQL en vivo, all-time), no de summaries mensuales almacenados. Si en el futuro se quiere una tarjeta de cuenta por mes, habrá que mantener explícitamente esos summaries (o ensamblarlos sumando los de sus envelopes).
 
 ### Recomendaciones de mayor alcance (fuera de la iteración actual)
 

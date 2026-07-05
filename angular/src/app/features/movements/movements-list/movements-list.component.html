@@ -56,7 +56,7 @@
             } @else {
               @let m = row.movement;
               @let cat = getCategory(m.categoryId);
-              <tr [class.row--income]="m.isPositive" [class.row--expense]="!m.isPositive" [class.row--selected]="isRowSelected(m.id)" [class.row--tentative]="m.isTentative">
+              <tr [class.row--income]="m.isPositive" [class.row--expense]="!m.isPositive" [class.row--selected]="isRowSelected(m.id)" [class.row--tentative]="m.isTentative" [class.row--anomalous]="m.isAnomalous">
                 <td class="select-col">
                   <input
                     type="checkbox"
@@ -69,6 +69,9 @@
                   {{ m.name }}
                   @if (m.isTentative) {
                     <span class="badge badge--tentative" title="Auto-generated — awaiting your review">⚠ Review</span>
+                  }
+                  @if (m.isAnomalous) {
+                    <span class="badge badge--anomalous" title="Anomalous — excluded from average/aggregate statistics">✷ anomalous</span>
                   }
                 </td>
                 <td class="amount">

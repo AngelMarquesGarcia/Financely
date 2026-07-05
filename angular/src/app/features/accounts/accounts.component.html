@@ -1,14 +1,18 @@
 <div class="accounts-page">
+  <label class="accounts-page__toggle">
+    <input type="checkbox" [(ngModel)]="showAnomalies" />
+    Include anomalous movements
+  </label>
   <div class="stats-strip">
     <app-stat-card
       title="Total income"
-      [value]="stats.totalIncomeCents | money"
+      [value]="displayIncomeCents | money"
       [icon]="faArrowUp"
       tone="positive"
     />
     <app-stat-card
       title="Total expense"
-      [value]="stats.totalExpenseCents | money"
+      [value]="displayExpenseCents | money"
       [icon]="faArrowDown"
       tone="negative"
     />

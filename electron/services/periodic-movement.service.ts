@@ -199,6 +199,7 @@ export class PeriodicMovementService {
       mov.categoryId,
       mov.envelopeIdMap,
       mov.additionalNotes,
+      mov.isAnomalous,
       mov.templateId,
       mov.isTentative,
       mov.accountId,

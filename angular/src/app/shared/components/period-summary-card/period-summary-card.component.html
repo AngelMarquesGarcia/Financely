@@ -5,12 +5,15 @@
       @if (summary.tentative) {
         <span class="psc__badge" title="Includes movements awaiting review">⚠ unconfirmed</span>
       }
+      @if (hasAnomalies) {
+        <span class="psc__badge" title="Includes anomalous movements — excluded when anomalies are hidden">✷ anomalies</span>
+      }
     </span>
     <span
       class="psc__cashflow"
-      [class.psc__cashflow--positive]="summary.cashFlowCents >= 0"
-      [class.psc__cashflow--negative]="summary.cashFlowCents < 0"
-      >{{ summary.cashFlowCents >= 0 ? '+' : '' }}{{ summary.cashFlowCents | money }}</span
+      [class.psc__cashflow--positive]="effective.cashFlowCents >= 0"
+      [class.psc__cashflow--negative]="effective.cashFlowCents < 0"
+      >{{ effective.cashFlowCents >= 0 ? '+' : '' }}{{ effective.cashFlowCents | money }}</span
     >
     <fa-icon class="psc__chevron" [icon]="expanded() ? faChevronDown : faChevronRight" />
   </button>
@@ -19,19 +22,19 @@
     <div class="psc__body">
       <div class="psc__row">
         <span class="psc__row-label">Income</span>
-        <span class="psc__row-value psc__row-value--positive">{{ summary.totalIncomeCents | money }}</span>
+        <span class="psc__row-value psc__row-value--positive">{{ effective.totalIncomeCents | money }}</span>
       </div>
       <div class="psc__row">
         <span class="psc__row-label">Expenses</span>
-        <span class="psc__row-value psc__row-value--negative">{{ summary.totalExpenseCents | money }}</span>
+        <span class="psc__row-value psc__row-value--negative">{{ effective.totalExpenseCents | money }}</span>
       </div>
       <div class="psc__row">
         <span class="psc__row-label">Avg expense</span>
-        <span class="psc__row-value">{{ summary.avgExpenseCents | money }}</span>
+        <span class="psc__row-value">{{ effective.avgExpenseCents | money }}</span>
       </div>
       <div class="psc__row">
         <span class="psc__row-label">Avg income</span>
-        <span class="psc__row-value">{{ summary.avgIncomeCents | money }}</span>
+        <span class="psc__row-value">{{ effective.avgIncomeCents | money }}</span>
       </div>
       <div class="psc__row">
         <span class="psc__row-label">Ending balance</span>
@@ -44,7 +47,7 @@
       </div>
       <div class="psc__row">
         <span class="psc__row-label">Movements</span>
-        <span class="psc__row-value">{{ summary.movementCount }}</span>
+        <span class="psc__row-value">{{ effective.movementCount }}</span>
       </div>
       @if (summary.budgetCents !== undefined) {
         <div class="psc__row">

@@ -40,6 +40,7 @@ export class ElectronService {
     categoryId: number,
     envelopeIdMap: Map<number, number>,
     additionalNotes: string | null,
+    isAnomalous = false,
   ) {
     return from(
       this.movements.create(
@@ -51,6 +52,7 @@ export class ElectronService {
         categoryId,
         envelopeIdMap,
         additionalNotes,
+        isAnomalous,
       ),
     );
   }
@@ -250,6 +252,10 @@ export class ElectronService {
   }
 
   // Period summaries
+  getAllPeriodSummaries() {
+    return from(this.periodSummaries.getAll());
+  }
+
   getLatestPeriodSummary(envelopeId: number) {
     return from(this.periodSummaries.getLatest(envelopeId));
   }

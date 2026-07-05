@@ -73,6 +73,8 @@ export class MovementFormComponent implements OnInit, OnChanges {
   selectedEnvelopeId: number | null = null;
   selectedTagIds: number[] = [];
   additionalNotes: string | null = null;
+  /** User-owned. Excluded from without-anomaly statistics; never affects balances. */
+  isAnomalous = false;
 
   /** Split-across-envelopes mode (CU3). When on, the split editor drives envelope attribution. */
   splitMode = false;
@@ -183,6 +185,7 @@ export class MovementFormComponent implements OnInit, OnChanges {
           this.selectedEnvelopeId = [...m.envelopeIdMap.keys()][0] ?? null;
         }
         this.additionalNotes = m.additionalNotes;
+        this.isAnomalous = m.isAnomalous;
         this.showErrors = false;
         this.electron
           .getTagsForMovement(m.id)
@@ -278,6 +281,8 @@ export class MovementFormComponent implements OnInit, OnChanges {
         categoryId,
         envelopeIdMap,
         additionalNotes: this.additionalNotes || null,
+        // User-owned: sent from the form (the backend persists it on update).
+        isAnomalous: this.isAnomalous,
         // System-owned: preserved as-is (the backend ignores them on update).
         templateId: this.editingMovement!.templateId,
         isTentative: this.editingMovement!.isTentative,
@@ -311,6 +316,7 @@ export class MovementFormComponent implements OnInit, OnChanges {
           categoryId,
           envelopeIdMap,
           this.additionalNotes || null,
+          this.isAnomalous,
         )
         .pipe(
           switchMap((newId) => {
@@ -390,6 +396,7 @@ export class MovementFormComponent implements OnInit, OnChanges {
     this.selectedTagIds = [];
     this.currentTagIds = [];
     this.additionalNotes = null;
+    this.isAnomalous = false;
     this.date = this.useDefaultDate && this.loadedDefaultDate ? this.loadedDefaultDate : this.todayString();
     this.showErrors = false;
   }

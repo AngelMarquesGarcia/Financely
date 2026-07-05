@@ -20,7 +20,34 @@ export class PeriodSummaryService {
   }
 
   getAll(): PeriodSummaryT[] {
-    return periodSummaryRepository.getAll();
+    const result: PeriodSummaryT[] = [];
+    for (const summary of periodSummaryRepository.getAll()) {
+      if (summary.dirtyState === 'CLEAN') {
+        result.push(summary);
+        continue;
+      }
+      // Clean the dirty summary in place. `undefined` means it was an orphan — its last movement was
+      // deleted, leaving a MODIFIED summary with no backing data, so cleaning self-deletes it. That is a
+      // normal self-heal, not an error: correctly omit it rather than aborting the whole fetch.
+      const cleaned = this.cleanPeriodSummary(Period.fromPeriodSummary(summary));
+      if (cleaned) result.push(cleaned);
+    }
+    return result;
+  }
+
+  /**
+   * Builds any missing period summaries from every existing movement (idempotent). Called once at
+   * startup after migrate() — the seed inserts movements with raw SQL, bypassing the periodTouched
+   * hook, so without this pass the period_summaries table would be empty and the overview blank.
+   */
+  backfillPeriodSummaries(): void {
+    const periods = new Map<string, Period>();
+    for (const mov of movementService.getAll()) {
+      for (const period of Movement.from(mov).getPeriods()) {
+        periods.set(`${period.accountId}-${period.envelopeId}-${period.year}-${period.month}`, period);
+      }
+    }
+    for (const period of periods.values()) this.periodTouched(period);
   }
 
   getByPeriod(period: Period): PeriodSummaryT {
@@ -94,24 +121,26 @@ export class PeriodSummaryService {
     periodSummaryRepository.update(periodSum);
   }
 
-  markDirty(period: Period): void {
+  markDirty(period: Period, rechain = true): void {
     const periodSum = periodSummaryRepository.getByPeriod(period);
     if (periodSum == undefined) throw new AppError(AppErrorCode.PERIODSUMMARY_NOT_FOUND);
     periodSum.dirtyState = 'MODIFIED';
     periodSummaryRepository.update(periodSum);
-    // Every later month's ending balance depends on this one — mark them all DIRTY (gap-safe).
-    periodSummaryRepository.markLaterDirty(period);
+    // Every later month's ending balance depends on this one — mark them all DIRTY (gap-safe). Skipped
+    // when the edit left cash flow untouched (e.g. an anomalous-flag or notes-only change): the summary
+    // still needs recomputing (MODIFIED, to refresh the mirror) but no later balance actually moves.
+    if (rechain) periodSummaryRepository.markLaterDirty(period);
   }
 
   /** A movement or transfer landed in this period: create its summary if absent, else mark dirty. */
-  periodTouched(period: Period) {
+  periodTouched(period: Period, rechain = true) {
     const summary = periodSummaryRepository.getByPeriod(period);
     if (summary == undefined) {
       this.create(period);
       // A newly-created (possibly past) period shifts every later month's balance — re-chain them.
-      periodSummaryRepository.markLaterDirty(period);
+      if (rechain) periodSummaryRepository.markLaterDirty(period);
     } else {
-      this.markDirty(period);
+      this.markDirty(period, rechain);
     }
   }
 
@@ -249,6 +278,13 @@ export class PeriodSummaryService {
     });
 
     const sum = this.getBasicSummary(movements, period.envelopeId);
+    // Recompute the same aggregates with anomalous movements excluded. null when the period has none:
+    // the without-view then equals the all-inclusive fields, so nothing needs to be stored.
+    const nonAnomalous = movements.filter((m) => !m.isAnomalous);
+    const summaryWithoutAnomalies =
+      nonAnomalous.length === movements.length
+        ? null
+        : this.getBasicSummary(nonAnomalous, period.envelopeId);
 
     return {
       accountId: period.accountId,
@@ -271,6 +307,7 @@ export class PeriodSummaryService {
       notes: undefined,
       dirtyState: 'CLEAN',
       tentative: movements.some((m) => m.isTentative),
+      summaryWithoutAnomalies,
     };
   }
 

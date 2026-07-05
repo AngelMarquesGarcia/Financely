@@ -10,6 +10,7 @@ export interface Movements {
     categoryId: number,
     envelopeIdMap: Map<number, number>,
     additionalNotes: string | null,
+    isAnomalous: boolean,
   ): Promise<number | bigint>;
   getAll(filter?: MovementFilter): Promise<MovementT[]>;
   getById(id: number): Promise<MovementT | undefined>;

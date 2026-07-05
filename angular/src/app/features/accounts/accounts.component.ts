@@ -1,5 +1,6 @@
 import { Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormsModule } from '@angular/forms';
 import { forkJoin, switchMap, of } from 'rxjs';
 import { faArrowDown, faArrowUp, faBoxArchive, faScaleBalanced } from '@fortawesome/free-solid-svg-icons';
 import { ConfirmService } from '../../core/services/confirm.service';
@@ -14,7 +15,7 @@ import { MoneyPipe } from '../../shared/pipes/money.pipe';
 
 @Component({
   selector: 'app-accounts',
-  imports: [AccountFormComponent, AccountsListComponent, StatCardComponent, MoneyPipe],
+  imports: [FormsModule, AccountFormComponent, AccountsListComponent, StatCardComponent, MoneyPipe],
   templateUrl: './accounts.component.html',
   styleUrl: './accounts.component.scss',
 })
@@ -31,8 +32,29 @@ export class AccountsComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
 
   accounts: AccountT[] = [];
-  stats: AccountStats = { totalIncomeCents: 0, totalExpenseCents: 0, balanceCents: 0, envelopeCount: 0 };
+  stats: AccountStats = {
+    totalIncomeCents: 0,
+    totalExpenseCents: 0,
+    totalIncomeWithoutAnomaliesCents: 0,
+    totalExpenseWithoutAnomaliesCents: 0,
+    balanceCents: 0,
+    envelopeCount: 0,
+  };
   editingAccount: AccountT | null = null;
+  /** When false (default), the income/expense tiles exclude anomalous movements. Balance never does. */
+  showAnomalies = false;
+
+  get displayIncomeCents(): number {
+    return this.showAnomalies
+      ? this.stats.totalIncomeCents
+      : this.stats.totalIncomeWithoutAnomaliesCents;
+  }
+
+  get displayExpenseCents(): number {
+    return this.showAnomalies
+      ? this.stats.totalExpenseCents
+      : this.stats.totalExpenseWithoutAnomaliesCents;
+  }
 
   ngOnInit() {
     this.loadAll();

@@ -16,6 +16,7 @@ export class MovementService {
     categoryId: number,
     envelopeIdMap: Map<number, number>,
     additionalNotes: string | null,
+    isAnomalous = false,
     templateId: number | null = null,
     isTentative = false,
     accountId?: number,
@@ -45,6 +46,7 @@ export class MovementService {
       additionalNotes,
       templateId,
       isTentative,
+      isAnomalous,
     );
     // A confirmed movement may not open a new month while the previous one still has tentatives.
     if (!isTentative) this.assertPreviousMonthConfirmed(resolvedAccountId, date);
@@ -79,6 +81,27 @@ export class MovementService {
       sum += amount;
     }
     if (sum !== quantityCents) throw new AppError(AppErrorCode.MOVEMENT_SPLIT_SUM_MISMATCH);
+  }
+
+  /**
+   * Whether an edit changes anything that feeds the ending-balance chain: the amount, its sign, the
+   * month it lands in, or the per-envelope split (keys or amounts). When none of these changed, every
+   * affected period's cash flow is identical, so later months need not be re-chained (see update()).
+   */
+  private balanceInputsChanged(stored: MovementT, next: Movement): boolean {
+    if (stored.quantityCents !== next.quantityCents) return true;
+    if (stored.isPositive !== next.isPositive) return true;
+    if (
+      stored.date.getFullYear() !== next.date.getFullYear() ||
+      stored.date.getMonth() !== next.date.getMonth()
+    ) {
+      return true;
+    }
+    if (stored.envelopeIdMap.size !== next.envelopeIdMap.size) return true;
+    for (const [envelopeId, amount] of next.envelopeIdMap) {
+      if (stored.envelopeIdMap.get(envelopeId) !== amount) return true;
+    }
+    return false;
   }
 
   /** The suffix-invariant guard: throws if the account's previous month still holds a tentative. */
@@ -131,6 +154,10 @@ export class MovementService {
     // The split (and thus the affected envelopes) may change, so collect both the old and new
     // periods and refresh the union. Old envelopes recompute without the movement; new ones gain it.
     const stored = movementRepository.getMovementById(movement.id);
+    // An edit that leaves cash flow untouched (only isAnomalous / name / concept / category / notes
+    // changed) still needs each period recomputed to refresh its mirror, but must NOT re-chain later
+    // months — no ending balance moves. Only balance-relevant changes warrant the propagation.
+    const rechain = stored == undefined || this.balanceInputsChanged(stored, movement);
     const affected = new Map<string, Period>();
     const collect = (periods: Period[]) => {
       for (const p of periods) affected.set(`${p.accountId}-${p.envelopeId}-${p.year}-${p.month}`, p);
@@ -139,7 +166,7 @@ export class MovementService {
     collect(movement.getPeriods());
 
     const result = movementRepository.updateMovement(movement);
-    for (const period of affected.values()) periodSummaryService.periodTouched(period);
+    for (const period of affected.values()) periodSummaryService.periodTouched(period, rechain);
 
     // Editing income (e.g. raising it) may push an envelope over its cap — re-check the redirect.
     // Gate on the STORED tentative state (update never changes it): a still-tentative instance

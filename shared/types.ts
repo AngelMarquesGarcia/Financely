@@ -16,6 +16,10 @@ export type MovementT = {
   templateId: number | null;
   /** Auto-generated and awaiting user review. System-owned (set at creation / cleared by confirm). */
   isTentative: boolean;
+  /** User-owned. Marks a one-off (a car, a trip) so it is excluded from the "without anomalies"
+   *  statistics view. Always counted in balances/cash flow — the flag never moves real money, it only
+   *  partitions the displayed statistics. */
+  isAnomalous: boolean;
 };
 
 /** A recurring-movement blueprint. Not a real movement — it has a day-of-month, no date, and no
@@ -67,6 +71,10 @@ export type AccountT = {
 export type AccountStats = {
   totalIncomeCents: number;
   totalExpenseCents: number;
+  /** Income/expense with anomalous movements excluded (for the "without anomalies" toggle). */
+  totalIncomeWithoutAnomaliesCents: number;
+  totalExpenseWithoutAnomaliesCents: number;
+  /** Always all-inclusive — balance reflects real money, so anomalies are never excluded here. */
   balanceCents: number;
   envelopeCount: number;
 };
@@ -176,6 +184,10 @@ export type PeriodSummaryT = {
   dirtyState: DirtyState;
   /** True when the period holds at least one tentative (unreviewed) movement. Display-only. */
   tentative: boolean;
+  /** The same aggregates recomputed with anomalous movements excluded, or `null` when the period holds
+   *  none (the without-view then equals the top-level fields). Top-level fields stay all-inclusive so the
+   *  ending-balance chain is unaffected; this mirror only feeds the "without anomalies" display. */
+  summaryWithoutAnomalies: BasicSummary | null;
 };
 
 export type PeriodT = {

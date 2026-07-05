@@ -84,4 +84,26 @@ describe('AccountService', () => {
     expect(after.balanceCents - before.balanceCents).toBe(7500);
     expect(after.envelopeCount).toBe(before.envelopeCount + 1);
   });
+
+  it('getStats excludes anomalous movements from the without-anomalies totals but keeps them in balance', () => {
+    const db = DatabaseService.getInstance().db;
+    const catId = Number(
+      (db.prepare('SELECT id FROM categories LIMIT 1').get() as { id: number }).id,
+    );
+    const accountId = Number(accountService.create('Anom Stats Account'));
+    const envelopeId = Number(
+      (db.prepare('SELECT id FROM envelopes WHERE account_id = ?').get(accountId) as { id: number }).id,
+    );
+    const before = accountService.getStats();
+    // A normal expense and an anomalous one (a car purchase drawn from savings).
+    movementService.create('Groceries', null, 3000, false, new Date('2024-04-01'), catId, new Map([[envelopeId, 3000]]), null);
+    movementService.create('New car', null, 200000, false, new Date('2024-04-02'), catId, new Map([[envelopeId, 200000]]), null, true);
+    const after = accountService.getStats();
+
+    // All-inclusive expense counts both; the without-anomalies figure omits the car.
+    expect(after.totalExpenseCents - before.totalExpenseCents).toBe(203000);
+    expect(after.totalExpenseWithoutAnomaliesCents - before.totalExpenseWithoutAnomaliesCents).toBe(3000);
+    // Balance always reflects real money — the anomalous expense still drained it.
+    expect(after.balanceCents - before.balanceCents).toBe(-203000);
+  });
 });

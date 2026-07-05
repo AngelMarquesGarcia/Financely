@@ -17,6 +17,7 @@ contextBridge.exposeInMainWorld('movements', {
     categoryId: number,
     envelopeIdMap: Map<number, number>,
     additionalNotes: string | null,
+    isAnomalous: boolean,
   ) =>
     ipcRenderer.invoke(Channels.MOVEMENT_CREATE, {
       name,
@@ -27,6 +28,7 @@ contextBridge.exposeInMainWorld('movements', {
       categoryId,
       envelopeIdMap,
       additionalNotes,
+      isAnomalous,
     }),
   getAll: (filter?: MovementFilter) => ipcRenderer.invoke(Channels.MOVEMENT_GET_ALL, filter),
   getById: (id: number) => ipcRenderer.invoke(Channels.MOVEMENT_GET_BY_ID, id),

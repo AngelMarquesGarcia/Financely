@@ -17,6 +17,7 @@ function makeMovement(overrides: Partial<MovementT> = {}): MovementT {
     additionalNotes: null,
     templateId: null,
     isTentative: false,
+    isAnomalous: false,
     ...overrides,
   };
 }

@@ -15,6 +15,7 @@ const sampleMovementT: MovementT = {
   additionalNotes: null,
   templateId: null,
   isTentative: false,
+  isAnomalous: false,
 };
 
 const sampleSummaryT: PeriodSummaryT = {
@@ -38,6 +39,7 @@ const sampleSummaryT: PeriodSummaryT = {
   notes: 'note',
   dirtyState: 'CLEAN',
   tentative: false,
+  summaryWithoutAnomalies: null,
 };
 
 describe('Period — navigation and factories', () => {

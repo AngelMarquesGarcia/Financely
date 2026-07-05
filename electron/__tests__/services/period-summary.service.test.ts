@@ -421,9 +421,9 @@ describe('PeriodSummaryService', () => {
   it('carries the ending balance across a month with no activity (gap)', () => {
     const { acc, def } = freshDefault('GapAcc');
     const cat = firstCategoryId();
-    movementService.create('May in', null, 35000, true, new Date(2026, 4, 10), cat, new Map([[def, 35000]]), null, null, false, acc);
+    movementService.create('May in', null, 35000, true, new Date(2026, 4, 10), cat, new Map([[def, 35000]]), null, false, null, false, acc);
     // June has no activity.
-    movementService.create('Jul in', null, 5000, true, new Date(2026, 6, 10), cat, new Map([[def, 5000]]), null, null, false, acc);
+    movementService.create('Jul in', null, 5000, true, new Date(2026, 6, 10), cat, new Map([[def, 5000]]), null, false, null, false, acc);
     // The July balance must still include May → 40000, not just 5000.
     expect(periodSummaryService.getLatestPeriodSummary(def)!.endingBalanceCents).toBe(40000);
   });
@@ -433,8 +433,92 @@ describe('PeriodSummaryService', () => {
     const a = Number(envelopeService.create('DA', acc));
     const b = Number(envelopeService.create('DB', acc));
     const cat = firstCategoryId();
-    movementService.create('Pay', null, 2000, true, new Date(2026, 6, 10), cat, new Map([[a, 1200], [b, 800]]), null, null, false, acc);
+    movementService.create('Pay', null, 2000, true, new Date(2026, 6, 10), cat, new Map([[a, 1200], [b, 800]]), null, false, null, false, acc);
     envelopeService.delete(b); // b's 800 share merges into the account default
     expect(periodSummaryService.getLatestPeriodSummary(def)!.endingBalanceCents).toBe(800);
+  });
+
+  // ── anomalous movements ────────────────────────────────────────────────────
+  it('summaryWithoutAnomalies is null when the period has no anomalous movements', () => {
+    const { acc, def } = freshDefault('NoAnomAcc');
+    const cat = firstCategoryId();
+    movementService.create('Normal', null, 5000, false, new Date(2026, 3, 5), cat, new Map([[def, 5000]]), null, false, null, false, acc);
+    expect(periodSummaryService.getByPeriod(new Period(acc, def, 2026, 3)).summaryWithoutAnomalies).toBeNull();
+  });
+
+  it('excludes an anomalous movement from the mirror but keeps it in the totals and balance', () => {
+    const { acc, def } = freshDefault('AnomAcc');
+    const cat = firstCategoryId();
+    // Two normal expenses (3000, 1000) and one anomalous (20000).
+    movementService.create('Food A', null, 3000, false, new Date(2026, 3, 5), cat, new Map([[def, 3000]]), null, false, null, false, acc);
+    movementService.create('Food B', null, 1000, false, new Date(2026, 3, 6), cat, new Map([[def, 1000]]), null, false, null, false, acc);
+    movementService.create('Car', null, 20000, false, new Date(2026, 3, 7), cat, new Map([[def, 20000]]), null, true, null, false, acc);
+
+    const summary = periodSummaryService.getByPeriod(new Period(acc, def, 2026, 3));
+    // Top-level (all-inclusive) counts everything — including balance.
+    expect(summary.totalExpenseCents).toBe(24000);
+    expect(summary.movementCount).toBe(3);
+    expect(summary.avgExpenseCents).toBe(8000); // 24000 / 3
+    expect(summary.endingBalanceCents).toBe(-24000);
+
+    // The mirror excludes the anomalous car.
+    const wo = summary.summaryWithoutAnomalies!;
+    expect(wo).not.toBeNull();
+    expect(wo.totalExpenseCents).toBe(4000);
+    expect(wo.movementCount).toBe(2);
+    expect(wo.avgExpenseCents).toBe(2000); // 4000 / 2
+    expect(wo.cashFlowCents).toBe(-4000);
+  });
+
+  it('marking a movement anomalous recomputes the mirror without moving the ending balance', () => {
+    const { acc, def } = freshDefault('MarkAnomAcc');
+    const cat = firstCategoryId();
+    const id = Number(
+      movementService.create('Big', null, 20000, false, new Date(2026, 3, 7), cat, new Map([[def, 20000]]), null, false, null, false, acc),
+    );
+    expect(periodSummaryService.getByPeriod(new Period(acc, def, 2026, 3)).summaryWithoutAnomalies).toBeNull();
+
+    movementService.update(Movement.from({ ...movementService.getById(id)!, isAnomalous: true }));
+
+    const after = periodSummaryService.getByPeriod(new Period(acc, def, 2026, 3));
+    expect(after.summaryWithoutAnomalies).not.toBeNull();
+    expect(after.summaryWithoutAnomalies!.totalExpenseCents).toBe(0);
+    expect(after.summaryWithoutAnomalies!.movementCount).toBe(0);
+    expect(after.endingBalanceCents).toBe(-20000); // the flag never moves real money
+  });
+
+  it('an anomalous-only edit does not re-dirty later months, but an amount edit does', () => {
+    const { acc, def } = freshDefault('RechainAcc');
+    const cat = firstCategoryId();
+    const mayId = Number(
+      movementService.create('May', null, 5000, false, new Date(2026, 4, 5), cat, new Map([[def, 5000]]), null, false, null, false, acc),
+    );
+    movementService.create('Jun', null, 3000, false, new Date(2026, 5, 5), cat, new Map([[def, 3000]]), null, false, null, false, acc);
+    periodSummaryService.getByPeriod(new Period(acc, def, 2026, 5)); // ensure June is CLEAN
+
+    // Balance-neutral edit (flag only) → June stays CLEAN.
+    movementService.update(Movement.from({ ...movementService.getById(mayId)!, isAnomalous: true }));
+    expect(periodSummaryRepository.getByPeriod(new Period(acc, def, 2026, 5))!.dirtyState).toBe('CLEAN');
+
+    // Amount edit → June is re-dirtied.
+    movementService.update(
+      Movement.from({ ...movementService.getById(mayId)!, quantityCents: 9000, envelopeIdMap: new Map([[def, 9000]]) }),
+    );
+    expect(periodSummaryRepository.getByPeriod(new Period(acc, def, 2026, 5))!.dirtyState).toBe('DIRTY');
+  });
+
+  it('getAll skips a summary orphaned by deleting the last movement in its period', () => {
+    const { acc, def } = freshDefault('OrphanAcc');
+    const cat = firstCategoryId();
+    const id = Number(
+      movementService.create('Solo', null, 5000, false, new Date(2026, 3, 5), cat, new Map([[def, 5000]]), null, false, null, false, acc),
+    );
+    movementService.delete(id); // leaves a MODIFIED summary with no backing movements
+    expect(() => periodSummaryService.getAll()).not.toThrow();
+    expect(
+      periodSummaryService
+        .getAll()
+        .some((s) => s.accountId === acc && s.envelopeId === def && s.year === 2026 && s.month === 3),
+    ).toBe(false);
   });
 });

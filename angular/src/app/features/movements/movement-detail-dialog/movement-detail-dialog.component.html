@@ -17,6 +17,13 @@
       <span class="detail-value">{{ formatDate(movement.date) }}</span>
     </div>
 
+    @if (movement.isAnomalous) {
+      <div class="detail-row">
+        <span class="detail-label">Anomalous</span>
+        <span class="detail-value">✷ Excluded from average/aggregate statistics</span>
+      </div>
+    }
+
     <div class="detail-row">
       <span class="detail-label">Category</span>
       <span class="detail-value">

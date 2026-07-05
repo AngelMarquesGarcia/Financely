@@ -5,4 +5,15 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+
+  &__toggle {
+    display: inline-flex;
+    align-self: flex-end;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    color: var(--c-text-muted);
+    cursor: pointer;
+    user-select: none;
+  }
 }

@@ -77,14 +77,18 @@ export class AccountRepository {
       .prepare(
         `SELECT
             COALESCE(SUM(CASE WHEN isPositive = 1 THEN quantity_cents ELSE 0 END), 0) AS income,
-            COALESCE(SUM(CASE WHEN isPositive = 0 THEN quantity_cents ELSE 0 END), 0) AS expense
+            COALESCE(SUM(CASE WHEN isPositive = 0 THEN quantity_cents ELSE 0 END), 0) AS expense,
+            COALESCE(SUM(CASE WHEN isPositive = 1 AND is_anomalous = 0 THEN quantity_cents ELSE 0 END), 0) AS incomeWo,
+            COALESCE(SUM(CASE WHEN isPositive = 0 AND is_anomalous = 0 THEN quantity_cents ELSE 0 END), 0) AS expenseWo
          FROM ${tables.movements}`,
       )
-      .get() as { income: number; expense: number };
+      .get() as { income: number; expense: number; incomeWo: number; expenseWo: number };
     const e = this.db.prepare(`SELECT COUNT(*) AS n FROM ${tables.envelopes}`).get() as { n: number };
     return {
       totalIncomeCents: m.income,
       totalExpenseCents: m.expense,
+      totalIncomeWithoutAnomaliesCents: m.incomeWo,
+      totalExpenseWithoutAnomaliesCents: m.expenseWo,
       balanceCents: m.income - m.expense,
       envelopeCount: e.n,
     };

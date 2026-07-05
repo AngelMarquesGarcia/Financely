@@ -126,6 +126,13 @@
       <app-tag-picker [tags]="tags" [(selectedTagIds)]="selectedTagIds" (tagCreated)="onTagPickerTagCreated()" />
     </div>
 
+    <div class="form__group form__group--full">
+      <label class="form__check">
+        <input type="checkbox" [(ngModel)]="isAnomalous" />
+        Mark as anomalous (excluded from average/aggregate stats; still counts toward your balance)
+      </label>
+    </div>
+
     <details class="extras form__group--full">
       <summary class="extras__toggle">Optional details</summary>
       <div class="extras__body">

@@ -8,6 +8,7 @@ import { registerEnvelopeHandlers } from './ipc/envelopes.handler';
 import { registerTagHandlers } from './ipc/tags.handler';
 import { registerSettingsHandlers } from './ipc/settings.handler';
 import { registerPeriodSummaryHandlers } from './ipc/period-summaries.handler';
+import { periodSummaryService } from './services/period-summary.service';
 import { PATHS } from './config/paths';
 import { getStartURL } from './config/environment';
 
@@ -17,6 +18,9 @@ app.commandLine.appendSwitch('remote-debugging-port', '9223');
 
 const createWindow = () => {
   DatabaseService.getInstance().migrate();
+  // The seed inserts movements with raw SQL, bypassing the periodTouched hook, so build their period
+  // summaries here (top layer — keeps the repository/database layer free of a service dependency).
+  periodSummaryService.backfillPeriodSummaries();
 
   const win = new BrowserWindow({
     width: 800,

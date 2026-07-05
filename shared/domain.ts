@@ -9,6 +9,7 @@ import type {
   TagT,
   TransferT,
   DirtyState,
+  BasicSummary,
 } from './types';
 
 export class Period implements PeriodT {
@@ -56,6 +57,7 @@ export class Movement implements MovementT {
     public readonly additionalNotes: string | null,
     public readonly templateId: number | null = null,
     public readonly isTentative: boolean = false,
+    public readonly isAnomalous: boolean = false,
   ) {}
 
   /** True when the movement is divided across more than one envelope. */
@@ -93,6 +95,7 @@ export class Movement implements MovementT {
       d.additionalNotes,
       d.templateId,
       d.isTentative,
+      d.isAnomalous,
     );
   }
 }
@@ -119,6 +122,7 @@ export class PeriodSummary implements PeriodSummaryT {
     public readonly notes: string | undefined,
     public readonly dirtyState: DirtyState,
     public readonly tentative: boolean = false,
+    public readonly summaryWithoutAnomalies: BasicSummary | null = null,
   ) {}
 
   getPeriod(): Period {
@@ -151,6 +155,7 @@ export class PeriodSummary implements PeriodSummaryT {
       d.notes,
       d.dirtyState,
       d.tentative,
+      d.summaryWithoutAnomalies,
     );
   }
 }

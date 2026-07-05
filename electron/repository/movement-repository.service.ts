@@ -15,6 +15,7 @@ type RawMovement = {
   additionalNotes: string | null;
   templateId: number | null;
   isTentative: number;
+  isAnomalous: number;
 };
 
 /** Builds a wire movement with an empty allocation map; `hydrateEnvelopeMaps` fills it in. */
@@ -32,6 +33,7 @@ function toMovement(r: RawMovement): MovementT {
     additionalNotes: r.additionalNotes,
     templateId: r.templateId,
     isTentative: r.isTentative === 1,
+    isAnomalous: r.isAnomalous === 1,
   };
 }
 
@@ -40,7 +42,8 @@ export class MovementRepository {
 
   private readonly selectCols = `id, account_id as accountId, name, concept, quantity_cents as quantityCents,
     isPositive, date, category_id as categoryId,
-    additional_notes as additionalNotes, template_id as templateId, is_tentative as isTentative`;
+    additional_notes as additionalNotes, template_id as templateId, is_tentative as isTentative,
+    is_anomalous as isAnomalous`;
 
   /**
    * Populates each movement's `envelopeIdMap` from `movement_envelopes` in a single batched query
@@ -74,9 +77,9 @@ export class MovementRepository {
     const insertMov = this.db.prepare(
       `INSERT INTO ${tables.movements}
          (account_id, name, concept, quantity_cents, isPositive, date, category_id,
-          additional_notes, template_id, is_tentative)
+          additional_notes, template_id, is_tentative, is_anomalous)
        VALUES (:accountId, :name, :concept, :quantityCents, :isPositive, :date, :categoryId,
-          :additionalNotes, :templateId, :isTentative)`,
+          :additionalNotes, :templateId, :isTentative, :isAnomalous)`,
     );
     const insertAlloc = this.db.prepare(
       `INSERT INTO ${tables.movementEnvelopes} (movement_id, envelope_id, amount_cents) VALUES (?, ?, ?)`,
@@ -93,6 +96,7 @@ export class MovementRepository {
         additionalNotes: m.additionalNotes ?? null,
         templateId: m.templateId ?? null,
         isTentative: m.isTentative ? 1 : 0,
+        isAnomalous: m.isAnomalous ? 1 : 0,
       }).lastInsertRowid;
       for (const [envelopeId, amount] of m.envelopeIdMap) insertAlloc.run(Number(id), envelopeId, amount);
       return id;
@@ -270,7 +274,7 @@ export class MovementRepository {
       UPDATE ${tables.movements}
       SET account_id = :accountId, name = :name, concept = :concept, quantity_cents = :quantityCents,
           isPositive = :isPositive, date = :date, category_id = :categoryId,
-          additional_notes = :additionalNotes
+          additional_notes = :additionalNotes, is_anomalous = :isAnomalous
       WHERE id = :id
     `);
     const delAlloc = this.db.prepare(
@@ -291,6 +295,7 @@ export class MovementRepository {
           date: dateToISO(m.date),
           categoryId: m.categoryId,
           additionalNotes: m.additionalNotes ?? null,
+          isAnomalous: m.isAnomalous ? 1 : 0,
         }).changes > 0;
       // Re-write the allocation regardless (the split may change while the movement row does not).
       delAlloc.run(m.id);

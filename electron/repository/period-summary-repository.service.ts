@@ -25,7 +25,14 @@ export class PeriodSummaryRepository {
     max_savings_cents         AS maxSavingsCents,
     notes,
     dirty_state               AS dirtyState,
-    tentative
+    tentative,
+    without_anom_cash_flow_cents           AS woCashFlowCents,
+    without_anom_total_income_cents        AS woTotalIncomeCents,
+    without_anom_total_expense_cents       AS woTotalExpenseCents,
+    without_anom_avg_expense_cents         AS woAvgExpenseCents,
+    without_anom_avg_income_cents          AS woAvgIncomeCents,
+    without_anom_avg_movement_amount_cents AS woAvgMovementAmountCents,
+    without_anom_movement_count            AS woMovementCount
   `;
 
   insert(s: PeriodSummaryT): number | bigint {
@@ -36,13 +43,21 @@ export class PeriodSummaryRepository {
           cash_flow_cents, total_income_cents, total_expense_cents,
           avg_expense_cents, avg_income_cents, avg_movement_amount_cents,
           movement_count, ending_balance_cents, net_transfers_cents,
-          budget_cents, max_savings_cents, notes, dirty_state, tentative
+          budget_cents, max_savings_cents, notes, dirty_state, tentative,
+          without_anom_cash_flow_cents, without_anom_total_income_cents,
+          without_anom_total_expense_cents, without_anom_avg_expense_cents,
+          without_anom_avg_income_cents, without_anom_avg_movement_amount_cents,
+          without_anom_movement_count
         ) VALUES (
           :accountId, :accountName, :envelopeId, :envelopeName, :year, :month,
           :cashFlowCents, :totalIncomeCents, :totalExpenseCents,
           :avgExpenseCents, :avgIncomeCents, :avgMovementAmountCents,
           :movementCount, :endingBalanceCents, :netTransfersCents,
-          :budgetCents, :maxSavingsCents, :notes, :dirtyState, :tentative
+          :budgetCents, :maxSavingsCents, :notes, :dirtyState, :tentative,
+          :woCashFlowCents, :woTotalIncomeCents,
+          :woTotalExpenseCents, :woAvgExpenseCents,
+          :woAvgIncomeCents, :woAvgMovementAmountCents,
+          :woMovementCount
         )`,
       )
       .run(toRow(s)).lastInsertRowid;
@@ -151,7 +166,14 @@ export class PeriodSummaryRepository {
             max_savings_cents = :maxSavingsCents,
             notes = :notes,
             dirty_state = :dirtyState,
-            tentative = :tentative
+            tentative = :tentative,
+            without_anom_cash_flow_cents = :woCashFlowCents,
+            without_anom_total_income_cents = :woTotalIncomeCents,
+            without_anom_total_expense_cents = :woTotalExpenseCents,
+            without_anom_avg_expense_cents = :woAvgExpenseCents,
+            without_anom_avg_income_cents = :woAvgIncomeCents,
+            without_anom_avg_movement_amount_cents = :woAvgMovementAmountCents,
+            without_anom_movement_count = :woMovementCount
            WHERE account_id = :accountId
              AND year = :year
              AND month = :month
@@ -223,6 +245,13 @@ type RawRow = {
   notes: string | null;
   dirtyState: string;
   tentative: number;
+  woCashFlowCents: number | null;
+  woTotalIncomeCents: number | null;
+  woTotalExpenseCents: number | null;
+  woAvgExpenseCents: number | null;
+  woAvgIncomeCents: number | null;
+  woAvgMovementAmountCents: number | null;
+  woMovementCount: number | null;
 };
 
 function toSummary(r: RawRow): PeriodSummaryT {
@@ -247,6 +276,19 @@ function toSummary(r: RawRow): PeriodSummaryT {
     notes: r.notes ?? undefined,
     dirtyState: r.dirtyState as DirtyState,
     tentative: r.tentative === 1,
+    // All seven mirror columns are written together, so a null count means "no mirror stored".
+    summaryWithoutAnomalies:
+      r.woMovementCount === null
+        ? null
+        : {
+            cashFlowCents: r.woCashFlowCents!,
+            totalIncomeCents: r.woTotalIncomeCents!,
+            totalExpenseCents: r.woTotalExpenseCents!,
+            avgExpenseCents: r.woAvgExpenseCents!,
+            avgIncomeCents: r.woAvgIncomeCents!,
+            avgMovementAmountCents: r.woAvgMovementAmountCents!,
+            movementCount: r.woMovementCount,
+          },
   };
 }
 
@@ -272,6 +314,13 @@ function toRow(s: PeriodSummaryT): Record<string, unknown> {
     notes: s.notes ?? null,
     dirtyState: s.dirtyState,
     tentative: s.tentative ? 1 : 0,
+    woCashFlowCents: s.summaryWithoutAnomalies?.cashFlowCents ?? null,
+    woTotalIncomeCents: s.summaryWithoutAnomalies?.totalIncomeCents ?? null,
+    woTotalExpenseCents: s.summaryWithoutAnomalies?.totalExpenseCents ?? null,
+    woAvgExpenseCents: s.summaryWithoutAnomalies?.avgExpenseCents ?? null,
+    woAvgIncomeCents: s.summaryWithoutAnomalies?.avgIncomeCents ?? null,
+    woAvgMovementAmountCents: s.summaryWithoutAnomalies?.avgMovementAmountCents ?? null,
+    woMovementCount: s.summaryWithoutAnomalies?.movementCount ?? null,
   };
 }
 

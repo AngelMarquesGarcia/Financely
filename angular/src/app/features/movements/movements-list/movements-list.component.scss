@@ -44,6 +44,18 @@ tr.row--tentative td:first-child { box-shadow: inset 3px 0 0 #f59e0b; }
   white-space: nowrap;
 }
 
+/* Anomalous (excluded from statistics) rows carry a violet left-edge accent — the income/expense
+   tint is preserved (unlike tentative), since an anomalous movement is still real money. */
+tr.row--anomalous td:first-child { box-shadow: inset 3px 0 0 #8b5cf6; }
+
+.badge--anomalous {
+  margin-left: 0.5rem;
+  background: #ede9fe;
+  color: #5b21b6;
+  font-size: 0.6875rem;
+  white-space: nowrap;
+}
+
 .badge--split {
   margin-left: 0.5rem;
   background: #e0e7ff;

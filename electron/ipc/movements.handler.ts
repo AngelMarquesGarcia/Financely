@@ -18,6 +18,7 @@ export function registerMovementHandlers(): void {
         arg.categoryId,
         arg.envelopeIdMap,
         arg.additionalNotes,
+        arg.isAnomalous,
       ),
     ),
   );
