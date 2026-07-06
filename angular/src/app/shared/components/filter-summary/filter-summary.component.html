@@ -1,0 +1,70 @@
+<div class="fs card">
+  <button class="fs__header" type="button" (click)="toggle()">
+    <span class="fs__label">
+      Filtered totals
+      @if (summary.aggregate.tentative) {
+        <span class="fs__badge" title="Includes movements awaiting review">⚠ unconfirmed</span>
+      }
+      @if (hasAnomalies(summary.aggregate)) {
+        <span class="fs__badge" title="Includes anomalous movements — excluded when anomalies are hidden">✷ anomalies</span>
+      }
+    </span>
+    <span
+      class="fs__cashflow"
+      [class.fs__cashflow--positive]="effective(summary.aggregate).cashFlowCents >= 0"
+      [class.fs__cashflow--negative]="effective(summary.aggregate).cashFlowCents < 0"
+      >{{ effective(summary.aggregate).cashFlowCents >= 0 ? '+' : '' }}{{ effective(summary.aggregate).cashFlowCents | money }}</span
+    >
+    <fa-icon class="fs__chevron" [icon]="expanded() ? faChevronDown : faChevronRight" />
+  </button>
+
+  @if (expanded()) {
+    <div class="fs__body">
+      <div class="fs__row">
+        <span class="fs__row-label">Income</span>
+        <span class="fs__row-value fs__row-value--positive">{{ effective(summary.aggregate).totalIncomeCents | money }}</span>
+      </div>
+      <div class="fs__row">
+        <span class="fs__row-label">Expenses</span>
+        <span class="fs__row-value fs__row-value--negative">{{ effective(summary.aggregate).totalExpenseCents | money }}</span>
+      </div>
+      <div class="fs__row">
+        <span class="fs__row-label">Avg expense</span>
+        <span class="fs__row-value">{{ effective(summary.aggregate).avgExpenseCents | money }}</span>
+      </div>
+      <div class="fs__row">
+        <span class="fs__row-label">Avg income</span>
+        <span class="fs__row-value">{{ effective(summary.aggregate).avgIncomeCents | money }}</span>
+      </div>
+      <div class="fs__row">
+        <span class="fs__row-label">Movements</span>
+        <span class="fs__row-value">{{ effective(summary.aggregate).movementCount }}</span>
+      </div>
+
+      @if (summary.children.length > 1) {
+        <div class="fs__months">
+          <h3 class="fs__months-title">By month</h3>
+          @for (child of summary.children; track $index) {
+            <div class="fs__month-row">
+              <span class="fs__month-label">
+                {{ monthLabel(child) }}
+                @if (child.tentative) {
+                  <span class="fs__badge" title="Includes movements awaiting review">⚠</span>
+                }
+                @if (hasAnomalies(child)) {
+                  <span class="fs__badge" title="Includes anomalous movements">✷</span>
+                }
+              </span>
+              <span
+                class="fs__row-value"
+                [class.fs__row-value--positive]="effective(child).cashFlowCents >= 0"
+                [class.fs__row-value--negative]="effective(child).cashFlowCents < 0"
+                >{{ effective(child).cashFlowCents >= 0 ? '+' : '' }}{{ effective(child).cashFlowCents | money }}</span
+              >
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

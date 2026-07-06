@@ -86,11 +86,14 @@ describe('Period — navigation and factories', () => {
 });
 
 describe('Movement', () => {
-  it('getPeriods returns one period per attributed envelope', () => {
-    expect(Movement.from(sampleMovementT).getPeriods()).toEqual([new Period(1, 4, 2026, 3)]);
+  it('getPeriods returns the envelope period plus the account-level period', () => {
+    expect(Movement.from(sampleMovementT).getPeriods()).toEqual([
+      new Period(1, 4, 2026, 3),
+      new Period(1, null, 2026, 3),
+    ]);
   });
 
-  it('getPeriods yields a period per envelope for a split movement', () => {
+  it('getPeriods yields a period per envelope for a split movement, then the account period', () => {
     const split = Movement.from({
       ...sampleMovementT,
       quantityCents: 3000,
@@ -102,6 +105,7 @@ describe('Movement', () => {
     expect(split.getPeriods()).toEqual([
       new Period(1, 4, 2026, 3),
       new Period(1, 6, 2026, 3),
+      new Period(1, null, 2026, 3),
     ]);
     expect(split.isSplitMovement()).toBe(true);
     expect(split.amountFor(6)).toBe(2000);

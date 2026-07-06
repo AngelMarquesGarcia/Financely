@@ -38,6 +38,8 @@ contextBridge.exposeInMainWorld('movements', {
   confirm: (id: number) => ipcRenderer.invoke(Channels.MOVEMENT_CONFIRM, id),
   suggestNames: (prefix: string, limit?: number) =>
     ipcRenderer.invoke(Channels.MOVEMENT_SUGGEST_NAMES, { prefix, limit }),
+  getFilterSummary: (filter: MovementFilter) =>
+    ipcRenderer.invoke(Channels.MOVEMENT_GET_FILTER_SUMMARY, filter),
 });
 
 contextBridge.exposeInMainWorld('periodicMovements', {

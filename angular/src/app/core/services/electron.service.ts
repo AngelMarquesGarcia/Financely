@@ -85,6 +85,10 @@ export class ElectronService {
     return from(this.movements.suggestNames(prefix, limit));
   }
 
+  getFilterSummary(filter: MovementFilter) {
+    return from(this.movements.getFilterSummary(filter));
+  }
+
   // Periodic movements
   createPeriodicMovement(template: NewPeriodicTemplate, tagIds: number[]) {
     return from(this.periodicMovements.create(template, tagIds));

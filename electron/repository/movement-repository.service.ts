@@ -123,6 +123,10 @@ export class MovementRepository {
       conditions.push('quantity_cents <= :amountTo');
       params['amountTo'] = filter.amount.to;
     }
+    if (filter?.accountId != null) {
+      conditions.push('account_id = :accountId');
+      params['accountId'] = filter.accountId;
+    }
     if (filter?.categoryId != null) {
       conditions.push('category_id = :categoryId');
       params['categoryId'] = filter.categoryId;
@@ -196,6 +200,26 @@ export class MovementRepository {
     );
   }
 
+  /**
+   * Every movement in an account+month, regardless of envelope — the account-level counterpart of
+   * getMovementsByPeriod (which scopes to one envelope). Each movement appears once at its full amount,
+   * so account summaries count a split as a single entry rather than per-envelope.
+   */
+  getMovementsByAccountMonth(accountId: number, year: number, month: number): MovementT[] {
+    return this.hydrateEnvelopeMaps(
+      (
+        this.db
+          .prepare(
+            `SELECT ${this.selectCols} FROM ${tables.movements}
+             WHERE account_id = ?
+               AND CAST(strftime('%Y', date) AS INTEGER) = ?
+               AND CAST(strftime('%m', date) AS INTEGER) - 1 = ?`,
+          )
+          .all(accountId, year, month) as RawMovement[]
+      ).map(toMovement),
+    );
+  }
+
   /** Clears the tentative flag (review approved). The only transition we support. */
   confirm(id: number): boolean {
     return (
@@ -220,6 +244,10 @@ export class MovementRepository {
 
   /** Drives the period summary's `tentative` flag: any tentative movement in this exact period? */
   hasTentativeInPeriod(period: PeriodT): boolean {
+    // An account-level period (null envelope) spans every envelope — reuse the account-month check.
+    if (period.envelopeId == null) {
+      return this.hasTentativeInAccountMonth(period.accountId, period.year, period.month);
+    }
     const row = this.db
       .prepare(
         `SELECT 1 FROM ${tables.movements} m

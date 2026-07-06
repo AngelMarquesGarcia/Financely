@@ -230,6 +230,15 @@ export class DatabaseService {
         `CREATE INDEX IF NOT EXISTS idx_periodic_movement_envelopes_envelope ON ${tables.periodicMovementEnvelopes}(envelope_id)`,
       )
       .run();
+
+    // Logical key of a period summary. COALESCE(envelope_id, -1) because SQLite treats NULLs as
+    // distinct in a plain UNIQUE, which would let duplicate account-level rows (null envelope) slip in.
+    this.db
+      .prepare(
+        `CREATE UNIQUE INDEX IF NOT EXISTS uq_period_summary_key
+           ON ${tables.periodSummaries}(account_id, COALESCE(envelope_id, -1), year, month)`,
+      )
+      .run();
     //#endregion
 
     //#region Partial unique indexes (enforce single default per scope)

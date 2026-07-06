@@ -1,4 +1,4 @@
-import { BasicSummary, MovementT, PeriodSummaryT } from '@shared/types';
+import { MovementT, PeriodSummaryT } from '@shared/types';
 import { Movement, Period, PeriodSummary } from '@shared/domain';
 import { periodSummaryRepository } from '../repository/period-summary-repository.service';
 import { transferRepository } from '../repository/transfer-repository.service';
@@ -6,6 +6,7 @@ import { movementRepository } from '../repository/movement-repository.service';
 import { movementService } from './movement.service';
 import { accountService } from './account.service';
 import { envelopeService } from './envelope.service';
+import { computeBasicSummary } from './basic-summary';
 import { AppError, AppErrorCode } from '@shared/error-codes';
 
 export class PeriodSummaryService {
@@ -277,14 +278,14 @@ export class PeriodSummaryService {
       if (m.accountId != period.accountId) throw new AppError(AppErrorCode.INCORRECT_PARAMETERS);
     });
 
-    const sum = this.getBasicSummary(movements, period.envelopeId);
+    const sum = computeBasicSummary(movements, period.envelopeId);
     // Recompute the same aggregates with anomalous movements excluded. null when the period has none:
     // the without-view then equals the all-inclusive fields, so nothing needs to be stored.
     const nonAnomalous = movements.filter((m) => !m.isAnomalous);
     const summaryWithoutAnomalies =
       nonAnomalous.length === movements.length
         ? null
-        : this.getBasicSummary(nonAnomalous, period.envelopeId);
+        : computeBasicSummary(nonAnomalous, period.envelopeId);
 
     return {
       accountId: period.accountId,
@@ -308,51 +309,6 @@ export class PeriodSummaryService {
       dirtyState: 'CLEAN',
       tentative: movements.some((m) => m.isTentative),
       summaryWithoutAnomalies,
-    };
-  }
-
-  /**
-   * A movement's contribution to a specific envelope. `getMovementsByPeriod` only returns movements
-   * attributed to `envelopeId`, so the allocation is always present; a missing entry signals a
-   * data-integrity bug rather than a legitimate case (a full-total fallback would over-count a split).
-   */
-  private amountForEnvelope(m: MovementT, envelopeId: number | null): number {
-    if (envelopeId == null) return m.quantityCents;
-    const amount = m.envelopeIdMap.get(envelopeId);
-    if (amount == undefined) throw new AppError(AppErrorCode.INCORRECT_PARAMETERS);
-    return amount;
-  }
-
-  private getBasicSummary(movements: MovementT[], envelopeId: number | null): BasicSummary {
-    let totalIncomeCents = 0;
-    let incomeCount = 0;
-    let totalExpenseCents = 0;
-    let expenseCount = 0;
-    for (const movement of movements) {
-      const amount = this.amountForEnvelope(movement, envelopeId);
-      if (movement.isPositive) {
-        totalIncomeCents += amount;
-        incomeCount++;
-      } else {
-        totalExpenseCents += amount;
-        expenseCount++;
-      }
-    }
-    const movementCount = movements.length;
-    const cashFlowCents = totalIncomeCents - totalExpenseCents;
-    const avgIncomeCents = incomeCount != 0 ? totalIncomeCents / incomeCount : 0;
-    const avgExpenseCents = expenseCount != 0 ? totalExpenseCents / expenseCount : 0;
-    const avgMovementAmountCents =
-      movementCount != 0 ? (totalIncomeCents + totalExpenseCents) / movementCount : 0;
-
-    return {
-      movementCount,
-      totalIncomeCents,
-      totalExpenseCents,
-      cashFlowCents,
-      avgExpenseCents,
-      avgIncomeCents,
-      avgMovementAmountCents,
     };
   }
 }

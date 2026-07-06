@@ -2,6 +2,7 @@ import { ipcMain, IpcMainInvokeEvent } from 'electron';
 import { Channels } from './channels';
 import { ipcHandle } from './ipc-utils';
 import { movementService } from '../services/movement.service';
+import { filterSummaryService } from '../services/filter-summary.service';
 import { MovementT, MovementFilter } from '@shared/types';
 import { Movement } from '@shared/domain';
 
@@ -59,6 +60,13 @@ export function registerMovementHandlers(): void {
     Channels.MOVEMENT_SUGGEST_NAMES,
     ipcHandle((_event: IpcMainInvokeEvent, arg: { prefix: string; limit?: number }) =>
       movementService.suggestNames(arg.prefix, arg.limit),
+    ),
+  );
+
+  ipcMain.handle(
+    Channels.MOVEMENT_GET_FILTER_SUMMARY,
+    ipcHandle((_event: IpcMainInvokeEvent, filter: MovementFilter) =>
+      filterSummaryService.generateFilterSummary(filter),
     ),
   );
 }

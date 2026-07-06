@@ -7,6 +7,7 @@ export const Channels = {
   MOVEMENT_DELETE_MANY: 'movement:deleteMany',
   MOVEMENT_CONFIRM: 'movement:confirm',
   MOVEMENT_SUGGEST_NAMES: 'movement:suggestNames',
+  MOVEMENT_GET_FILTER_SUMMARY: 'movement:getFilterSummary',
 
   PERIODIC_CREATE: 'periodic:create',
   PERIODIC_GET_ALL: 'periodic:getAll',

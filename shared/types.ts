@@ -124,6 +124,7 @@ export type TextMatchCondition = 'contains' | 'startsWith' | 'endsWith' | 'exact
 export type TextMatchField = 'name' | 'concept' | 'notes' | 'all';
 
 export type MovementFilter = {
+  accountId?: number;
   date?: {
     from?: string;
     to?: string;
@@ -144,6 +145,10 @@ export type MovementFilter = {
   categoryId?: number;
   envelopeId?: number;
   isPositive?: boolean;
+  /** System-owned, backend-set-only. Labels which anomaly variant a computed summary reflects (true =
+   *  all-inclusive, false = anomalies excluded) so the two variants are distinct cache keys. Callers of
+   *  the movement/summary APIs must not set it — no query filters on it; it is stamped on results. */
+  includeAnomalies?: boolean;
 };
 
 export type BasicSummary = {
@@ -155,6 +160,26 @@ export type BasicSummary = {
   avgMovementAmountCents: number; // average ignoring sign
   movementCount: number;
   filters?: MovementFilter; // cache/deduplication key
+};
+
+/** One period's slice of an on-the-fly filter summary: the all-inclusive figures, their
+ *  anomaly-stripped mirror (`null` when the slice holds no anomalous movement, as the two coincide),
+ *  and a display flag for tentative movements. Each `BasicSummary.filters` echoes the exact slice
+ *  (month-snapped date + the `includeAnomalies` label) so it stands alone as a cache key. */
+export type FilterSummaryEntry = {
+  summary: BasicSummary;
+  summaryWithoutAnomalies: BasicSummary | null;
+  tentative: boolean;
+};
+
+/** Result of summarizing movements matching an arbitrary `MovementFilter` over a month-granular
+ *  interval — computed on the fly, never stored. `aggregate` is the whole interval; `children` is one
+ *  entry per month, chronological. Unlike `PeriodSummaryT` it carries no balance/transfer/budget
+ *  fields (a filter slice is not a money pool). */
+export type FilterSummaryT = {
+  filters: MovementFilter; // the request as received (whole-interval cache key)
+  aggregate: FilterSummaryEntry;
+  children: FilterSummaryEntry[];
 };
 
 export type DirtyState = 'CLEAN' | 'MODIFIED' | 'DIRTY';

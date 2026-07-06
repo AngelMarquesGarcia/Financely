@@ -104,7 +104,7 @@ export const PeriodSummarySchema = `
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
   account_name TEXT NOT NULL,
-  envelope_id INTEGER REFERENCES envelopes(id) ON DELETE SET NULL,
+  envelope_id INTEGER REFERENCES envelopes(id) ON DELETE CASCADE,
   envelope_name TEXT,
   year INTEGER NOT NULL CHECK(year >= 1970),
   month INTEGER NOT NULL CHECK(month >= 0 AND month <= 11),

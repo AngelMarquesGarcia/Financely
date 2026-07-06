@@ -19,7 +19,7 @@ export class MonthOverviewComponent implements OnInit {
   private errors = inject(ErrorReporter);
   private destroyRef = inject(DestroyRef);
 
-  /** Envelope-level summaries only — account-level ones (envelopeId null) aren't maintained today. */
+  /** All stored summaries for the shown months — both account-level (envelopeId null) and envelope. */
   private summaries: PeriodSummaryT[] = [];
   /** Index into `months` of the month currently shown (0 = most recent). */
   protected monthIndex = 0;
@@ -31,7 +31,7 @@ export class MonthOverviewComponent implements OnInit {
       .getAllPeriodSummaries()
       .pipe(this.errors.toast(), takeUntilDestroyed(this.destroyRef))
       .subscribe((summaries) => {
-        this.summaries = summaries.filter((s) => s.envelopeId !== null);
+        this.summaries = summaries;
         this.monthIndex = 0;
       });
   }
@@ -49,10 +49,21 @@ export class MonthOverviewComponent implements OnInit {
     return this.months[this.monthIndex] ?? null;
   }
 
+  /** Account-level total(s) for the shown month — one per account (envelopeId null). */
+  get accountSummaries(): PeriodSummaryT[] {
+    const cur = this.current;
+    if (!cur) return [];
+    return this.summaries.filter(
+      (s) => s.year === cur.year && s.month === cur.month && s.envelopeId === null,
+    );
+  }
+
   get envelopeSummaries(): PeriodSummaryT[] {
     const cur = this.current;
     if (!cur) return [];
-    return this.summaries.filter((s) => s.year === cur.year && s.month === cur.month);
+    return this.summaries.filter(
+      (s) => s.year === cur.year && s.month === cur.month && s.envelopeId !== null,
+    );
   }
 
   get monthLabel(): string {

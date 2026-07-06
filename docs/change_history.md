@@ -500,6 +500,45 @@ edición de importe, `getAll` omite huérfanos; account: `getStats` sin-anómalo
 
 ---
 
+## Julio 2026 (06/07)
+
+### Generalización de PeriodSummary: mantenimiento de summaries a nivel de cuenta + `FilterSummary` al vuelo
+
+Reencuadre del Known Issue "equivalente a PeriodSummary para tags/categorías". Un `PeriodSummary` es *"recontar las stats de los movimientos que casan un filtro en un periodo"*. En vez de ensanchar `PeriodSummary`, se parte por la frontera de almacenamiento:
+
+- **`PeriodSummary` (almacenado, mantenido true): solo cuenta + envelope.** Clave intacta `(accountId, envelopeId|null, year, month)`, `envelopeId=null` = nivel de cuenta. Sin renombrado de clave (`target_type` descartado: `envelopeId` ya distingue cuenta vs envelope).
+- **`FilterSummary` (al vuelo, no almacenado): tags, categorías, cuenta-como-filtro, filtros arbitrarios.** `BasicSummary` calculado en vivo, nunca persistido. Es además el prerrequisito de `CompoundMovement` (que necesita un home de neto a nivel de cuenta).
+
+**Mantenimiento de summaries de cuenta (el Known Issue resuelto):** antes `Movement.getPeriods()` solo emitía periodos de envelope, así que las filas de cuenta nunca se creaban/actualizaban.
+
+- [shared/domain.ts](shared/domain.ts): `Movement.getPeriods()` emite también el periodo de cuenta; `Period.fromMovement` acepta `envelopeId: number | null`. Con esto todos los hooks existentes (`periodTouched`/`markDirty`/`recalculate`/`backfill`) mantienen la fila de cuenta gratis; las filas de cuenta forman su propia cadena (`getLatestBefore`/`markLaterDirty` ya usan `envelope_id IS ?`).
+- [movement-repository.service.ts](electron/repository/movement-repository.service.ts): nuevo `getMovementsByAccountMonth` (todos los movimientos de cuenta+mes, sin el scoping `EXISTS` por envelope); `hasTentativeInPeriod` ramifica a `hasTentativeInAccountMonth` para el periodo de cuenta. [movement.service.ts](electron/services/movement.service.ts): `getByPeriod` ramifica según `envelopeId == null`.
+- Semántica de cuenta: cada movimiento cuenta **una vez** a su importe completo (los splits no se desglosan); `netTransfers ≡ 0` (las transferencias internas se netean dentro de la cuenta); balance anclado en `account.startingBalance`.
+
+**Fix de schema (descubierto en implementación):** `period_summaries.envelope_id` era `ON DELETE SET NULL`. Con las filas de cuenta ya reales, borrar un envelope convertía sus summaries en filas `envelope_id=NULL` que colisionaban con la fila de cuenta (y con el nuevo índice único). Cambiado a **`ON DELETE CASCADE`** (los summaries de envelope derivados mueren con su envelope). [schema.ts](electron/repository/schema.ts).
+
+**Índice único que faltaba:** [database.service.ts](electron/repository/database.service.ts) añade `uq_period_summary_key ON period_summaries(account_id, COALESCE(envelope_id, -1), year, month)` — el `COALESCE` es necesario porque SQLite trata los `NULL` como distintos en un `UNIQUE` normal (dejaría pasar filas de cuenta duplicadas).
+
+**`FilterSummary` al vuelo:**
+
+- Núcleo de agregación extraído a [basic-summary.ts](electron/services/basic-summary.ts) (`computeBasicSummary(movements, envelopeId?)`), reutilizado por `PeriodSummaryService` y el nuevo servicio.
+- Nuevo [filter-summary.service.ts](electron/services/filter-summary.service.ts): `generateFilterSummary(filter)`. Deriva el intervalo de `filter.date` a nivel de **mes** (snapeado a meses enteros; los días arbitrarios se ignoran), hace un único fetch del intervalo, agrupa por mes, y devuelve un `FilterSummaryT` = `{ filters, aggregate, children[] }` (una entrada por mes). Cada entrada trae el `BasicSummary` all-inclusive **y** su espejo sin-anómalos (`null` si el slice no tiene anómalos) + flag `tentative`. Los importes siguen al filtro: **parciales** si apunta a un único envelope, **completos** en otro caso. Las medias del `aggregate` se calculan sobre los totales del intervalo (no promediando medias mensuales).
+- `MovementFilter` gana `accountId` (acota slices de tag/categoría a una cuenta) e `includeAnomalies` (system-owned, backend-set-only: etiqueta qué variante refleja cada `BasicSummary.filters`; el usuario nunca lo fija, ninguna query lo lee). [types.ts](shared/types.ts): nuevos `FilterSummaryT`/`FilterSummaryEntry`.
+- Capa IPC: canal `MOVEMENT_GET_FILTER_SUMMARY`, handler en [movements.handler.ts](electron/ipc/movements.handler.ts), `Movements.getFilterSummary` en interfaces/preload/`ElectronService`.
+
+**Frontend:**
+
+- `month-overview` deja de descartar las filas de cuenta: nueva sección "Account total" con una tarjeta de cuenta por mes (reusa `PeriodSummaryCardComponent`, cuyo `label` ya cae a `accountName`). [month-overview.component.ts](angular/src/app/features/month-overview/month-overview.component.ts).
+- Nuevo [filter-summary.component](angular/src/app/shared/components/filter-summary/filter-summary.component.ts): muestra el `aggregate` + desglose mensual expandible, con toggle de anómalos (mismo patrón `effective` que `period-summary-card`). Cableado en [movements.component.ts](angular/src/app/features/movements/movements.component.ts) bajo la lista, refrescándose con el filtro activo.
+
+**Tests:** [domain.test.ts](electron/__tests__/shared/domain.test.ts) (getPeriods con periodo de cuenta); [period-summary.service.test.ts](electron/__tests__/services/period-summary.service.test.ts) (mantenimiento de cuenta: totales, split contado una vez, `netTransfers=0`, cadena de balance, borrado de huérfano; el test que asumía que crear un summary de cuenta lanzaba ahora verifica que agrega correctamente); nueva suite [filter-summary.service.test.ts](electron/__tests__/services/filter-summary.service.test.ts) (intervalo multi-mes con medias correctas + snapping, espejo sin-anómalos, parcial vs completo, default a mes actual).
+
+**Verificación:** electron `type-check` limpio; **163/163** Jest verdes; `npm run lint` limpio; `build:dev` limpio; **79/79** Vitest verdes. Smoke-test manual por el usuario: todo OK.
+
+**Diferido conscientemente:** vista anual/intervalo para pools (cuenta/envelope); multi-select vía arrays en el filtro; rework del starting balance de envelopes (ver Pasos siguientes).
+
+---
+
 ## Pasos siguientes
 
 ### Pendientes arrastrados de auditorías previas
@@ -534,8 +573,7 @@ Generados directamente por el trabajo de esta iteración.
 - Would be good if you could instantiate PeriodicMovements from the create movement tab. Something like have a "instantiate periodic movement" button or something. This way, when you sit down for the month to catch the app up, you don't need to be going elsewhere, you can just stay in the create movement window until you've input everything. For future consideration.
 - PeriodicMovement: The guard only checks the immediately previous month, so the "tentatives form a suffix" invariant it's enforcing has a gap. If month N has a tentative, N+1 is empty/confirmed, and you book a confirmed movement in N+2, then getPrevious(N+2) = N+1 has no tentative → it's allowed, stranding an unconfirmed tentative behind confirmed months. Reachable by deactivating a template after N (so N+1 gets no instance) or deleting N+1's tentative. The ending-balance chain then carries unconfirmed money underneath confirmed periods — exactly what the invariant is meant to prevent. Either scan "any earlier month has a tentative" or document the limitation. No test covers the gap.
   - No se puede confirmar un movimiento en un mes si los meses anteriores tienen movimientos tentativos. Esto se comprueba mirando sólo el mes anterior, que por defecto no es problema, porque entras 5 meses tarde, y te genera tentativos para esos 5 meses, y no te deja confirmarlos hasta que confirmes los anteriores. Sin embargo, sí los puedes borrar. Si entras 5 meses tarde, y borras los movimientos que se creen, hay un hueco de 5 meses sin tentativos. Cuando la guarda compruebe si el mes anterior tiene tentativos, verá que no, y fallará.
-- Habrá que añadir un equivalente a PeriodSummary para tags/categorías. El PeriodSummary es la forma de ver las stats de un grupo concreto a lo largo del tiempo. Es interesante poder hacer esto con categorías y tags. Podría ser tan fácil como añadir un tagId a PeriodSummary y forzar que if (tagId!=null and envelopeId != null) throw error.
-- Los `PeriodSummary` a nivel de cuenta (`envelopeId = null`) **no se mantienen**. `Movement.getPeriods()` solo emite periodos a nivel de envelope, así que el flujo de movimientos nunca crea ni actualiza summaries de cuenta (`backfillPeriodSummaries` tampoco, por el mismo motivo). Por eso `month-overview` muestra solo tarjetas de envelope y los agregados a nivel de cuenta se derivan de `Accounts.getStats()` (SQL en vivo, all-time), no de summaries mensuales almacenados. Si en el futuro se quiere una tarjeta de cuenta por mes, habrá que mantener explícitamente esos summaries (o ensamblarlos sumando los de sus envelopes).
+- Los `PeriodSummary` a nivel de cuenta y el equivalente para tags/categorías (antes aquí como pendientes) se resolvieron el 06/07 — ver la entrada de esa fecha. Los summaries de cuenta se mantienen de verdad; tags/categorías/filtros arbitrarios se sirven al vuelo como `FilterSummary` (`BasicSummary`, no almacenado).
 
 ### Recomendaciones de mayor alcance (fuera de la iteración actual)
 
@@ -548,5 +586,6 @@ Registradas para no perderlas; ninguna es bloqueante.
 - **Confirmación de borrado de cuenta tecleando el nombre**: importante para evitar borrados destructivos accidentales (cascada de envelopes + movements + tags).
 - **Estados tentativo/confirmado**, **split allocations** (`movement_envelope_allocation`), **plantillas de movimientos periódicos**, **marcado de anomalías**: todos en el spec del vault; asignados a v0.4+.
 - **Edición masiva de "movimientos del mes"**, **excluir presupuestos del total**, **atajos de teclado**: parking lot.
+- Set starting balance for envelopes as part of account creation: give the user the ability to create envelopes at the same time as they create the account, and assign the starting balance in the account across the different created envelopes. Envelopes created in any other way must have startingBalance=0.
 
 ---

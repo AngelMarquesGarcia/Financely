@@ -138,6 +138,10 @@ export class MovementService {
   }
 
   getByPeriod(period: Period): MovementT[] {
+    // Account-level periods (null envelope) aren't scoped to one envelope — fetch the whole month.
+    if (period.envelopeId == null) {
+      return movementRepository.getMovementsByAccountMonth(period.accountId, period.year, period.month);
+    }
     return movementRepository.getMovementsByPeriod(period);
   }
 

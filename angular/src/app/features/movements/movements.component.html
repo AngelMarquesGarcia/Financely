@@ -40,4 +40,14 @@
     (confirmRequested)="onConfirmRequested($event)"
     (bulkDeleteRequested)="onBulkDeleteRequested($event)"
   />
+
+  @if (filterSummary) {
+    <div class="movements-summary">
+      <label class="movements-summary__toggle">
+        <input type="checkbox" [(ngModel)]="showSummaryAnomalies" />
+        Include anomalous movements
+      </label>
+      <app-filter-summary [summary]="filterSummary" [showAnomalies]="showSummaryAnomalies" />
+    </div>
+  }
 </div>

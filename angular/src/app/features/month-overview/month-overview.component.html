@@ -11,6 +11,15 @@
     </label>
   </header>
 
+  @if (accountSummaries.length > 0) {
+    <section class="month-overview__section">
+      <h2 class="month-overview__section-title">Account total</h2>
+      @for (s of accountSummaries; track s.accountId) {
+        <app-period-summary-card [summary]="s" [showAnomalies]="showAnomalies" />
+      }
+    </section>
+  }
+
   <section class="month-overview__section">
     <h2 class="month-overview__section-title">Envelopes</h2>
     @if (envelopeSummaries.length === 0) {

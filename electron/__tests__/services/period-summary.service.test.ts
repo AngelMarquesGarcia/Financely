@@ -21,6 +21,7 @@ import { envelopeRepository } from '../../repository/envelope-repository.service
 import { movementService } from '../../services/movement.service';
 import { envelopeService } from '../../services/envelope.service';
 import { accountService } from '../../services/account.service';
+import { transferService } from '../../services/transfer.service';
 import { Period, PeriodSummary, Envelope, Movement } from '@shared/domain';
 import { AppErrorCode } from '@shared/error-codes';
 
@@ -110,11 +111,19 @@ describe('PeriodSummaryService', () => {
     );
   });
 
-  it('create throws INCORRECT_PARAMETERS for an account-level period (unreachable from movements)', () => {
+  it('create builds an account-level summary aggregating every envelope in the month', () => {
     const accountLevel = new Period(defaultAccountId(), null, 2026, 3);
-    expect(() => periodSummaryService.create(accountLevel)).toThrow(
-      AppErrorCode.INCORRECT_PARAMETERS,
-    );
+    periodSummaryService.create(accountLevel);
+    const summary = periodSummaryService.getByPeriod(accountLevel);
+    // April default account: 5 monthly expenses (94700) + April salary (220000), each counted once.
+    expect(summary.envelopeId).toBeNull();
+    expect(summary.movementCount).toBe(6);
+    expect(summary.totalIncomeCents).toBe(220000);
+    expect(summary.totalExpenseCents).toBe(94700);
+    expect(summary.cashFlowCents).toBe(125300);
+    expect(summary.netTransfersCents).toBe(0);
+    // Anchored on the account starting balance (0); April is the earliest month with activity.
+    expect(summary.endingBalanceCents).toBe(125300);
   });
 
   // ── budget + savings-cap snapshot ──────────────────────────────────────────
@@ -519,6 +528,67 @@ describe('PeriodSummaryService', () => {
       periodSummaryService
         .getAll()
         .some((s) => s.accountId === acc && s.envelopeId === def && s.year === 2026 && s.month === 3),
+    ).toBe(false);
+  });
+
+  // ── account-level summary maintenance ──────────────────────────────────────
+  it('maintains an account-level summary when movements are created', () => {
+    const { acc, def } = freshDefault('AcctMaint');
+    const cat = firstCategoryId();
+    movementService.create('Pay', null, 5000, true, new Date(2026, 3, 10), cat, new Map([[def, 5000]]), null, false, null, false, acc);
+    movementService.create('Buy', null, 2000, false, new Date(2026, 3, 12), cat, new Map([[def, 2000]]), null, false, null, false, acc);
+    const summary = periodSummaryService.getByPeriod(new Period(acc, null, 2026, 3));
+    expect(summary.envelopeId).toBeNull();
+    expect(summary.movementCount).toBe(2);
+    expect(summary.totalIncomeCents).toBe(5000);
+    expect(summary.totalExpenseCents).toBe(2000);
+    expect(summary.cashFlowCents).toBe(3000);
+    expect(summary.endingBalanceCents).toBe(3000);
+  });
+
+  it('counts a split movement once, at its full amount, in the account summary', () => {
+    const { acc, def } = freshDefault('AcctSplit');
+    const other = Number(envelopeService.create('AcctSplitB', acc));
+    const cat = firstCategoryId();
+    movementService.create('Split', null, 3000, true, new Date(2026, 3, 10), cat, new Map([[def, 1000], [other, 2000]]), null, false, null, false, acc);
+    const accSummary = periodSummaryService.getByPeriod(new Period(acc, null, 2026, 3));
+    expect(accSummary.movementCount).toBe(1);
+    expect(accSummary.totalIncomeCents).toBe(3000);
+    // Each envelope still sees only its partial share.
+    expect(periodSummaryService.getByPeriod(new Period(acc, def, 2026, 3)).totalIncomeCents).toBe(1000);
+    expect(periodSummaryService.getByPeriod(new Period(acc, other, 2026, 3)).totalIncomeCents).toBe(2000);
+  });
+
+  it('keeps account-level netTransfers at zero and balance real when envelopes transfer', () => {
+    const { acc, def } = freshDefault('AcctXfer');
+    const other = Number(envelopeService.create('AcctXferB', acc));
+    const cat = firstCategoryId();
+    movementService.create('Seed', null, 10000, true, new Date(2026, 3, 1), cat, new Map([[def, 10000]]), null, false, null, false, acc);
+    transferService.create(def, other, 4000, new Date(2026, 3, 5));
+    const accSummary = periodSummaryService.getByPeriod(new Period(acc, null, 2026, 3));
+    expect(accSummary.netTransfersCents).toBe(0);
+    expect(accSummary.endingBalanceCents).toBe(10000); // transfer moves nothing at account level
+  });
+
+  it('chains the account-level ending balance across months', () => {
+    const { acc, def } = freshDefault('AcctChain');
+    const cat = firstCategoryId();
+    movementService.create('Apr', null, 5000, true, new Date(2026, 3, 10), cat, new Map([[def, 5000]]), null, false, null, false, acc);
+    movementService.create('May', null, 3000, true, new Date(2026, 4, 10), cat, new Map([[def, 3000]]), null, false, null, false, acc);
+    expect(periodSummaryService.getByPeriod(new Period(acc, null, 2026, 4)).endingBalanceCents).toBe(8000);
+  });
+
+  it('deletes the account-level summary when its last movement is removed', () => {
+    const { acc, def } = freshDefault('AcctOrphan');
+    const cat = firstCategoryId();
+    const id = Number(
+      movementService.create('Solo', null, 5000, false, new Date(2026, 3, 5), cat, new Map([[def, 5000]]), null, false, null, false, acc),
+    );
+    movementService.delete(id);
+    expect(
+      periodSummaryService
+        .getAll()
+        .some((s) => s.accountId === acc && s.envelopeId === null && s.year === 2026 && s.month === 3),
     ).toBe(false);
   });
 });

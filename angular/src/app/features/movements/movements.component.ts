@@ -7,15 +7,24 @@ import { NotificationService } from '../../core/services/notification.service';
 import { ElectronService } from '../../core/services/electron.service';
 import { ErrorReporter } from '../../core/services/error-reporter.service';
 import { DataRefreshService } from '../../core/services/data-refresh.service';
-import { CategoryT, EnvelopeT, MovementT, MovementFilter, TagT } from '@shared/types';
+import { FormsModule } from '@angular/forms';
+import { CategoryT, EnvelopeT, FilterSummaryT, MovementT, MovementFilter, TagT } from '@shared/types';
 import { MovementFormComponent } from './movement-form/movement-form.component';
 import { MovementsListComponent } from './movements-list/movements-list.component';
 import { MovementListCompactComponent } from './movement-list-compact/movement-list-compact.component';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
+import { FilterSummaryComponent } from '../../shared/components/filter-summary/filter-summary.component';
 
 @Component({
   selector: 'app-movements',
-  imports: [MovementFormComponent, MovementsListComponent, MovementListCompactComponent, ModalComponent],
+  imports: [
+    FormsModule,
+    MovementFormComponent,
+    MovementsListComponent,
+    MovementListCompactComponent,
+    ModalComponent,
+    FilterSummaryComponent,
+  ],
   templateUrl: './movements.component.html',
   styleUrl: './movements.component.scss',
 })
@@ -33,6 +42,11 @@ export class MovementsComponent implements OnInit {
   tags: TagT[] = [];
   movementTags: Record<number, TagT[]> = {};
   editingMovement: MovementT | null = null;
+
+  /** On-the-fly summary of the movements matching the active filter, over its month interval. */
+  filterSummary: FilterSummaryT | null = null;
+  /** Toggle for the summary card: include anomalous movements in the figures (default excludes them). */
+  showSummaryAnomalies = false;
 
   private currentFilter: MovementFilter = {};
 
@@ -57,6 +71,7 @@ export class MovementsComponent implements OnInit {
   }
 
   loadMovements() {
+    this.loadFilterSummary();
     this.electron
       .getAllMovements(this.currentFilter)
       .pipe(
@@ -69,6 +84,14 @@ export class MovementsComponent implements OnInit {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((tagMap) => (this.movementTags = tagMap));
+  }
+
+  /** Refreshes the filter-summary card for the current filter (kept in sync with the list). */
+  private loadFilterSummary() {
+    this.electron
+      .getFilterSummary(this.currentFilter)
+      .pipe(this.errors.toast(), takeUntilDestroyed(this.destroyRef))
+      .subscribe((summary) => (this.filterSummary = summary));
   }
 
   onFilterChanged(filter: MovementFilter) {

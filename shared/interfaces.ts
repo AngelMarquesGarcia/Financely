@@ -1,4 +1,4 @@
-import { MovementT, CategoryT, MovementFilter, AppSettings, AccountT, AccountStats, EnvelopeT, TagT, TransferT, PeriodSummaryT, PeriodicMovementT } from './types';
+import { MovementT, CategoryT, MovementFilter, AppSettings, AccountT, AccountStats, EnvelopeT, TagT, TransferT, PeriodSummaryT, PeriodicMovementT, FilterSummaryT } from './types';
 
 export interface Movements {
   create(
@@ -22,6 +22,9 @@ export interface Movements {
   confirm(id: number): Promise<boolean>;
   /** Returns distinct movement names matching the prefix, alphabetical, capped at `limit`. */
   suggestNames(prefix: string, limit?: number): Promise<string[]>;
+  /** On-the-fly BasicSummary of movements matching `filter`, over the month-granular interval derived
+   *  from `filter.date` (defaults to the current month). Never stored. */
+  getFilterSummary(filter: MovementFilter): Promise<FilterSummaryT>;
 }
 
 export interface PeriodicMovements {

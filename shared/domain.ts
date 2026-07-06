@@ -34,7 +34,7 @@ export class Period implements PeriodT {
     return new Period(d.accountId, d.envelopeId, d.year, d.month);
   }
 
-  static fromMovement(m: MovementT, envelopeId: number): Period {
+  static fromMovement(m: MovementT, envelopeId: number | null): Period {
     return new Period(m.accountId, envelopeId, m.date.getFullYear(), m.date.getMonth());
   }
 
@@ -70,11 +70,13 @@ export class Movement implements MovementT {
     return this.envelopeIdMap.get(envelopeId);
   }
 
-  /** One period per envelope the movement is attributed to (a split touches several). */
+  /** One period per envelope the movement is attributed to (a split touches several), plus the
+   *  account-level period (`envelopeId = null`) so account summaries are maintained on every change. */
   getPeriods(): Period[] {
-    return [...this.envelopeIdMap.keys()].map((envelopeId) =>
+    const envelopePeriods = [...this.envelopeIdMap.keys()].map((envelopeId) =>
       Period.fromMovement(this, envelopeId),
     );
+    return [...envelopePeriods, Period.fromMovement(this, null)];
   }
 
   isPeriodic(): boolean {
