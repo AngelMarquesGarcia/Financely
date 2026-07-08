@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { Channels } from './ipc/channels';
-import { MovementT, CategoryT, MovementFilter, AppSettings, AccountT, EnvelopeT, TagT, PeriodSummaryT, PeriodicMovementT } from '../shared/types';
+import { MovementT, CategoryT, MovementFilter, AppSettings, AccountT, EnvelopeT, TagT, PeriodSummaryT, PeriodicMovementT, CompoundMovementT, NewCompoundFields, NewCompoundChild } from '../shared/types';
 
 type NewPeriodicTemplate = Omit<
   PeriodicMovementT,
@@ -94,6 +94,26 @@ contextBridge.exposeInMainWorld('transfers', {
   getForEnvelope: (envelopeId: number) =>
     ipcRenderer.invoke(Channels.TRANSFER_GET_FOR_ENVELOPE, envelopeId),
   delete: (id: number) => ipcRenderer.invoke(Channels.TRANSFER_DELETE, id),
+});
+
+contextBridge.exposeInMainWorld('compoundMovements', {
+  create: (
+    fields: NewCompoundFields,
+    existingChildIds: number[],
+    newChildren: NewCompoundChild[],
+  ) => ipcRenderer.invoke(Channels.COMPOUND_CREATE, { fields, existingChildIds, newChildren }),
+  getAll: () => ipcRenderer.invoke(Channels.COMPOUND_GET_ALL),
+  getById: (id: number) => ipcRenderer.invoke(Channels.COMPOUND_GET_BY_ID, id),
+  getChildren: (id: number) => ipcRenderer.invoke(Channels.COMPOUND_GET_CHILDREN, id),
+  addMember: (compoundId: number, movementId: number) =>
+    ipcRenderer.invoke(Channels.COMPOUND_ADD_MEMBER, { compoundId, movementId }),
+  createMember: (compoundId: number, child: NewCompoundChild) =>
+    ipcRenderer.invoke(Channels.COMPOUND_CREATE_MEMBER, { compoundId, child }),
+  removeMember: (compoundId: number, movementId: number) =>
+    ipcRenderer.invoke(Channels.COMPOUND_REMOVE_MEMBER, { compoundId, movementId }),
+  update: (compound: CompoundMovementT) => ipcRenderer.invoke(Channels.COMPOUND_UPDATE, compound),
+  delete: (id: number, deleteChildren: boolean) =>
+    ipcRenderer.invoke(Channels.COMPOUND_DELETE, { id, deleteChildren }),
 });
 
 contextBridge.exposeInMainWorld('categories', {

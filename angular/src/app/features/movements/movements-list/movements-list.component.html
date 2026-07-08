@@ -53,10 +53,39 @@
               <tr class="month-separator">
                 <td colspan="8">{{ row.label }}</td>
               </tr>
+            } @else if (row.kind === 'compound') {
+              <tr class="row--compound-group">
+                <td class="select-col">
+                  <button
+                    class="group-toggle"
+                    type="button"
+                    (click)="toggleGroup(row.compound.id)"
+                    [attr.aria-label]="(row.expanded ? 'Collapse ' : 'Expand ') + row.compound.name"
+                  >{{ row.expanded ? '▾' : '▸' }}</button>
+                </td>
+                <td>
+                  <button class="group-name" type="button" (click)="toggleGroup(row.compound.id)">{{ row.compound.name }}</button>
+                  <span class="badge badge--compound" [title]="row.compound.isCancelable ? 'Cancelable — the net is the true movement' : 'A grouping of movements'">
+                    {{ row.compound.isCancelable ? 'cancelable' : 'group' }}
+                  </span>
+                  @if (row.compound.isAnomalous) {
+                    <span class="badge badge--anomalous" title="Anomalous — excluded from average/aggregate statistics">✷ anomalous</span>
+                  }
+                  <span class="group-count">{{ row.monthChildren.length }} item{{ row.monthChildren.length === 1 ? '' : 's' }}</span>
+                </td>
+                <td class="amount">{{ groupSubtotalCents(row.monthChildren) | money }}</td>
+                <td colspan="3" class="group-meta">compound movement</td>
+                <td></td>
+                <td>
+                  <div class="actions">
+                    <button class="btn btn--edit" type="button" (click)="compoundDetailRequested.emit(row.compound)">Detail</button>
+                  </div>
+                </td>
+              </tr>
             } @else {
               @let m = row.movement;
               @let cat = getCategory(m.categoryId);
-              <tr [class.row--income]="m.isPositive" [class.row--expense]="!m.isPositive" [class.row--selected]="isRowSelected(m.id)" [class.row--tentative]="m.isTentative" [class.row--anomalous]="m.isAnomalous">
+              <tr [class.row--income]="m.isPositive" [class.row--expense]="!m.isPositive" [class.row--selected]="isRowSelected(m.id)" [class.row--tentative]="m.isTentative" [class.row--anomalous]="m.isAnomalous" [class.row--compound-inactive]="row.inactive" [class.row--compound-child]="row.childOf !== undefined" [title]="row.inactive ? inactiveTitle(m) : null">
                 <td class="select-col">
                   <input
                     type="checkbox"
@@ -72,6 +101,9 @@
                   }
                   @if (m.isAnomalous) {
                     <span class="badge badge--anomalous" title="Anomalous — excluded from average/aggregate statistics">✷ anomalous</span>
+                  }
+                  @if (row.inactive && compoundFor(m); as c) {
+                    <span class="badge badge--compound" [title]="inactiveTitle(m)">⛓ {{ c.name }}</span>
                   }
                 </td>
                 <td class="amount">

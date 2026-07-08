@@ -4,6 +4,7 @@ export const tables = {
   categories: 'categories',
   movements: 'movements',
   movementEnvelopes: 'movement_envelopes',
+  compoundMovements: 'compound_movements',
   transfers: 'transfers',
   tags: 'tags',
   movementTags: 'movement_tags',

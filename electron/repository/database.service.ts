@@ -5,6 +5,7 @@ import Database from 'better-sqlite3';
 import {
   AccountSchema,
   CategorySchema,
+  CompoundMovementSchema,
   EnvelopeSchema,
   MovementEnvelopeSchema,
   MovementSchema,
@@ -185,6 +186,7 @@ export class DatabaseService {
     this.db.prepare(`DROP TABLE IF EXISTS ${tables.periodicMovementEnvelopes}`).run();
     this.db.prepare(`DROP TABLE IF EXISTS ${tables.transfers}`).run();
     this.db.prepare(`DROP TABLE IF EXISTS ${tables.movements}`).run();
+    this.db.prepare(`DROP TABLE IF EXISTS ${tables.compoundMovements}`).run();
     this.db.prepare(`DROP TABLE IF EXISTS ${tables.periodicMovements}`).run();
     this.db.prepare(`DROP TABLE IF EXISTS ${tables.categories}`).run();
     this.db.prepare(`DROP TABLE IF EXISTS ${tables.envelopes}`).run();
@@ -210,6 +212,10 @@ export class DatabaseService {
         `CREATE TABLE ${tables.periodicMovementEnvelopes} (${PeriodicMovementEnvelopeSchema})`,
       )
       .run();
+    // compound_movements before movements (movements.parent_id references it).
+    this.db
+      .prepare(`CREATE TABLE ${tables.compoundMovements} (${CompoundMovementSchema})`)
+      .run();
     this.db.prepare(`CREATE TABLE ${tables.movements} (${MovementSchema})`).run();
     this.db.prepare(`CREATE TABLE ${tables.movementEnvelopes} (${MovementEnvelopeSchema})`).run();
     this.db.prepare(`CREATE TABLE ${tables.transfers} (${TransferSchema})`).run();
@@ -228,6 +234,12 @@ export class DatabaseService {
     this.db
       .prepare(
         `CREATE INDEX IF NOT EXISTS idx_periodic_movement_envelopes_envelope ON ${tables.periodicMovementEnvelopes}(envelope_id)`,
+      )
+      .run();
+    // Compound membership lookups (listing a compound's children filters on parent_id).
+    this.db
+      .prepare(
+        `CREATE INDEX IF NOT EXISTS idx_movements_parent ON ${tables.movements}(parent_id)`,
       )
       .run();
 

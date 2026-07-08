@@ -133,3 +133,75 @@ Aunque no se adopta, se documenta la alternativa:
 ## 9. Descartado
 
 - **Envelope inverso (semántica):** la idea de modelar los movimientos que se cancelan en distintos meses como un "envelope al revés" (gastas y luego te va entrando) se consideró interesante conceptualmente pero **se descarta** por falta de relevancia práctica.
+
+# Implementación
+
+Esta sección describe cómo funcionan los movimientos compuestos tal y como están implementados: una guía de uso, no de código.
+
+## Qué son
+
+Un **movimiento compuesto** agrupa dos o más movimientos reales bajo un mismo conjunto. Hay dos modalidades:
+
+- **Agrupación** (no cancelable): movimientos que quieres ver y analizar juntos pero que siguen siendo gastos/ingresos independientes (la gasolina, el hotel y los restaurantes de un viaje).
+- **Cancelable:** movimientos que en realidad forman uno solo movimiento en varios trozos y que se compensan entre sí (pagas una cena de 120 € y tus amigos te devuelven su parte por Bizum: tu gasto real son 20 €, pero tienes varios apuntes ensuciando las cuentas). El conjunto se trata como **un único movimiento por su neto**.
+
+Un movimiento pertenece como mucho a un compuesto.
+
+## Requisitos de los miembros
+
+- Todos los miembros deben ser de la **misma cuenta**.
+- No pueden ser movimientos **divididos entre varios sobres** (split), **instancias de un movimiento periódico**, ni movimientos **pendientes de revisión** (tentativos).
+- Un compuesto necesita **al menos dos** miembros. Si por cualquier motivo se queda con uno, se **disuelve** automáticamente (el movimiento superviviente vuelve a ser normal).
+- Un compuesto **cancelable** exige además que **todos sus miembros compartan el mismo sobre** (así su neto tiene un único sitio donde imputarse). Una agrupación sí puede repartir sus miembros entre varios sobres.
+
+## Creación
+
+Se crean desde la página **Compounds**. Al crearlo eliges:
+
+- **Nombre**.
+- **Miembros:** seleccionando movimientos ya existentes (solo se ofrecen los elegibles) y/o creando movimientos nuevos en el momento con el botón "New movement". Si cancelas la creación del compuesto, esos movimientos nuevos se descartan; solo se conservan si terminas creándolo.
+- **Tipo:** cancelable o agrupación.
+- **Mes propietario** (owner month): ver el apartado siguiente.
+- **Anómalo** y **notas** (opcionales).
+
+## Mes propietario y efecto en los cálculos
+
+El **balance nunca se ve afectado**: cada movimiento sigue contando en su mes y sobre reales para el saldo, que siempre cuadra con el banco. El mes propietario solo re-atribuye las **estadísticas** (medias, totales, cash flow de "hábitos"), nunca el dinero.
+
+- Por defecto, el mes propietario es el **mes más temprano** de los miembros; puedes cambiarlo a cualquier mes en el que caiga algún miembro.
+- También puedes dejarlo en **"Anual (sin dueño)"**. En ese caso **no se re-atribuye nada**: los miembros se muestran en gris en sus fechas y solo se excluyen de las estadísticas si están marcados como anómalos.
+
+Cuando hay mes propietario, las estadísticas del conjunto se **colapsan en ese mes**:
+
+- Los miembros que caen en **otros meses** se **retiran** de las estadísticas de esos meses...
+- ...y el conjunto se **inyecta en el mes propietario**: si es **cancelable**, como **un único movimiento por su neto** (p. ej. −20 €); si es una **agrupación**, como sus miembros **individuales**.
+
+Esta re-atribución se aplica **a nivel de cuenta** siempre. **A nivel de sobre** solo se aplica a los cancelables (que comparten un único sobre). Es decir: los miembros de una **agrupación repartida en varios sobres siguen contando en las estadísticas de su sobre y su mes reales**; solo la vista global de la cuenta los agrupa en el mes propietario. (Un sobre es un fondo real: el dinero salió de ese sobre en ese mes, y las estadísticas del sobre lo reflejan.)
+
+## Cómo se ven
+
+- En el listado de movimientos, en el **mes propietario** los miembros se **comprimen en una única fila desplegable** (al desplegar se ven solo los de ese mes).
+- En los **demás meses**, los miembros se muestran **en gris** ("no contados aquí"), con una nota de a qué compuesto pertenecen y cuál es su mes propietario. Siguen ahí porque afectan al balance.
+- Desde cualquiera de esas filas se abre el **detalle** del compuesto.
+
+## Vista de estadísticas
+
+En las tarjetas de resumen (Overview), la vista **con la re-atribución de compuestos ya aplicada es la que se muestra por defecto** (marcada con una insignia de compuesto). Se combina con el interruptor de **anómalos**, de modo que puedes ver los agregados con o sin los movimientos marcados como anómalos. Cuando ningún compuesto afecta a un periodo, la tarjeta muestra simplemente las cifras normales.
+
+## Anómalos
+
+Un movimiento suelto ya podía marcarse como **anómalo** para excluirlo de las medias y agregados de "gasto normal" (sin sacarlo del balance). Con los compuestos:
+
+- Puedes marcar **todo el compuesto** como anómalo; entonces **todos sus miembros pasan a ser anómalos** y no pueden dejar de serlo mientras el compuesto lo esté.
+- Si el compuesto no es anómalo, cada miembro puede ser anómalo o no de forma individual.
+
+Es la vía recomendada para viajes o compras grandes: los agrupas y, si no quieres que distorsionen tus medias, marcas el conjunto como anómalo.
+
+## Edición
+
+Se puede editar en cualquier momento: **nombre**, **notas**, **tipo** (cancelable/agrupación), **mes propietario**, marca de **anómalo**, y **añadir o quitar miembros**. Al quitar un miembro, si el mes propietario se queda sin ningún miembro se re-ancla automáticamente al mes más temprano de los que quedan. Al convertir el compuesto en cancelable se exige que todos los miembros compartan sobre.
+
+## Borrado y disolución
+
+- **Borrar** un compuesto ofrece la opción de **borrar también sus movimientos** (marcada por defecto) o de solo deshacer la agrupación, dejando los movimientos como sueltos.
+- Se **disuelve** automáticamente si se queda con menos de dos miembros (al quitar o borrar miembros). El/los superviviente(s) quedan como movimientos normales y conservan su propia marca de anómalo.

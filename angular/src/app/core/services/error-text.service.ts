@@ -52,6 +52,21 @@ const ERROR_MESSAGES: Record<string, string> = {
   [AppErrorCode.TRANSFER_NOT_FOUND]: 'Transfer not found.',
   [AppErrorCode.TAG_TYPE_REQUIRED]: 'Tag type cannot be empty.',
   [AppErrorCode.TAG_NAME_REQUIRED]: 'Tag name cannot be empty.',
+  [AppErrorCode.COMPOUND_NAME_REQUIRED]: 'Compound name cannot be empty.',
+  [AppErrorCode.COMPOUND_NOT_FOUND]: 'Compound movement not found.',
+  [AppErrorCode.COMPOUND_TOO_FEW_CHILDREN]: 'A compound needs at least two movements.',
+  [AppErrorCode.COMPOUND_CROSS_ACCOUNT]: 'All movements in a compound must belong to the same account.',
+  [AppErrorCode.COMPOUND_CHILD_SPLIT]: 'A split movement cannot be part of a compound.',
+  [AppErrorCode.COMPOUND_CHILD_PERIODIC]: 'A generated periodic movement cannot be part of a compound.',
+  [AppErrorCode.COMPOUND_CHILD_TENTATIVE]: 'A movement awaiting review cannot be part of a compound.',
+  [AppErrorCode.COMPOUND_CHILD_ALREADY_PARENTED]: 'That movement already belongs to another compound.',
+  [AppErrorCode.COMPOUND_CHILD_NOT_MEMBER]: 'That movement is not a member of this compound.',
+  [AppErrorCode.COMPOUND_CANCELABLE_MULTI_ENVELOPE]:
+    'A cancelable compound requires all its movements to share one envelope.',
+  [AppErrorCode.COMPOUND_OWNER_MONTH_INVALID]:
+    'The owner month must be one of the months its movements fall in.',
+  [AppErrorCode.COMPOUND_ANOMALY_CHILD_CONFLICT]:
+    'A movement cannot be marked non-anomalous while its compound is anomalous.',
   [AppErrorCode.CONSTRAINT_VIOLATION]: 'This item already exists or violates a uniqueness rule.',
   [AppErrorCode.UNKNOWN]: 'Something went wrong.',
 };

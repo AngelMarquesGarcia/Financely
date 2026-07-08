@@ -7,13 +7,15 @@ import { NotificationService } from '../../core/services/notification.service';
 import { ElectronService } from '../../core/services/electron.service';
 import { ErrorReporter } from '../../core/services/error-reporter.service';
 import { DataRefreshService } from '../../core/services/data-refresh.service';
+import { DialogService } from '../../core/services/dialog.service';
 import { FormsModule } from '@angular/forms';
-import { CategoryT, EnvelopeT, FilterSummaryT, MovementT, MovementFilter, TagT } from '@shared/types';
+import { CategoryT, CompoundMovementT, EnvelopeT, FilterSummaryT, MovementT, MovementFilter, TagT } from '@shared/types';
 import { MovementFormComponent } from './movement-form/movement-form.component';
 import { MovementsListComponent } from './movements-list/movements-list.component';
 import { MovementListCompactComponent } from './movement-list-compact/movement-list-compact.component';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { FilterSummaryComponent } from '../../shared/components/filter-summary/filter-summary.component';
+import { CompoundFormComponent, CompoundFormData } from '../compounds/compound-form/compound-form.component';
 
 @Component({
   selector: 'app-movements',
@@ -34,6 +36,7 @@ export class MovementsComponent implements OnInit {
   private notify = inject(NotificationService);
   private errors = inject(ErrorReporter);
   private refresh = inject(DataRefreshService);
+  private dialog = inject(DialogService);
   private destroyRef = inject(DestroyRef);
 
   movements: MovementT[] = [];
@@ -41,6 +44,7 @@ export class MovementsComponent implements OnInit {
   envelopes: EnvelopeT[] = [];
   tags: TagT[] = [];
   movementTags: Record<number, TagT[]> = {};
+  compounds: CompoundMovementT[] = [];
   editingMovement: MovementT | null = null;
 
   /** On-the-fly summary of the movements matching the active filter, over its month interval. */
@@ -72,6 +76,7 @@ export class MovementsComponent implements OnInit {
 
   loadMovements() {
     this.loadFilterSummary();
+    this.loadCompounds();
     this.electron
       .getAllMovements(this.currentFilter)
       .pipe(
@@ -92,6 +97,26 @@ export class MovementsComponent implements OnInit {
       .getFilterSummary(this.currentFilter)
       .pipe(this.errors.toast(), takeUntilDestroyed(this.destroyRef))
       .subscribe((summary) => (this.filterSummary = summary));
+  }
+
+  /** Compounds drive the list's owner-month collapse + greyed non-owner rows. */
+  private loadCompounds() {
+    this.electron
+      .getAllCompoundMovements()
+      .pipe(this.errors.toast(), takeUntilDestroyed(this.destroyRef))
+      .subscribe((compounds) => (this.compounds = compounds));
+  }
+
+  /** Opens the compound in its form (edit/detail) from a list row; reloads on close. */
+  onCompoundDetail(compound: CompoundMovementT) {
+    this.dialog
+      .open<CompoundFormComponent, CompoundFormData, void>(CompoundFormComponent, {
+        data: { compound },
+        maxWidth: 'min(40rem, 94vw)',
+      })
+      .afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.loadMovements());
   }
 
   onFilterChanged(filter: MovementFilter) {

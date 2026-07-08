@@ -33,12 +33,14 @@
     [envelopes]="envelopes"
     [tags]="tags"
     [movementTags]="movementTags"
+    [compounds]="compounds"
     [scopedEnvelopeId]="scopedEnvelopeId"
     (filterChanged)="onFilterChanged($event)"
     (editRequested)="onEditRequested($event)"
     (deleteRequested)="onDeleteRequested($event)"
     (confirmRequested)="onConfirmRequested($event)"
     (bulkDeleteRequested)="onBulkDeleteRequested($event)"
+    (compoundDetailRequested)="onCompoundDetail($event)"
   />
 
   @if (filterSummary) {

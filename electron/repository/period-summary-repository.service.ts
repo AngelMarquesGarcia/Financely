@@ -1,4 +1,4 @@
-import { DirtyState, PeriodT, PeriodSummaryT } from '@shared/types';
+import { BasicSummary, DirtyState, PeriodT, PeriodSummaryT } from '@shared/types';
 import { DatabaseService } from './database.service';
 import { tables } from '../constants';
 
@@ -32,7 +32,21 @@ export class PeriodSummaryRepository {
     without_anom_avg_expense_cents         AS woAvgExpenseCents,
     without_anom_avg_income_cents          AS woAvgIncomeCents,
     without_anom_avg_movement_amount_cents AS woAvgMovementAmountCents,
-    without_anom_movement_count            AS woMovementCount
+    without_anom_movement_count            AS woMovementCount,
+    compound_adj_cash_flow_cents           AS caCashFlowCents,
+    compound_adj_total_income_cents        AS caTotalIncomeCents,
+    compound_adj_total_expense_cents       AS caTotalExpenseCents,
+    compound_adj_avg_expense_cents         AS caAvgExpenseCents,
+    compound_adj_avg_income_cents          AS caAvgIncomeCents,
+    compound_adj_avg_movement_amount_cents AS caAvgMovementAmountCents,
+    compound_adj_movement_count            AS caMovementCount,
+    compound_adj_wo_anom_cash_flow_cents           AS cawoCashFlowCents,
+    compound_adj_wo_anom_total_income_cents        AS cawoTotalIncomeCents,
+    compound_adj_wo_anom_total_expense_cents       AS cawoTotalExpenseCents,
+    compound_adj_wo_anom_avg_expense_cents         AS cawoAvgExpenseCents,
+    compound_adj_wo_anom_avg_income_cents          AS cawoAvgIncomeCents,
+    compound_adj_wo_anom_avg_movement_amount_cents AS cawoAvgMovementAmountCents,
+    compound_adj_wo_anom_movement_count            AS cawoMovementCount
   `;
 
   insert(s: PeriodSummaryT): number | bigint {
@@ -47,7 +61,15 @@ export class PeriodSummaryRepository {
           without_anom_cash_flow_cents, without_anom_total_income_cents,
           without_anom_total_expense_cents, without_anom_avg_expense_cents,
           without_anom_avg_income_cents, without_anom_avg_movement_amount_cents,
-          without_anom_movement_count
+          without_anom_movement_count,
+          compound_adj_cash_flow_cents, compound_adj_total_income_cents,
+          compound_adj_total_expense_cents, compound_adj_avg_expense_cents,
+          compound_adj_avg_income_cents, compound_adj_avg_movement_amount_cents,
+          compound_adj_movement_count,
+          compound_adj_wo_anom_cash_flow_cents, compound_adj_wo_anom_total_income_cents,
+          compound_adj_wo_anom_total_expense_cents, compound_adj_wo_anom_avg_expense_cents,
+          compound_adj_wo_anom_avg_income_cents, compound_adj_wo_anom_avg_movement_amount_cents,
+          compound_adj_wo_anom_movement_count
         ) VALUES (
           :accountId, :accountName, :envelopeId, :envelopeName, :year, :month,
           :cashFlowCents, :totalIncomeCents, :totalExpenseCents,
@@ -57,7 +79,15 @@ export class PeriodSummaryRepository {
           :woCashFlowCents, :woTotalIncomeCents,
           :woTotalExpenseCents, :woAvgExpenseCents,
           :woAvgIncomeCents, :woAvgMovementAmountCents,
-          :woMovementCount
+          :woMovementCount,
+          :caCashFlowCents, :caTotalIncomeCents,
+          :caTotalExpenseCents, :caAvgExpenseCents,
+          :caAvgIncomeCents, :caAvgMovementAmountCents,
+          :caMovementCount,
+          :cawoCashFlowCents, :cawoTotalIncomeCents,
+          :cawoTotalExpenseCents, :cawoAvgExpenseCents,
+          :cawoAvgIncomeCents, :cawoAvgMovementAmountCents,
+          :cawoMovementCount
         )`,
       )
       .run(toRow(s)).lastInsertRowid;
@@ -173,7 +203,21 @@ export class PeriodSummaryRepository {
             without_anom_avg_expense_cents = :woAvgExpenseCents,
             without_anom_avg_income_cents = :woAvgIncomeCents,
             without_anom_avg_movement_amount_cents = :woAvgMovementAmountCents,
-            without_anom_movement_count = :woMovementCount
+            without_anom_movement_count = :woMovementCount,
+            compound_adj_cash_flow_cents = :caCashFlowCents,
+            compound_adj_total_income_cents = :caTotalIncomeCents,
+            compound_adj_total_expense_cents = :caTotalExpenseCents,
+            compound_adj_avg_expense_cents = :caAvgExpenseCents,
+            compound_adj_avg_income_cents = :caAvgIncomeCents,
+            compound_adj_avg_movement_amount_cents = :caAvgMovementAmountCents,
+            compound_adj_movement_count = :caMovementCount,
+            compound_adj_wo_anom_cash_flow_cents = :cawoCashFlowCents,
+            compound_adj_wo_anom_total_income_cents = :cawoTotalIncomeCents,
+            compound_adj_wo_anom_total_expense_cents = :cawoTotalExpenseCents,
+            compound_adj_wo_anom_avg_expense_cents = :cawoAvgExpenseCents,
+            compound_adj_wo_anom_avg_income_cents = :cawoAvgIncomeCents,
+            compound_adj_wo_anom_avg_movement_amount_cents = :cawoAvgMovementAmountCents,
+            compound_adj_wo_anom_movement_count = :cawoMovementCount
            WHERE account_id = :accountId
              AND year = :year
              AND month = :month
@@ -252,7 +296,45 @@ type RawRow = {
   woAvgIncomeCents: number | null;
   woAvgMovementAmountCents: number | null;
   woMovementCount: number | null;
+  caCashFlowCents: number | null;
+  caTotalIncomeCents: number | null;
+  caTotalExpenseCents: number | null;
+  caAvgExpenseCents: number | null;
+  caAvgIncomeCents: number | null;
+  caAvgMovementAmountCents: number | null;
+  caMovementCount: number | null;
+  cawoCashFlowCents: number | null;
+  cawoTotalIncomeCents: number | null;
+  cawoTotalExpenseCents: number | null;
+  cawoAvgExpenseCents: number | null;
+  cawoAvgIncomeCents: number | null;
+  cawoAvgMovementAmountCents: number | null;
+  cawoMovementCount: number | null;
 };
+
+/** Folds a prefixed group of raw columns back into a BasicSummary, or null when the group is unset
+ *  (all seven columns are written together, so a null count means "not stored"). */
+function toBasic(
+  count: number | null,
+  cashFlow: number | null,
+  income: number | null,
+  expense: number | null,
+  avgExpense: number | null,
+  avgIncome: number | null,
+  avgAmount: number | null,
+): BasicSummary | null {
+  return count === null
+    ? null
+    : {
+        cashFlowCents: cashFlow!,
+        totalIncomeCents: income!,
+        totalExpenseCents: expense!,
+        avgExpenseCents: avgExpense!,
+        avgIncomeCents: avgIncome!,
+        avgMovementAmountCents: avgAmount!,
+        movementCount: count,
+      };
+}
 
 function toSummary(r: RawRow): PeriodSummaryT {
   return {
@@ -276,19 +358,19 @@ function toSummary(r: RawRow): PeriodSummaryT {
     notes: r.notes ?? undefined,
     dirtyState: r.dirtyState as DirtyState,
     tentative: r.tentative === 1,
-    // All seven mirror columns are written together, so a null count means "no mirror stored".
-    summaryWithoutAnomalies:
-      r.woMovementCount === null
-        ? null
-        : {
-            cashFlowCents: r.woCashFlowCents!,
-            totalIncomeCents: r.woTotalIncomeCents!,
-            totalExpenseCents: r.woTotalExpenseCents!,
-            avgExpenseCents: r.woAvgExpenseCents!,
-            avgIncomeCents: r.woAvgIncomeCents!,
-            avgMovementAmountCents: r.woAvgMovementAmountCents!,
-            movementCount: r.woMovementCount,
-          },
+    // Each mirror's seven columns are written together, so a null count means "no mirror stored".
+    summaryWithoutAnomalies: toBasic(
+      r.woMovementCount, r.woCashFlowCents, r.woTotalIncomeCents, r.woTotalExpenseCents,
+      r.woAvgExpenseCents, r.woAvgIncomeCents, r.woAvgMovementAmountCents,
+    ),
+    summaryCompoundAdjusted: toBasic(
+      r.caMovementCount, r.caCashFlowCents, r.caTotalIncomeCents, r.caTotalExpenseCents,
+      r.caAvgExpenseCents, r.caAvgIncomeCents, r.caAvgMovementAmountCents,
+    ),
+    summaryCompoundAdjustedWithoutAnomalies: toBasic(
+      r.cawoMovementCount, r.cawoCashFlowCents, r.cawoTotalIncomeCents, r.cawoTotalExpenseCents,
+      r.cawoAvgExpenseCents, r.cawoAvgIncomeCents, r.cawoAvgMovementAmountCents,
+    ),
   };
 }
 
@@ -321,6 +403,20 @@ function toRow(s: PeriodSummaryT): Record<string, unknown> {
     woAvgIncomeCents: s.summaryWithoutAnomalies?.avgIncomeCents ?? null,
     woAvgMovementAmountCents: s.summaryWithoutAnomalies?.avgMovementAmountCents ?? null,
     woMovementCount: s.summaryWithoutAnomalies?.movementCount ?? null,
+    caCashFlowCents: s.summaryCompoundAdjusted?.cashFlowCents ?? null,
+    caTotalIncomeCents: s.summaryCompoundAdjusted?.totalIncomeCents ?? null,
+    caTotalExpenseCents: s.summaryCompoundAdjusted?.totalExpenseCents ?? null,
+    caAvgExpenseCents: s.summaryCompoundAdjusted?.avgExpenseCents ?? null,
+    caAvgIncomeCents: s.summaryCompoundAdjusted?.avgIncomeCents ?? null,
+    caAvgMovementAmountCents: s.summaryCompoundAdjusted?.avgMovementAmountCents ?? null,
+    caMovementCount: s.summaryCompoundAdjusted?.movementCount ?? null,
+    cawoCashFlowCents: s.summaryCompoundAdjustedWithoutAnomalies?.cashFlowCents ?? null,
+    cawoTotalIncomeCents: s.summaryCompoundAdjustedWithoutAnomalies?.totalIncomeCents ?? null,
+    cawoTotalExpenseCents: s.summaryCompoundAdjustedWithoutAnomalies?.totalExpenseCents ?? null,
+    cawoAvgExpenseCents: s.summaryCompoundAdjustedWithoutAnomalies?.avgExpenseCents ?? null,
+    cawoAvgIncomeCents: s.summaryCompoundAdjustedWithoutAnomalies?.avgIncomeCents ?? null,
+    cawoAvgMovementAmountCents: s.summaryCompoundAdjustedWithoutAnomalies?.avgMovementAmountCents ?? null,
+    cawoMovementCount: s.summaryCompoundAdjustedWithoutAnomalies?.movementCount ?? null,
   };
 }
 

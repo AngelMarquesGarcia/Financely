@@ -28,17 +28,31 @@ export class PeriodSummaryCardComponent {
   }
 
   /**
-   * The aggregate view to display: the all-inclusive summary, or — when excluding anomalies — its
-   * anomaly-stripped mirror. Falls back to the summary itself when the period holds no anomalies (the
-   * two views coincide). PeriodSummaryT inlines every BasicSummary field, so it is a valid fallback.
+   * The aggregate view to display. Compound-movement re-attribution is applied by default (a
+   * compound's stats collapse into its owner month), composed with the anomalies toggle. Each layer
+   * falls back to the next when its mirror is absent: no compound here → the plain anomaly view; no
+   * anomalies either → the all-inclusive top-level fields (PeriodSummaryT inlines every BasicSummary
+   * field, so it is a valid fallback).
    */
   protected get effective(): BasicSummary {
-    return this.showAnomalies ? this.summary : (this.summary.summaryWithoutAnomalies ?? this.summary);
+    if (this.showAnomalies) {
+      return this.summary.summaryCompoundAdjusted ?? this.summary;
+    }
+    return (
+      this.summary.summaryCompoundAdjustedWithoutAnomalies ??
+      this.summary.summaryWithoutAnomalies ??
+      this.summary
+    );
   }
 
   /** True when the period holds at least one anomalous movement (drives the display badge). */
   protected get hasAnomalies(): boolean {
     return this.summary.summaryWithoutAnomalies !== null;
+  }
+
+  /** True when a compound movement re-attributes statistics into this period (drives the badge). */
+  protected get hasCompound(): boolean {
+    return this.summary.summaryCompoundAdjusted !== null;
   }
 
   /** Remaining allowance for the month: budget − expenses. null when no budget is set. Anomalous

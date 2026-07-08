@@ -9,6 +9,9 @@ import {
   EnvelopeT,
   TagT,
   PeriodicMovementT,
+  CompoundMovementT,
+  NewCompoundFields,
+  NewCompoundChild,
 } from '@shared/types';
 
 type NewPeriodicTemplate = Omit<
@@ -23,6 +26,7 @@ export class ElectronService {
   private movements = window.movements;
   private periodicMovements = window.periodicMovements;
   private transfers = window.transfers;
+  private compoundMovements = window.compoundMovements;
   private categories = window.categories;
   private accounts = window.accounts;
   private envelopes = window.envelopes;
@@ -165,6 +169,47 @@ export class ElectronService {
 
   deleteTransfer(id: number) {
     return from(this.transfers.delete(id));
+  }
+
+  // Compound movements
+  createCompoundMovement(
+    fields: NewCompoundFields,
+    existingChildIds: number[],
+    newChildren: NewCompoundChild[],
+  ) {
+    return from(this.compoundMovements.create(fields, existingChildIds, newChildren));
+  }
+
+  getAllCompoundMovements() {
+    return from(this.compoundMovements.getAll());
+  }
+
+  getCompoundMovementById(id: number) {
+    return from(this.compoundMovements.getById(id));
+  }
+
+  getCompoundMovementChildren(id: number) {
+    return from(this.compoundMovements.getChildren(id));
+  }
+
+  addMemberToCompound(compoundId: number, movementId: number) {
+    return from(this.compoundMovements.addMember(compoundId, movementId));
+  }
+
+  createMemberInCompound(compoundId: number, child: NewCompoundChild) {
+    return from(this.compoundMovements.createMember(compoundId, child));
+  }
+
+  removeMemberFromCompound(compoundId: number, movementId: number) {
+    return from(this.compoundMovements.removeMember(compoundId, movementId));
+  }
+
+  updateCompoundMovement(compound: CompoundMovementT) {
+    return from(this.compoundMovements.update(compound));
+  }
+
+  deleteCompoundMovement(id: number, deleteChildren: boolean) {
+    return from(this.compoundMovements.delete(id, deleteChildren));
   }
 
   // Categories

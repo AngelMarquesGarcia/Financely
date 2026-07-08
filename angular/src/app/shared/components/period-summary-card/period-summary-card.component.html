@@ -8,6 +8,9 @@
       @if (hasAnomalies) {
         <span class="psc__badge" title="Includes anomalous movements — excluded when anomalies are hidden">✷ anomalies</span>
       }
+      @if (hasCompound) {
+        <span class="psc__badge" title="A compound movement re-attributes its statistics into this month">⛓ compound</span>
+      }
     </span>
     <span
       class="psc__cashflow"

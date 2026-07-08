@@ -1,6 +1,7 @@
 import type {
   PeriodT,
   MovementT,
+  CompoundMovementT,
   PeriodSummaryT,
   PeriodicMovementT,
   AccountT,
@@ -58,6 +59,7 @@ export class Movement implements MovementT {
     public readonly templateId: number | null = null,
     public readonly isTentative: boolean = false,
     public readonly isAnomalous: boolean = false,
+    public readonly parentId: number | null = null,
   ) {}
 
   /** True when the movement is divided across more than one envelope. */
@@ -98,6 +100,38 @@ export class Movement implements MovementT {
       d.templateId,
       d.isTentative,
       d.isAnomalous,
+      d.parentId,
+    );
+  }
+}
+
+export class CompoundMovement implements CompoundMovementT {
+  constructor(
+    public readonly id: number,
+    public readonly accountId: number,
+    public readonly name: string,
+    public readonly isCancelable: boolean,
+    public readonly ownerYear: number | null,
+    public readonly ownerMonth: number | null,
+    public readonly isAnomalous: boolean,
+    public readonly notes: string | null,
+  ) {}
+
+  /** True when the compound anchors its statistics to a specific month (both fields set together). */
+  hasOwnerMonth(): boolean {
+    return this.ownerYear != null && this.ownerMonth != null;
+  }
+
+  static from(d: CompoundMovementT): CompoundMovement {
+    return new CompoundMovement(
+      d.id,
+      d.accountId,
+      d.name,
+      d.isCancelable,
+      d.ownerYear,
+      d.ownerMonth,
+      d.isAnomalous,
+      d.notes,
     );
   }
 }
@@ -125,6 +159,8 @@ export class PeriodSummary implements PeriodSummaryT {
     public readonly dirtyState: DirtyState,
     public readonly tentative: boolean = false,
     public readonly summaryWithoutAnomalies: BasicSummary | null = null,
+    public readonly summaryCompoundAdjusted: BasicSummary | null = null,
+    public readonly summaryCompoundAdjustedWithoutAnomalies: BasicSummary | null = null,
   ) {}
 
   getPeriod(): Period {
@@ -158,6 +194,8 @@ export class PeriodSummary implements PeriodSummaryT {
       d.dirtyState,
       d.tentative,
       d.summaryWithoutAnomalies,
+      d.summaryCompoundAdjusted,
+      d.summaryCompoundAdjustedWithoutAnomalies,
     );
   }
 }

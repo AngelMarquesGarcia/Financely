@@ -1,0 +1,15 @@
+<div class="card">
+  <div class="card__header">
+    <h2 class="card__title">Compound movements</h2>
+    <div class="card__actions">
+      <button class="btn btn--primary" type="button" (click)="openCreate()">New compound</button>
+    </div>
+  </div>
+
+  <app-compounds-list
+    [compounds]="compounds"
+    [childCounts]="childCounts"
+    (editRequested)="openEdit($event)"
+    (deleteRequested)="onDeleteRequested($event)"
+  />
+</div>

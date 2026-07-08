@@ -46,7 +46,22 @@ export const MovementSchema = `
   additional_notes TEXT,
   template_id INTEGER REFERENCES periodic_movements(id) ON DELETE SET NULL,
   is_tentative INTEGER NOT NULL DEFAULT 0,
-  is_anomalous INTEGER NOT NULL DEFAULT 0
+  is_anomalous INTEGER NOT NULL DEFAULT 0,
+  parent_id INTEGER REFERENCES compound_movements(id) ON DELETE SET NULL
+`;
+
+/** A lightweight compound grouping its member movements (which reference it via `parent_id`). All
+ *  members share `account_id`; a cancelable compound additionally shares one envelope (enforced in
+ *  the service). `owner_year`/`owner_month` are null-together (null owner ⇒ no stats re-attribution). */
+export const CompoundMovementSchema = `
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  is_cancelable INTEGER NOT NULL DEFAULT 0,
+  owner_year INTEGER,
+  owner_month INTEGER CHECK(owner_month IS NULL OR (owner_month >= 0 AND owner_month <= 11)),
+  is_anomalous INTEGER NOT NULL DEFAULT 0,
+  notes TEXT
 `;
 
 /** Per-envelope allocation for a movement. Every movement has ≥1 row; a split has several. The
@@ -128,7 +143,21 @@ export const PeriodSummarySchema = `
   without_anom_avg_expense_cents INTEGER,
   without_anom_avg_income_cents INTEGER,
   without_anom_avg_movement_amount_cents INTEGER,
-  without_anom_movement_count INTEGER
+  without_anom_movement_count INTEGER,
+  compound_adj_cash_flow_cents INTEGER,
+  compound_adj_total_income_cents INTEGER,
+  compound_adj_total_expense_cents INTEGER,
+  compound_adj_avg_expense_cents INTEGER,
+  compound_adj_avg_income_cents INTEGER,
+  compound_adj_avg_movement_amount_cents INTEGER,
+  compound_adj_movement_count INTEGER,
+  compound_adj_wo_anom_cash_flow_cents INTEGER,
+  compound_adj_wo_anom_total_income_cents INTEGER,
+  compound_adj_wo_anom_total_expense_cents INTEGER,
+  compound_adj_wo_anom_avg_expense_cents INTEGER,
+  compound_adj_wo_anom_avg_income_cents INTEGER,
+  compound_adj_wo_anom_avg_movement_amount_cents INTEGER,
+  compound_adj_wo_anom_movement_count INTEGER
 `;
 
 export const MovementTagSchema = `

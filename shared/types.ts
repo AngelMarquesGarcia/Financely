@@ -20,6 +20,56 @@ export type MovementT = {
    *  statistics view. Always counted in balances/cash flow — the flag never moves real money, it only
    *  partitions the displayed statistics. */
   isAnomalous: boolean;
+  /** The `CompoundMovementT` this movement belongs to (shared with its siblings), or null. A movement
+   *  belongs to at most one compound. System-owned: changed only via the compound service. */
+  parentId: number | null;
+};
+
+/**
+ * A lightweight grouping of real, separately-existing movements that share a `parentId`. Two shapes:
+ * a plain **grouping** (a trip — the children stay canonical) and an **`isCancelable`** set (a dinner
+ * repaid by several Bizums — the compound's net is canonical). Never moves money; the `ownerMonth`
+ * only re-attributes the set's *statistics* into one month (see PeriodSummary compound diffs). All
+ * children share `accountId`; a cancelable compound additionally forces one envelope.
+ */
+export type CompoundMovementT = {
+  id: number;
+  /** Account every child shares (enforced on membership). */
+  accountId: number;
+  name: string;
+  /** true → children cancel out; the net is treated as a single movement in the owner month. */
+  isCancelable: boolean;
+  /** Owner-month anchor (`ownerYear`/`ownerMonth` null-together). Non-null ⇒ the set's stats are
+   *  re-attributed there; null ⇒ no re-attribution (children ride their own months / anomaly flag). */
+  ownerYear: number | null;
+  ownerMonth: number | null; // 0-11
+  /** true ⇒ every child is forced anomalous (a child may not opt out while this is true). */
+  isAnomalous: boolean;
+  notes: string | null;
+};
+
+/** Caller-supplied fields for a new compound; `id`/`accountId` are derived from its children. */
+export type NewCompoundFields = {
+  name: string;
+  isCancelable: boolean;
+  isAnomalous: boolean;
+  notes: string | null;
+  /** Owner month. `undefined` ⇒ default to the earliest child month; `null` ⇒ intentional no-owner. */
+  ownerYear?: number | null;
+  ownerMonth?: number | null;
+};
+
+/** A movement to create on the spot as a compound child (single-envelope, non-tentative, no split). */
+export type NewCompoundChild = {
+  name: string;
+  concept: string | null;
+  quantityCents: number;
+  isPositive: boolean;
+  date: Date;
+  categoryId: number;
+  envelopeIdMap: Map<number, number>;
+  additionalNotes: string | null;
+  isAnomalous?: boolean;
 };
 
 /** A recurring-movement blueprint. Not a real movement — it has a day-of-month, no date, and no
@@ -213,6 +263,14 @@ export type PeriodSummaryT = {
    *  none (the without-view then equals the top-level fields). Top-level fields stay all-inclusive so the
    *  ending-balance chain is unaffected; this mirror only feeds the "without anomalies" display. */
   summaryWithoutAnomalies: BasicSummary | null;
+  /** The aggregates with compound-movement re-attribution applied (a compound's stats collapse into
+   *  its owner month per D4/D6): children in non-owner months drop out, the owner month gains the
+   *  compound's figure (a cancelable set's net, a grouping's individuals). `null` when no compound
+   *  affects this period. Stats-only — the ending-balance chain uses the all-inclusive fields (D1). */
+  summaryCompoundAdjusted: BasicSummary | null;
+  /** `summaryCompoundAdjusted` with anomalous movements additionally excluded — the compound-adjusted
+   *  "without anomalies" view. `null` together with `summaryCompoundAdjusted`. */
+  summaryCompoundAdjustedWithoutAnomalies: BasicSummary | null;
 };
 
 export type PeriodT = {

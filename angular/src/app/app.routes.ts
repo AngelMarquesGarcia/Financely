@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { MovementsComponent } from './features/movements/movements.component';
 import { PeriodicMovementsComponent } from './features/periodic-movements/periodic-movements.component';
+import { CompoundsComponent } from './features/compounds/compounds.component';
 import { CategoriesComponent } from './features/categories/categories.component';
 import { AccountsComponent } from './features/accounts/accounts.component';
 import { EnvelopesComponent } from './features/envelopes/envelopes.component';
@@ -13,6 +14,7 @@ export const routes: Routes = [
   { path: '', redirectTo: 'movements', pathMatch: 'full' },
   { path: 'movements', component: MovementsComponent },
   { path: 'periodic-movements', component: PeriodicMovementsComponent },
+  { path: 'compounds', component: CompoundsComponent },
   { path: 'categories', component: CategoriesComponent },
   { path: 'accounts', component: AccountsComponent },
   { path: 'envelopes', component: EnvelopesComponent },

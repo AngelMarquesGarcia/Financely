@@ -1,4 +1,4 @@
-import { MovementT, CategoryT, MovementFilter, AppSettings, AccountT, AccountStats, EnvelopeT, TagT, TransferT, PeriodSummaryT, PeriodicMovementT, FilterSummaryT } from './types';
+import { MovementT, CategoryT, MovementFilter, AppSettings, AccountT, AccountStats, EnvelopeT, TagT, TransferT, PeriodSummaryT, PeriodicMovementT, FilterSummaryT, CompoundMovementT, NewCompoundFields, NewCompoundChild } from './types';
 
 export interface Movements {
   create(
@@ -59,6 +59,24 @@ export interface PeriodicMovements {
     amountCents?: number,
     envelopeIdMap?: Map<number, number>,
   ): Promise<number | bigint>;
+}
+
+export interface CompoundMovements {
+  /** Creates a compound from ≥2 children (existing ids and/or new movements). Returns the new id. */
+  create(
+    fields: NewCompoundFields,
+    existingChildIds: number[],
+    newChildren: NewCompoundChild[],
+  ): Promise<number | bigint>;
+  getAll(): Promise<CompoundMovementT[]>;
+  getById(id: number): Promise<CompoundMovementT | undefined>;
+  getChildren(id: number): Promise<MovementT[]>;
+  addMember(compoundId: number, movementId: number): Promise<void>;
+  createMember(compoundId: number, child: NewCompoundChild): Promise<number | bigint>;
+  removeMember(compoundId: number, movementId: number): Promise<void>;
+  update(compound: CompoundMovementT): Promise<boolean>;
+  /** Deletes the compound; `deleteChildren` also removes its member movements. */
+  delete(id: number, deleteChildren: boolean): Promise<boolean>;
 }
 
 export interface Categories {

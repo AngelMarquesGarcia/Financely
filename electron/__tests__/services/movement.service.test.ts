@@ -102,7 +102,7 @@ describe('MovementService — validation and CRUD', () => {
     const row = db.prepare('SELECT * FROM movements LIMIT 1').get() as { id: number } | undefined;
     if (!row) return;
     expect(() =>
-      movementService.update(Movement.from({ id: row.id, accountId: 1, name: '  ', concept: null, quantityCents: 100, isPositive: true, date: new Date(), categoryId: 1, envelopeIdMap: one(1, 100), additionalNotes: null, templateId: null, isTentative: false, isAnomalous: false })),
+      movementService.update(Movement.from({ id: row.id, accountId: 1, name: '  ', concept: null, quantityCents: 100, isPositive: true, date: new Date(), categoryId: 1, envelopeIdMap: one(1, 100), additionalNotes: null, templateId: null, isTentative: false, isAnomalous: false, parentId: null })),
     ).toThrow(AppErrorCode.MOVEMENT_NAME_REQUIRED);
   });
 

@@ -25,6 +25,16 @@ export const Channels = {
   TRANSFER_GET_FOR_ENVELOPE: 'transfer:getForEnvelope',
   TRANSFER_DELETE: 'transfer:delete',
 
+  COMPOUND_CREATE: 'compound:create',
+  COMPOUND_GET_ALL: 'compound:getAll',
+  COMPOUND_GET_BY_ID: 'compound:getById',
+  COMPOUND_GET_CHILDREN: 'compound:getChildren',
+  COMPOUND_ADD_MEMBER: 'compound:addMember',
+  COMPOUND_CREATE_MEMBER: 'compound:createMember',
+  COMPOUND_REMOVE_MEMBER: 'compound:removeMember',
+  COMPOUND_UPDATE: 'compound:update',
+  COMPOUND_DELETE: 'compound:delete',
+
   CATEGORY_CREATE: 'category:create',
   CATEGORY_GET_ALL: 'category:getAll',
   CATEGORY_GET_BY_ID: 'category:getById',

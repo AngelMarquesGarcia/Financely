@@ -504,7 +504,7 @@ edición de importe, `getAll` omite huérfanos; account: `getStats` sin-anómalo
 
 ### Generalización de PeriodSummary: mantenimiento de summaries a nivel de cuenta + `FilterSummary` al vuelo
 
-Reencuadre del Known Issue "equivalente a PeriodSummary para tags/categorías". Un `PeriodSummary` es *"recontar las stats de los movimientos que casan un filtro en un periodo"*. En vez de ensanchar `PeriodSummary`, se parte por la frontera de almacenamiento:
+Reencuadre del Known Issue "equivalente a PeriodSummary para tags/categorías". Un `PeriodSummary` es _"recontar las stats de los movimientos que casan un filtro en un periodo"_. En vez de ensanchar `PeriodSummary`, se parte por la frontera de almacenamiento:
 
 - **`PeriodSummary` (almacenado, mantenido true): solo cuenta + envelope.** Clave intacta `(accountId, envelopeId|null, year, month)`, `envelopeId=null` = nivel de cuenta. Sin renombrado de clave (`target_type` descartado: `envelopeId` ya distingue cuenta vs envelope).
 - **`FilterSummary` (al vuelo, no almacenado): tags, categorías, cuenta-como-filtro, filtros arbitrarios.** `BasicSummary` calculado en vivo, nunca persistido. Es además el prerrequisito de `CompoundMovement` (que necesita un home de neto a nivel de cuenta).
@@ -536,6 +536,57 @@ Reencuadre del Known Issue "equivalente a PeriodSummary para tags/categorías". 
 **Verificación:** electron `type-check` limpio; **163/163** Jest verdes; `npm run lint` limpio; `build:dev` limpio; **79/79** Vitest verdes. Smoke-test manual por el usuario: todo OK.
 
 **Diferido conscientemente:** vista anual/intervalo para pools (cuenta/envelope); multi-select vía arrays en el filtro; rework del starting balance de envelopes (ver Pasos siguientes).
+
+---
+
+## Julio 2026 (07/07)
+
+### Movimientos compuestos (CU1 agrupación + CU2 cancelables)
+
+Un **movimiento compuesto** agrupa movimientos reales que existen por separado bajo un `parentId` común, para verlos y calcularlos como un conjunto. Dos formas: una **agrupación** (un viaje — los hijos siguen siendo canónicos) y un conjunto **cancelable** (una cena de 120 € devuelta por varios Bizums — el neto es lo canónico). Nunca mueve dinero: el `ownerMonth` solo re-atribuye las _estadísticas_ del conjunto a un mes, mientras la cadena de ending-balance permanece fiel al banco. Cierra los casos de uso CU1/CU2 del spec ([docs/CompoundMovement-spec.md](docs/CompoundMovement-spec.md)); CU3 (split) ya estaba. El registro completo de decisiones y su porqué vive en la memoria `compound-movements-decisions` (D1–D16).
+
+**Invariante rector (D1):** la re-atribución de compuestos solo toca agregados de estadística; jamás la cadena de balance, `netTransfers` ni la redirección de excedente. El balance de la app siempre cuadra con el banco (verificación); las stats son "hábitos" y se pueden remodelar.
+
+#### Backend
+
+**Modelo** ([shared/types.ts](shared/types.ts), [shared/domain.ts](shared/domain.ts), [schema.ts](electron/repository/schema.ts)):
+
+- `MovementT.parentId: number | null` — el compuesto al que pertenece (≤1). Columna `parent_id` en `movements` (`ON DELETE SET NULL`). `updateMovement` lo **preserva** (como `is_tentative`); solo cambia vía `setParent`.
+- Nueva entidad ligera `CompoundMovementT` + tabla `compound_movements`: `accountId`, `name`, `isCancelable`, `ownerYear`/`ownerMonth` (null-juntos ⇒ "anual/sin dueño"), `isAnomalous`, `notes`.
+
+**Servicio** ([electron/services/compound-movement.service.ts](electron/services/compound-movement.service.ts)): create (desde movimientos existentes y/o nuevos, ≥2), addMember/createMember/removeMember, update, delete(deleteChildren). Reglas:
+
+- **D12/D13 membresía:** misma cuenta (`COMPOUND_CROSS_ACCOUNT`), ≤1 padre, sin hijos split/periódicos/tentativos.
+- **D6 cancelable:** todos los hijos comparten un envelope (`COMPOUND_CANCELABLE_MULTI_ENVELOPE`).
+- **D11 owner month:** por defecto el mes más temprano de los hijos, sobre-escribible; el backend valida que ∈ meses de los hijos.
+- **D2 herencia de anomalía:** padre anómalo ⇒ fuerza todos los hijos anómalos; un hijo no puede desmarcarse mientras el padre lo esté (guard `COMPOUND_ANOMALY_CHILD_CONFLICT` en `movement.update`).
+- **D16 ciclo de vida:** bajar de 2 miembros disuelve el compuesto (el superviviente queda huérfano, conservando su `isAnomalous`); `movement.delete`/`deleteMany` auto-disuelven al borrar un hijo directamente.
+
+**Estadística re-atribuida** ([electron/services/compound-summary.ts](electron/services/compound-summary.ts)): `computeCompoundAdjusted(period, rawMovements)` produce los agregados "compound-adjusted" (con y sin anómalos) de un periodo, o `null` si ningún compuesto lo afecta. En meses no-dueño los hijos se sacan del cálculo; en el owner month se inyecta la figura colapsada (cancelable → **un** movimiento neto; agrupación → sus hijos individuales, D14). Reglas de nivel (D4/D6): a nivel **cuenta** re-atribuyen agrupaciones y cancelables; a nivel **envelope** solo cancelables (los hijos de una agrupación siguen contando en su envelope real).
+
+**Decisión revisada (vs. plan):** el plan fijaba _diffs_ almacenados (D7); durante la implementación se optó por **mirrors completos** almacenados (`summaryCompoundAdjusted` / `summaryCompoundAdjustedWithoutAnomalies` en `PeriodSummaryT`; 14 columnas `compound_adj_*` / `compound_adj_wo_anom_*`). Motivo: los diffs eran mucho más complejos en lógica (composición asimétrica anomalía×compuesto entre periodos) y, con a lo sumo unos miles de summaries, el coste de memoria es asumible; reajustable a futuro. (Aprendizaje: este cambio debió plantearse en la fase de spec, no durante la implementación.)
+
+**Propagación cross-period (la parte difícil):** el `compoundInjection` del owner month depende de hijos de _otros_ meses. `movement.update`/`delete`/`deleteMany` invocan `touchCompoundOwner(parentId)`, que dispara `periodSummaryService.touchCompoundOwnerPeriods(compound)` — remarca el/los periodo(s) dueño (cuenta siempre; envelope si cancelable), stats-only, sin re-encadenar el balance (D1). No-op para compuestos sin dueño.
+
+**IPC:** superficie completa `compoundMovements` (channels, handler [compound-movements.handler.ts](electron/ipc/compound-movements.handler.ts), preload, `CompoundMovements` en interfaces, `ElectronService.*CompoundMovement*`). Nuevos códigos `COMPOUND_*` en [error-codes.ts](shared/error-codes.ts).
+
+#### Frontend
+
+- **Página dedicada `/compounds`** ([angular/src/app/features/compounds/](angular/src/app/features/compounds/)): contenedor + `compounds-list` (nombre, badge de tipo, owner month/"Yearly", nº de miembros, badge anómalo) + `compound-form` dialog-aware (picker de miembros con `EntitySelect` filtrado por elegibilidad, `<select>` de owner month, botón **"+ New movement"** que reusa `MovementForm` en diálogo y auto-selecciona el movimiento nuevo — creación de hijos en el sitio) + `compound-delete-dialog` (checkbox "borrar también los movimientos", D16). Ruta + link en navbar.
+- **Visualización D15 en `movements-list`:** los miembros del owner month **colapsan en una pseudo-fila expandible** (revela solo los de ese mes); los de meses no-dueño se muestran **grises "no contados aquí"** con tooltip. `movements.component` carga los compuestos y abre el detalle desde una fila.
+- **Stats:** `period-summary-card` muestra por defecto el mirror compound-adjusted (getter `effective`, componiendo con el toggle de anómalos) + badge `⛓ compound`.
+- **Errores:** textos `COMPOUND_*` en [error-text.service.ts](angular/src/app/core/services/error-text.service.ts).
+
+**Tests:** backend — nueva suite [compound-movement.service.test.ts](electron/__tests__/services/compound-movement.service.test.ts) (creación, membresía, owner month, herencia de anomalía, add/remove/disolución, update/delete) + [period-summary.service.test.ts](electron/__tests__/services/period-summary.service.test.ts) ampliada (re-atribución mono/multi-mes, cancelable neto, composición anomalía×compuesto, propagación al owner, balance intacto). Frontend — `compounds-list`, `period-summary-card` (selección del mirror), `movements-list` (colapso + filas grises).
+
+**Verificación:** **195/195** Jest verdes; **93/93** Vitest verdes; `type-check`, `build:dev` y `npm run lint` limpios. Smoke-test manual entregado al usuario.
+
+**Diferido:** create-new-children-on-the-spot resuelto reusando `MovementForm` (no un sub-form propio).
+
+**Correcciones de UI (mismo día):**
+
+- El formulario de compuesto se abría vía `<app-modal>`, que no aporta superficie de card (la aporta el contenido proyectado) y cuyo panel queda por encima del `cdk-overlay-container`; el diálogo "New movement" anidado quedaba **detrás e ininteractuable**. La página `/compounds` pasa a abrir el formulario con `DialogService` (igual que el "Detail" desde la lista de movimientos), y `compound-form` + `compound-delete-dialog` llevan su propia card. [compounds.component.ts](angular/src/app/features/compounds/compounds.component.ts).
+- Los movimientos creados con "+ New movement" se persisten de inmediato (reusan `MovementForm`), así que ahora son **provisionales**: `compound-form` los rastrea y, si el diálogo se cierra sin crear/guardar (cancelar, backdrop, ESC), `ngOnDestroy` los borra (rollback) y refresca las vistas. Si se completa la creación/edición, se conservan (los seleccionados quedan como miembros). [compound-form.component.ts](angular/src/app/features/compounds/compound-form/compound-form.component.ts).
 
 ---
 
@@ -574,6 +625,7 @@ Generados directamente por el trabajo de esta iteración.
 - PeriodicMovement: The guard only checks the immediately previous month, so the "tentatives form a suffix" invariant it's enforcing has a gap. If month N has a tentative, N+1 is empty/confirmed, and you book a confirmed movement in N+2, then getPrevious(N+2) = N+1 has no tentative → it's allowed, stranding an unconfirmed tentative behind confirmed months. Reachable by deactivating a template after N (so N+1 gets no instance) or deleting N+1's tentative. The ending-balance chain then carries unconfirmed money underneath confirmed periods — exactly what the invariant is meant to prevent. Either scan "any earlier month has a tentative" or document the limitation. No test covers the gap.
   - No se puede confirmar un movimiento en un mes si los meses anteriores tienen movimientos tentativos. Esto se comprueba mirando sólo el mes anterior, que por defecto no es problema, porque entras 5 meses tarde, y te genera tentativos para esos 5 meses, y no te deja confirmarlos hasta que confirmes los anteriores. Sin embargo, sí los puedes borrar. Si entras 5 meses tarde, y borras los movimientos que se creen, hay un hueco de 5 meses sin tentativos. Cuando la guarda compruebe si el mes anterior tiene tentativos, verá que no, y fallará.
 - Los `PeriodSummary` a nivel de cuenta y el equivalente para tags/categorías (antes aquí como pendientes) se resolvieron el 06/07 — ver la entrada de esa fecha. Los summaries de cuenta se mantienen de verdad; tags/categorías/filtros arbitrarios se sirven al vuelo como `FilterSummary` (`BasicSummary`, no almacenado).
+- Verificar que los movimientos compuestos de tipo isCancelable sólo cuentan como un único movimiento para las estadísticas.
 
 ### Recomendaciones de mayor alcance (fuera de la iteración actual)
 

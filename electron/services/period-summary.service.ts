@@ -1,4 +1,4 @@
-import { MovementT, PeriodSummaryT } from '@shared/types';
+import { CompoundMovementT, MovementT, PeriodSummaryT } from '@shared/types';
 import { Movement, Period, PeriodSummary } from '@shared/domain';
 import { periodSummaryRepository } from '../repository/period-summary-repository.service';
 import { transferRepository } from '../repository/transfer-repository.service';
@@ -7,6 +7,7 @@ import { movementService } from './movement.service';
 import { accountService } from './account.service';
 import { envelopeService } from './envelope.service';
 import { computeBasicSummary } from './basic-summary';
+import { computeCompoundAdjusted } from './compound-summary';
 import { AppError, AppErrorCode } from '@shared/error-codes';
 
 export class PeriodSummaryService {
@@ -286,6 +287,8 @@ export class PeriodSummaryService {
       nonAnomalous.length === movements.length
         ? null
         : computeBasicSummary(nonAnomalous, period.envelopeId);
+    // Compound re-attribution (owner-month collapse). null when no compound affects this period.
+    const compound = computeCompoundAdjusted(period, movements);
 
     return {
       accountId: period.accountId,
@@ -309,7 +312,32 @@ export class PeriodSummaryService {
       dirtyState: 'CLEAN',
       tentative: movements.some((m) => m.isTentative),
       summaryWithoutAnomalies,
+      summaryCompoundAdjusted: compound?.adjusted ?? null,
+      summaryCompoundAdjustedWithoutAnomalies: compound?.adjustedWithoutAnomalies ?? null,
     };
+  }
+
+  /**
+   * Recomputes the owner-month period(s) of a compound so its collapsed statistics stay current when a
+   * child changes elsewhere (the injection is cross-period). Account level always; the shared envelope
+   * too when cancelable. Stats-only (no balance re-chain, D1); no-op for a null-owner compound.
+   */
+  touchCompoundOwnerPeriods(compound: CompoundMovementT): void {
+    if (compound.ownerYear == null || compound.ownerMonth == null) return;
+    const { accountId, ownerYear: y, ownerMonth: mo } = compound;
+    this.markPeriodModifiedIfExists(new Period(accountId, null, y, mo));
+    if (compound.isCancelable) {
+      const children = movementRepository.getByParent(compound.id);
+      if (children.length > 0) {
+        const envelopeId = [...children[0].envelopeIdMap.keys()][0];
+        this.markPeriodModifiedIfExists(new Period(accountId, envelopeId, y, mo));
+      }
+    }
+  }
+
+  /** MODIFIED (recompute aggregates) without re-chaining later balances — for stats-only refreshes. */
+  private markPeriodModifiedIfExists(period: Period): void {
+    if (this.checkExists(period)) this.markDirty(period, false);
   }
 }
 

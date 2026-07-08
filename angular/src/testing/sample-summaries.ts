@@ -20,6 +20,8 @@ export const SAMPLE_ACCOUNT_SUMMARY: PeriodSummaryT = {
   dirtyState: 'CLEAN',
   tentative: false,
   summaryWithoutAnomalies: null,
+  summaryCompoundAdjusted: null,
+  summaryCompoundAdjustedWithoutAnomalies: null,
 };
 
 export const SAMPLE_FOOD_SUMMARY: PeriodSummaryT = {
@@ -42,6 +44,8 @@ export const SAMPLE_FOOD_SUMMARY: PeriodSummaryT = {
   dirtyState: 'CLEAN',
   tentative: false,
   summaryWithoutAnomalies: null,
+  summaryCompoundAdjusted: null,
+  summaryCompoundAdjustedWithoutAnomalies: null,
 };
 
 export const SAMPLE_TRANSPORT_SUMMARY: PeriodSummaryT = {
@@ -64,6 +68,8 @@ export const SAMPLE_TRANSPORT_SUMMARY: PeriodSummaryT = {
   dirtyState: 'CLEAN',
   tentative: false,
   summaryWithoutAnomalies: null,
+  summaryCompoundAdjusted: null,
+  summaryCompoundAdjustedWithoutAnomalies: null,
 };
 
 export const SAMPLE_SAVINGS_SUMMARY: PeriodSummaryT = {
@@ -87,6 +93,8 @@ export const SAMPLE_SAVINGS_SUMMARY: PeriodSummaryT = {
   dirtyState: 'CLEAN',
   tentative: false,
   summaryWithoutAnomalies: null,
+  summaryCompoundAdjusted: null,
+  summaryCompoundAdjustedWithoutAnomalies: null,
 };
 
 export const SAMPLE_SUMMARIES: PeriodSummaryT[] = [

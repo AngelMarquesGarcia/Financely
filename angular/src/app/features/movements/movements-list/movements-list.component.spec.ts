@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { MovementsListComponent } from './movements-list.component';
-import { MovementT, CategoryT, EnvelopeT } from '@shared/types';
+import { MovementT, CategoryT, CompoundMovementT, EnvelopeT } from '@shared/types';
 
 function makeMovement(overrides: Partial<MovementT> = {}): MovementT {
   return {
@@ -18,6 +18,21 @@ function makeMovement(overrides: Partial<MovementT> = {}): MovementT {
     templateId: null,
     isTentative: false,
     isAnomalous: false,
+    parentId: null,
+    ...overrides,
+  };
+}
+
+function makeCompound(overrides: Partial<CompoundMovementT> = {}): CompoundMovementT {
+  return {
+    id: 10,
+    accountId: 1,
+    name: 'Trip',
+    isCancelable: false,
+    ownerYear: 2024,
+    ownerMonth: 0, // January
+    isAnomalous: false,
+    notes: null,
     ...overrides,
   };
 }
@@ -108,5 +123,65 @@ describe('MovementsListComponent', () => {
     fixture.componentInstance.movements = [];
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('app-empty-state')).not.toBeNull();
+  });
+
+  // ── compound movements (D15 visualization) ──────────────────────────────────
+  it('collapses owner-month members into one compound group row', () => {
+    const fixture = createComponent();
+    const comp = fixture.componentInstance;
+    comp.compounds = [makeCompound()];
+    comp.movements = [
+      makeMovement({ id: 1, date: new Date(2024, 0, 5), parentId: 10 }),
+      makeMovement({ id: 2, date: new Date(2024, 0, 20), parentId: 10 }),
+    ];
+    const rows = comp.groupedRows;
+    const groupRows = rows.filter((r) => r.kind === 'compound');
+    expect(groupRows).toHaveLength(1);
+    expect(groupRows[0].kind === 'compound' && groupRows[0].monthChildren.length).toBe(2);
+    // collapsed → the members are not emitted as their own rows
+    expect(rows.some((r) => r.kind === 'movement')).toBe(false);
+  });
+
+  it('shows a member outside its owner month as a greyed inactive row', () => {
+    const fixture = createComponent();
+    const comp = fixture.componentInstance;
+    comp.compounds = [makeCompound({ ownerYear: 2024, ownerMonth: 0 })];
+    comp.movements = [makeMovement({ id: 3, date: new Date(2024, 1, 10), parentId: 10 })]; // February
+    const rows = comp.groupedRows;
+    expect(rows.some((r) => r.kind === 'compound')).toBe(false);
+    const movementRow = rows.find((r) => r.kind === 'movement');
+    expect(movementRow?.kind === 'movement' && movementRow.inactive).toBe(true);
+  });
+
+  it('expands a group to reveal that month’s members as child rows', () => {
+    const fixture = createComponent();
+    const comp = fixture.componentInstance;
+    comp.compounds = [makeCompound()];
+    comp.movements = [
+      makeMovement({ id: 1, date: new Date(2024, 0, 5), parentId: 10 }),
+      makeMovement({ id: 2, date: new Date(2024, 0, 20), parentId: 10 }),
+    ];
+    comp.toggleGroup(10);
+    const rows = comp.groupedRows;
+    expect(rows.some((r) => r.kind === 'compound' && r.expanded)).toBe(true);
+    const childRows = rows.filter((r) => r.kind === 'movement' && r.childOf === 10);
+    expect(childRows).toHaveLength(2);
+  });
+
+  it('ownerLabel reads "Yearly" for a null-owner compound', () => {
+    const fixture = createComponent();
+    expect(
+      fixture.componentInstance.ownerLabel(makeCompound({ ownerYear: null, ownerMonth: null })),
+    ).toBe('Yearly');
+  });
+
+  it('groupSubtotalCents sums signed member amounts', () => {
+    const fixture = createComponent();
+    const comp = fixture.componentInstance;
+    const children = [
+      makeMovement({ id: 1, quantityCents: 12000, isPositive: false }),
+      makeMovement({ id: 2, quantityCents: 10000, isPositive: true }),
+    ];
+    expect(comp.groupSubtotalCents(children)).toBe(-2000);
   });
 });

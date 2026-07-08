@@ -286,6 +286,7 @@ export class MovementFormComponent implements OnInit, OnChanges {
         // System-owned: preserved as-is (the backend ignores them on update).
         templateId: this.editingMovement!.templateId,
         isTentative: this.editingMovement!.isTentative,
+        parentId: this.editingMovement!.parentId,
       };
       this.electron
         .updateMovement(movement)

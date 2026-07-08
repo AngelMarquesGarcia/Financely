@@ -2,6 +2,7 @@ import type {
   Movements,
   PeriodicMovements,
   Transfers,
+  CompoundMovements,
   Categories,
   Accounts,
   Envelopes,
@@ -15,6 +16,7 @@ declare global {
     movements: Movements;
     periodicMovements: PeriodicMovements;
     transfers: Transfers;
+    compoundMovements: CompoundMovements;
     categories: Categories;
     accounts: Accounts;
     envelopes: Envelopes;

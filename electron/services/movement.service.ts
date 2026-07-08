@@ -1,5 +1,6 @@
 import { movementRepository } from '../repository/movement-repository.service';
 import { accountRepository } from '../repository/account-repository.service';
+import { compoundMovementRepository } from '../repository/compound-movement-repository.service';
 import { MovementT, MovementFilter } from '@shared/types';
 import { Movement, Period } from '@shared/domain';
 import { AppError, AppErrorCode } from '@shared/error-codes';
@@ -158,6 +159,8 @@ export class MovementService {
     // The split (and thus the affected envelopes) may change, so collect both the old and new
     // periods and refresh the union. Old envelopes recompute without the movement; new ones gain it.
     const stored = movementRepository.getMovementById(movement.id);
+    // A parented movement must remain a valid compound child through the edit (D2/D6/D12).
+    if (stored?.parentId != null) this.assertCompoundChildStillValid(stored, movement);
     // An edit that leaves cash flow untouched (only isAnomalous / name / concept / category / notes
     // changed) still needs each period recomputed to refresh its mirror, but must NOT re-chain later
     // months — no ending balance moves. Only balance-relevant changes warrant the propagation.
@@ -171,6 +174,8 @@ export class MovementService {
 
     const result = movementRepository.updateMovement(movement);
     for (const period of affected.values()) periodSummaryService.periodTouched(period, rechain);
+    // A compound child's edit shifts its compound's owner-month collapsed stats (cross-period).
+    this.touchCompoundOwner(stored?.parentId ?? null);
 
     // Editing income (e.g. raising it) may push an envelope over its cap — re-check the redirect.
     // Gate on the STORED tentative state (update never changes it): a still-tentative instance
@@ -189,6 +194,10 @@ export class MovementService {
     for (const period of periods) {
       if (periodSummaryService.checkExists(period)) periodSummaryService.markDirty(period);
     }
+    if (stored.parentId != null) {
+      this.dissolveIfBelowMinimum(stored.parentId);
+      this.touchCompoundOwner(stored.parentId);
+    }
     return ok;
   }
 
@@ -197,9 +206,11 @@ export class MovementService {
       throw new AppError(AppErrorCode.MOVEMENT_ID_INVALID);
     }
     const periods = new Map<string, Period>();
+    const parentIds = new Set<number>();
     for (const id of ids) {
       const movement = movementRepository.getMovementById(id);
       if (movement != undefined) {
+        if (movement.parentId != null) parentIds.add(movement.parentId);
         for (const period of Movement.from(movement).getPeriods()) {
           periods.set(
             `${period.accountId}-${period.envelopeId}-${period.year}-${period.month}`,
@@ -212,7 +223,51 @@ export class MovementService {
     for (const period of periods.values()) {
       if (periodSummaryService.checkExists(period)) periodSummaryService.markDirty(period);
     }
+    for (const parentId of parentIds) {
+      this.dissolveIfBelowMinimum(parentId);
+      this.touchCompoundOwner(parentId);
+    }
     return count;
+  }
+
+  /**
+   * A parented movement must remain a valid compound child through an edit: it cannot opt out of an
+   * anomalous parent (D2), cannot become a split (D12), and — under a cancelable compound — cannot
+   * change the single envelope the set shares (D6).
+   */
+  private assertCompoundChildStillValid(stored: MovementT, next: Movement): void {
+    const parentId = stored.parentId;
+    if (parentId == null) return;
+    const parent = compoundMovementRepository.getById(parentId);
+    if (parent == undefined) return; // parent vanished; nothing to enforce
+    if (parent.isAnomalous && !next.isAnomalous) {
+      throw new AppError(AppErrorCode.COMPOUND_ANOMALY_CHILD_CONFLICT);
+    }
+    if (next.isSplitMovement()) throw new AppError(AppErrorCode.COMPOUND_CHILD_SPLIT);
+    if (parent.isCancelable) {
+      const before = [...stored.envelopeIdMap.keys()][0];
+      const after = [...next.envelopeIdMap.keys()][0];
+      if (before !== after) throw new AppError(AppErrorCode.COMPOUND_CANCELABLE_MULTI_ENVELOPE);
+    }
+  }
+
+  /**
+   * After a child leaves (deleted or un-parented) a compound with fewer than two members is
+   * meaningless, so dissolve it. The surviving child, if any, is un-parented by the `parent_id` FK
+   * (`ON DELETE SET NULL`) and keeps its own `isAnomalous` value (D16d).
+   */
+  private dissolveIfBelowMinimum(parentId: number): void {
+    if (movementRepository.countByParent(parentId) < 2) {
+      compoundMovementRepository.delete(parentId);
+    }
+  }
+
+  /** Refreshes a compound's owner-month collapsed statistics after one of its children changed. No-op
+   *  when the movement has no parent or the compound has since dissolved. */
+  private touchCompoundOwner(parentId: number | null): void {
+    if (parentId == null) return;
+    const compound = compoundMovementRepository.getById(parentId);
+    if (compound != undefined) periodSummaryService.touchCompoundOwnerPeriods(compound);
   }
 
   suggestNames(prefix: string, limit?: number): string[] {

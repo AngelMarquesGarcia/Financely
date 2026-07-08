@@ -16,6 +16,7 @@ type RawMovement = {
   templateId: number | null;
   isTentative: number;
   isAnomalous: number;
+  parentId: number | null;
 };
 
 /** Builds a wire movement with an empty allocation map; `hydrateEnvelopeMaps` fills it in. */
@@ -34,6 +35,7 @@ function toMovement(r: RawMovement): MovementT {
     templateId: r.templateId,
     isTentative: r.isTentative === 1,
     isAnomalous: r.isAnomalous === 1,
+    parentId: r.parentId,
   };
 }
 
@@ -43,7 +45,7 @@ export class MovementRepository {
   private readonly selectCols = `id, account_id as accountId, name, concept, quantity_cents as quantityCents,
     isPositive, date, category_id as categoryId,
     additional_notes as additionalNotes, template_id as templateId, is_tentative as isTentative,
-    is_anomalous as isAnomalous`;
+    is_anomalous as isAnomalous, parent_id as parentId`;
 
   /**
    * Populates each movement's `envelopeIdMap` from `movement_envelopes` in a single batched query
@@ -77,9 +79,9 @@ export class MovementRepository {
     const insertMov = this.db.prepare(
       `INSERT INTO ${tables.movements}
          (account_id, name, concept, quantity_cents, isPositive, date, category_id,
-          additional_notes, template_id, is_tentative, is_anomalous)
+          additional_notes, template_id, is_tentative, is_anomalous, parent_id)
        VALUES (:accountId, :name, :concept, :quantityCents, :isPositive, :date, :categoryId,
-          :additionalNotes, :templateId, :isTentative, :isAnomalous)`,
+          :additionalNotes, :templateId, :isTentative, :isAnomalous, :parentId)`,
     );
     const insertAlloc = this.db.prepare(
       `INSERT INTO ${tables.movementEnvelopes} (movement_id, envelope_id, amount_cents) VALUES (?, ?, ?)`,
@@ -97,6 +99,7 @@ export class MovementRepository {
         templateId: m.templateId ?? null,
         isTentative: m.isTentative ? 1 : 0,
         isAnomalous: m.isAnomalous ? 1 : 0,
+        parentId: m.parentId ?? null,
       }).lastInsertRowid;
       for (const [envelopeId, amount] of m.envelopeIdMap) insertAlloc.run(Number(id), envelopeId, amount);
       return id;
@@ -278,6 +281,35 @@ export class MovementRepository {
         .prepare(`SELECT COUNT(*) AS n FROM ${tables.movements} WHERE template_id = ?`)
         .get(templateId) as { n: number }
     ).n;
+  }
+
+  /** Every movement belonging to a compound (its children). */
+  getByParent(parentId: number): MovementT[] {
+    return this.hydrateEnvelopeMaps(
+      (
+        this.db
+          .prepare(`SELECT ${this.selectCols} FROM ${tables.movements} WHERE parent_id = ?`)
+          .all(parentId) as RawMovement[]
+      ).map(toMovement),
+    );
+  }
+
+  countByParent(parentId: number): number {
+    return (
+      this.db
+        .prepare(`SELECT COUNT(*) AS n FROM ${tables.movements} WHERE parent_id = ?`)
+        .get(parentId) as { n: number }
+    ).n;
+  }
+
+  /** Links (or, with null, unlinks) a movement to a compound. The sole way `parent_id` changes —
+   *  `updateMovement` deliberately preserves it (like `is_tentative`). */
+  setParent(movementId: number, parentId: number | null): boolean {
+    return (
+      this.db
+        .prepare(`UPDATE ${tables.movements} SET parent_id = ? WHERE id = ?`)
+        .run(parentId, movementId).changes > 0
+    );
   }
 
   private getMovementIdsByTags(tagIds: number[], matchAll: boolean): number[] {

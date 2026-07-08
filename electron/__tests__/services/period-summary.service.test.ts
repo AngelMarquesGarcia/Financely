@@ -19,6 +19,7 @@ import { periodSummaryService } from '../../services/period-summary.service';
 import { periodSummaryRepository } from '../../repository/period-summary-repository.service';
 import { envelopeRepository } from '../../repository/envelope-repository.service';
 import { movementService } from '../../services/movement.service';
+import { compoundMovementService } from '../../services/compound-movement.service';
 import { envelopeService } from '../../services/envelope.service';
 import { accountService } from '../../services/account.service';
 import { transferService } from '../../services/transfer.service';
@@ -590,5 +591,135 @@ describe('PeriodSummaryService', () => {
         .getAll()
         .some((s) => s.accountId === acc && s.envelopeId === null && s.year === 2026 && s.month === 3),
     ).toBe(false);
+  });
+});
+
+describe('PeriodSummaryService — compound re-attribution (Phase 2)', () => {
+  beforeEach(() => {
+    DatabaseService.getInstance().migrate();
+  });
+
+  const APR = new Date(2026, 3, 15);
+  const MAY = new Date(2026, 4, 10);
+
+  /** A fresh account with two empty envelopes (no seed noise), so aggregates are exactly assertable. */
+  function fresh(name: string): { acc: number; env1: number; env2: number } {
+    const acc = Number(accountService.create(name));
+    const env1 = envelopeService.getAll().find((e) => e.accountId === acc && e.isDefault)!.id;
+    const env2 = Number(envelopeService.create(`${name}-2`, acc));
+    return { acc, env1, env2 };
+  }
+
+  function m(
+    acc: number,
+    env: number,
+    name: string,
+    amountCents: number,
+    isPositive: boolean,
+    date: Date,
+    isAnomalous = false,
+  ): number {
+    return Number(
+      movementService.create(
+        name, null, amountCents, isPositive, date, firstCategoryId(),
+        one(env, amountCents), null, isAnomalous, null, false, acc,
+      ),
+    );
+  }
+
+  const compound = (over: Record<string, unknown>) => ({
+    name: 'Set', isCancelable: false, isAnomalous: false, notes: null, ...over,
+  });
+
+  it('single-month cancelable collapses to its net at envelope level; base and balance untouched', () => {
+    const { acc, env1 } = fresh('C1');
+    const dinner = m(acc, env1, 'Dinner', 12000, false, APR);
+    const bizum = m(acc, env1, 'Bizum', 10000, true, APR);
+    compoundMovementService.create(compound({ isCancelable: true }), [dinner, bizum]);
+
+    const apr = periodSummaryService.getByPeriod(new Period(acc, env1, 2026, 3));
+    // base (all-inclusive): two movements netting -2000.
+    expect(apr.cashFlowCents).toBe(-2000);
+    expect(apr.movementCount).toBe(2);
+    // compound-adjusted: the same net, but as ONE movement.
+    expect(apr.summaryCompoundAdjusted).toEqual(
+      expect.objectContaining({ cashFlowCents: -2000, movementCount: 1, totalExpenseCents: 2000, totalIncomeCents: 0 }),
+    );
+    // ending balance follows the base cash flow, never the collapsed view (D1).
+    expect(apr.endingBalanceCents).toBe(-2000);
+  });
+
+  it('single-month grouping does not alter statistics (adjusted mirror is null at both levels)', () => {
+    const { acc, env1 } = fresh('C2');
+    const a = m(acc, env1, 'Fuel', 5000, false, APR);
+    const b = m(acc, env1, 'Hotel', 3000, false, APR);
+    compoundMovementService.create(compound({ name: 'Trip' }), [a, b]);
+    expect(periodSummaryService.getByPeriod(new Period(acc, env1, 2026, 3)).summaryCompoundAdjusted).toBeNull();
+    expect(periodSummaryService.getByPeriod(new Period(acc, null, 2026, 3)).summaryCompoundAdjusted).toBeNull();
+  });
+
+  it('multi-month cancelable nets into the owner month and empties the other; balances stay real', () => {
+    const { acc, env1 } = fresh('C3');
+    const dinner = m(acc, env1, 'Dinner', 12000, false, APR);
+    const bizum = m(acc, env1, 'Bizum', 10000, true, MAY);
+    compoundMovementService.create(compound({ isCancelable: true }), [dinner, bizum]); // owner defaults to April
+
+    const apr = periodSummaryService.getByPeriod(new Period(acc, env1, 2026, 3));
+    const may = periodSummaryService.getByPeriod(new Period(acc, env1, 2026, 4));
+    // April (owner): raw -12000; collapsed net -2000 as one movement.
+    expect(apr.cashFlowCents).toBe(-12000);
+    expect(apr.summaryCompoundAdjusted).toEqual(expect.objectContaining({ cashFlowCents: -2000, movementCount: 1 }));
+    // May: the reimbursement re-attributes away → empty adjusted; raw +10000.
+    expect(may.cashFlowCents).toBe(10000);
+    expect(may.summaryCompoundAdjusted).toEqual(expect.objectContaining({ cashFlowCents: 0, movementCount: 0 }));
+    // Balances follow the real months: April -12000, May -2000.
+    expect(apr.endingBalanceCents).toBe(-12000);
+    expect(may.endingBalanceCents).toBe(-2000);
+  });
+
+  it('multi-month multi-envelope grouping collapses at account level only', () => {
+    const { acc, env1, env2 } = fresh('C4');
+    m(acc, env1, 'FuelApr', 5000, false, APR); // April, env1
+    m(acc, env2, 'HotelMay', 3000, false, MAY); // May, env2
+    const [a, b] = movementService.getAll({ accountId: acc }).map((mv) => mv.id);
+    compoundMovementService.create(compound({ name: 'Trip' }), [a, b]); // owner April
+
+    const aprAcc = periodSummaryService.getByPeriod(new Period(acc, null, 2026, 3));
+    const mayAcc = periodSummaryService.getByPeriod(new Period(acc, null, 2026, 4));
+    // Account level: April gains both children as individuals; May is emptied.
+    expect(aprAcc.summaryCompoundAdjusted).toEqual(expect.objectContaining({ cashFlowCents: -8000, movementCount: 2 }));
+    expect(mayAcc.summaryCompoundAdjusted).toEqual(expect.objectContaining({ cashFlowCents: 0, movementCount: 0 }));
+    // Envelope level: a grouping never re-attributes (D4) → mirrors null, base intact.
+    expect(periodSummaryService.getByPeriod(new Period(acc, env1, 2026, 3)).summaryCompoundAdjusted).toBeNull();
+    expect(periodSummaryService.getByPeriod(new Period(acc, env2, 2026, 4)).summaryCompoundAdjusted).toBeNull();
+  });
+
+  it('an anomalous cancelable compound distinguishes the four statistical views', () => {
+    const { acc, env1 } = fresh('C5');
+    const dinner = m(acc, env1, 'Dinner', 12000, false, APR);
+    const bizum = m(acc, env1, 'Bizum', 10000, true, MAY);
+    compoundMovementService.create(compound({ isCancelable: true, isAnomalous: true }), [dinner, bizum]);
+
+    const apr = periodSummaryService.getByPeriod(new Period(acc, env1, 2026, 3));
+    expect(apr.cashFlowCents).toBe(-12000); // base
+    expect(apr.summaryWithoutAnomalies).toEqual(expect.objectContaining({ cashFlowCents: 0, movementCount: 0 }));
+    expect(apr.summaryCompoundAdjusted).toEqual(expect.objectContaining({ cashFlowCents: -2000, movementCount: 1 }));
+    expect(apr.summaryCompoundAdjustedWithoutAnomalies).toEqual(expect.objectContaining({ cashFlowCents: 0, movementCount: 0 }));
+  });
+
+  it('editing a non-owner child updates the owner-month net (cross-period propagation)', () => {
+    const { acc, env1 } = fresh('C6');
+    const dinner = m(acc, env1, 'Dinner', 12000, false, APR);
+    const bizum = m(acc, env1, 'Bizum', 10000, true, MAY);
+    compoundMovementService.create(compound({ isCancelable: true }), [dinner, bizum]); // owner April
+    expect(periodSummaryService.getByPeriod(new Period(acc, env1, 2026, 3)).summaryCompoundAdjusted?.cashFlowCents).toBe(-2000);
+
+    // Lower the May reimbursement to +80 → net becomes -40 in April.
+    const stored = movementService.getById(bizum)!;
+    movementService.update(
+      Movement.from({ ...stored, quantityCents: 8000, envelopeIdMap: new Map([[env1, 8000]]) }),
+    );
+    expect(periodSummaryService.getByPeriod(new Period(acc, env1, 2026, 3)).summaryCompoundAdjusted?.cashFlowCents).toBe(-4000);
+    expect(dinner).toBeGreaterThan(0);
   });
 });
