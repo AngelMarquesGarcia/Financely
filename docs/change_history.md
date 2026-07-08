@@ -444,6 +444,43 @@ Tres fases incrementales sobre el modelo de envelopes. El plan detallado vive en
 
 ---
 
+## Junio–Julio 2026 (registro retroactivo — 28/06 a 03/07)
+
+> **Nota:** las cuatro funcionalidades siguientes se implementaron entre el 28/06 y el 03/07 pero no se registraron en su momento; se documentan ahora de forma retroactiva, en su lugar cronológico. Ninguna incrementa la versión de schema (sigue en **1**; `migrate()` hace drop+recreate).
+
+### Transferencias — capa de UI (28/06)
+
+La capa IPC de transferencias manuales se completó el 27/06 (entrada anterior) pero su interfaz quedó diferida. Ahora implementada:
+
+- Nueva feature [angular/src/app/features/transfers/](angular/src/app/features/transfers/): página contenedora, `transfers-list` (listado con origen/destino, importe, fecha, flag `isAuto`) y `transfer-form` (crear transferencia entre dos envelopes de la misma cuenta).
+- Selector de `overflowsTo` en `envelope-form` (envelope destino del excedente de ahorro por encima del tope).
+- Métodos correspondientes cableados en `ElectronService` y enlace en la navbar.
+
+### Fix: importes con `.00` automático (28/06)
+
+- Corregido un bug en [AmountInputComponent](angular/src/app/shared/components/amount-input/amount-input.component.ts) por el que al teclear un importe se le añadía `.00` de forma prematura, interfiriendo con la edición. El reformateo a céntimos pasa a aplicarse solo en `blur`. Test añadido.
+
+### Movimientos periódicos (02/07)
+
+Plantillas de movimientos recurrentes que **materializan** movimientos reales a medida que pasa el tiempo (decisión "plantilla vs instancia" del spec: el periódico NO es un flag sobre el movimiento, sino una entidad aparte).
+
+- Nueva entidad `PeriodicMovementT` ([shared/types.ts](shared/types.ts)) + clase de dominio `PeriodicMovement` + tabla `periodic_movements`: `dayOfMonth` (1–31, se recorta a la longitud del mes al instanciar), `active` (pausa la generación conservando el histórico), `startYear`/`startMonth`, y el cursor `lastCreatedYear`/`lastCreatedMonth` (último periodo generado). Cada plantilla lleva su asignación a envelope y sus tags (la asignación se migra después a la tabla puente `periodic_movement_envelope` con la división de movimientos).
+- Los movimientos generados nacen **tentativos** (`is_tentative` en `movements`, columna `template_id` → plantilla origen). El estado tentativo/confirmado se estrena aquí.
+- Capa completa: [periodic-movement.service.ts](electron/services/periodic-movement.service.ts), [periodic-movement-repository.service.ts](electron/repository/periodic-movement-repository.service.ts), [periodic-movements.handler.ts](electron/ipc/periodic-movements.handler.ts), IPC/preload/interfaces, y feature Angular [features/periodic-movements/](angular/src/app/features/periodic-movements/) (lista + formulario).
+- **Invariante** (con hueco conocido, ver "Known Issues"): no se puede confirmar un movimiento en un mes si el mes anterior tiene tentativos.
+
+### División de movimientos entre envelopes / splits (03/07)
+
+Un movimiento puede repartirse entre varios envelopes de su misma cuenta.
+
+- La asignación movimiento→envelope pasa de una FK simple (`movements.envelope_id`) a la tabla puente **`movement_envelope`** (`movement_id`, `envelope_id`, `amount_cents > 0`, PK compuesta). Un movimiento normal tiene 1 fila; un split, varias. Invariante: `sum(amount_cents) == quantity_cents` (validado en servicio, no en schema).
+- `MovementT.envelopeId` reemplazado por `envelopeIdMap: Map<envelopeId, amountCents>` ([shared/types.ts](shared/types.ts)); repositorio, servicio, cálculo de PeriodSummary (cada envelope cuenta su parte) y todos los callers actualizados. La plantilla periódica gana el equivalente `periodic_movement_envelope`.
+- Nuevo componente [envelope-split-editor](angular/src/app/shared/components/envelope-split-editor/) adoptado en `movement-form` y `periodic-movement-form`. `movements-list` y `movement-detail-dialog` muestran el desglose.
+- Nuevo [data-refresh.service.ts](angular/src/app/core/services/data-refresh.service.ts) para refrescar vistas dependientes tras cambios.
+- Nuevos `AppErrorCode` de split (suma ≠ total, envelope duplicado, importe no positivo).
+
+---
+
 ## Julio 2026 (04/07)
 
 ### Movimientos anómalos

@@ -47,15 +47,19 @@ angular/
 │   │   │       ├── dialog-ref.ts             # Handle del diálogo: close(), afterClosed()
 │   │   │       ├── dialog.tokens.ts          # InjectionToken DIALOG_DATA
 │   │   │       ├── error-text.service.ts     # AppErrorCode → texto human-readable
-│   │   │       └── error-reporter.service.ts # Operador `.toast()`: catch + resolve + notify
+│   │   │       ├── error-reporter.service.ts # Operador `.toast()`: catch + resolve + notify
+│   │   │       └── data-refresh.service.ts   # Señal de refresco para vistas dependientes tras cambios
 │   │   ├── features/
 │   │   │   ├── accounts/                     # account-form/, accounts-list/, accounts.component.*
 │   │   │   ├── categories/                   # categories-list/, category-form/, categories.component.*
+│   │   │   ├── compounds/                    # compounds-list/, compound-form/, compound-delete-dialog/, compounds.component.* — movimientos compuestos
 │   │   │   ├── envelopes/                    # envelope-form/, envelopes-list/, envelopes.component.*
 │   │   │   ├── month-overview/               # MonthOverviewComponent — resumen mensual de account + envelopes
 │   │   │   ├── movements/                    # movement-form/, movements-list/, movements-filter/, movement-list-compact/, movement-detail-dialog/, movements.component.*
+│   │   │   ├── periodic-movements/           # periodic-movements-list/, periodic-movement-form/, periodic-movements.component.*
 │   │   │   ├── settings/                     # settings.component.*
-│   │   │   └── tags/                         # tag-form/, tags-list/, tags.component.*
+│   │   │   ├── tags/                         # tag-form/, tags-list/, tags.component.*
+│   │   │   └── transfers/                    # transfers-list/, transfer-form/, transfers.component.*
 │   │   ├── shared/
 │   │   │   ├── components/
 │   │   │   │   ├── amount-input/             # AmountInputComponent — decimal text ↔ integer cents
@@ -66,6 +70,8 @@ angular/
 │   │   │   │   ├── confirm-dialog/           # Modal de confirmación
 │   │   │   │   ├── empty-state/              # EmptyStateComponent — message + icon? + slot proyectado para CTA
 │   │   │   │   ├── entity-select/            # EntitySelectComponent<T> — chips + popover multi-select
+│   │   │   │   ├── envelope-split-editor/    # EnvelopeSplitEditorComponent — reparte un importe entre N envelopes
+│   │   │   │   ├── filter-summary/           # FilterSummaryComponent — muestra un FilterSummary (agregado + desglose mensual)
 │   │   │   │   ├── form-field/               # FormFieldComponent — label + slot + error
 │   │   │   │   ├── icon-picker/              # IconPickerComponent — grid de emojis con reorder/add/delete
 │   │   │   │   ├── modal/                    # ModalComponent — overlay declarativo para componentes "ventana"
@@ -116,34 +122,57 @@ electron/
 │   ├── accounts.handler.ts
 │   ├── envelopes.handler.ts
 │   ├── period-summaries.handler.ts
+│   ├── periodic-movements.handler.ts     # Plantillas de movimientos recurrentes
+│   ├── transfers.handler.ts              # Transferencias internas entre envelopes
+│   ├── compound-movements.handler.ts     # Movimientos compuestos (agrupación / cancelable)
 │   ├── tags.handler.ts
 │   └── settings.handler.ts
 ├── repository/
 │   ├── database.service.ts               # SQLite con better-sqlite3, migrate(), seed
 │   ├── schema.ts                         # DDL + migraciones declarativas
-│   ├── movement-repository.service.ts
+│   ├── date-utils.ts                     # Conversión Date ↔ ISO YYYY-MM-DD (estable a TZ)
+│   ├── movement-repository.service.ts    # Incl. asignación por envelope (tabla movement_envelope)
 │   ├── category-repository.service.ts
 │   ├── account-repository.service.ts
 │   ├── envelope-repository.service.ts
 │   ├── period-summary-repository.service.ts
+│   ├── periodic-movement-repository.service.ts
+│   ├── transfer-repository.service.ts
+│   ├── compound-movement-repository.service.ts
 │   └── tag-repository.service.ts
 ├── services/
 │   ├── movement.service.ts               # Validación + delega al repositorio
 │   ├── category.service.ts
 │   ├── account.service.ts                # Incluye getAccountStats() (agregados SUM/COUNT)
-│   ├── envelope.service.ts
+│   ├── envelope.service.ts               # Budget, tope de ahorro (maxSavings), overflow
 │   ├── period-summary.service.ts         # Creación, recálculo y propagación dirty de PeriodSummary
+│   ├── basic-summary.ts                  # computeBasicSummary() — núcleo de agregación reutilizado
+│   ├── filter-summary.service.ts         # FilterSummary al vuelo (tags/categorías/filtro arbitrario)
+│   ├── periodic-movement.service.ts      # Plantillas recurrentes → instancias tentativas
+│   ├── transfer.service.ts               # Transferencias internas + redirección de excedente
+│   ├── compound-movement.service.ts      # Movimientos compuestos (validaciones D2/D6/D11/D12/D16)
+│   ├── compound-summary.ts               # computeCompoundAdjusted() — re-atribución de stats
 │   ├── tag.service.ts
 │   └── settings.service.ts               # electron-store (AppSettings)
 ├── __tests__/
 │   ├── jest.setup.ts                     # Mock global de better-sqlite3
+│   ├── shared/
+│   │   └── domain.test.ts                # Clases de dominio (getPeriods, etc.)
 │   └── services/
 │       ├── account.service.test.ts
 │       ├── category.service.test.ts
 │       ├── envelope.service.test.ts
 │       ├── movement.service.test.ts
+│       ├── period-summary.service.test.ts
+│       ├── filter-summary.service.test.ts
+│       ├── periodic-movement.service.test.ts
+│       ├── transfer.service.test.ts
+│       ├── compound-movement.service.test.ts
 │       ├── settings.service.test.ts
 │       └── tag.service.test.ts
+├── config/
+│   ├── environment.ts
+│   └── paths.ts
 ├── constants.ts                          # Constantes de nombres de tabla (objeto tables)
 ├── main.ts                               # Entry point del main process
 ├── preload.ts                            # Expone la API al renderer vía contextBridge
@@ -159,10 +188,10 @@ El output de esbuild va a `dist/main/` (dos archivos: `main.js` y `preload.js`).
 
 ```
 shared/
-├── types.ts       # Tipos wire IPC (plain objects serializables): MovementT, CategoryT, AccountT, EnvelopeT, TagT, PeriodT, PeriodSummaryT, AccountStats, BasicSummary, AppSettings, MovementFilter, DirtyState
-├── domain.ts      # Clases de dominio con métodos: Period, Movement, PeriodSummary, Account, Category, Envelope, Tag — cada una con static from(d: XyzT): Xyz
+├── types.ts       # Tipos wire IPC (plain objects serializables): MovementT, CategoryT, AccountT, EnvelopeT, TagT, PeriodT, PeriodSummaryT, PeriodicMovementT, TransferT, CompoundMovementT, FilterSummaryT/FilterSummaryEntry, AccountStats, BasicSummary, AppSettings, MovementFilter, DirtyState
+├── domain.ts      # Clases de dominio con métodos: Period, Movement, PeriodSummary, PeriodicMovement, Transfer, CompoundMovement, Account, Category, Envelope, Tag — cada una con static from(d: XyzT): Xyz
 ├── defaults.ts    # DEFAULT_COLOR_ORDER y DEFAULT_CATEGORY_ICONS — fuente única, importada por frontend y backend
-├── interfaces.ts  # Movements, Categories, Accounts, Envelopes, Tags, Settings, PeriodSummaries (contratos IPC)
+├── interfaces.ts  # Movements, Categories, Accounts, Envelopes, Tags, Settings, PeriodSummaries, PeriodicMovements, Transfers, CompoundMovements (contratos IPC)
 └── error-codes.ts # AppErrorCode + AppError — usado por backend (throw) y frontend (resolve a texto)
 ```
 
@@ -170,7 +199,7 @@ Importado tanto por el frontend (`electron.service.ts`) como por el backend (ser
 
 **Patrón de representación dual:** los tipos `*T` (`MovementT`, `PeriodT`, etc.) son DTOs planos que cruzan el IPC — serializables por structured clone. Las clases de dominio (`Movement`, `Period`, etc. en `domain.ts`) añaden métodos y se usan exclusivamente en el backend. Los **handlers** son la frontera de adaptación: reciben T-types del IPC, convierten via `XyzClass.from(arg)`, y llaman a los servicios con clases. El retorno es automático — structured clone elimina los métodos al cruzar la frontera. Los servicios nunca ven wire types en sus parámetros de entidad.
 
-**Tipo de dominio clave — `PeriodSummaryT`:** snapshot mensual de actividad financiera para una combinación `(accountId, envelopeId, year, month)` (`envelopeId = null` → resumen a nivel de cuenta). El campo `month` es **0-indexado** (convenio `Date.getMonth()` de JavaScript); la capa de presentación suma 1 al renderizar. Incluye todos los campos de `BasicSummary` (cash flow, totales income/expense, medias, count) más: `endingBalanceCents` — cadena acumulativa `ending_balance(P) = ending_balance(P-1) + cashFlow(P)`, anclada en `startingBalance` del account o envelope en el primer periodo; `availableBudgetCents` — presupuesto restante para summaries de envelope con budget fijo; `notes` — único campo editable por el usuario; `dirtyState: DirtyState` (`'CLEAN' | 'MODIFIED' | 'DIRTY'`) — `MODIFIED` desencadena recálculo completo de agregados desde los movimientos; `DIRTY` propaga únicamente el endingBalance en la cadena sin releer movimientos. Las vistas multi-mes se ensamblan al vuelo a partir de los datos mensuales almacenados.
+**Tipo de dominio clave — `PeriodSummaryT`:** snapshot mensual de actividad financiera para una combinación `(accountId, envelopeId, year, month)` (`envelopeId = null` → resumen a nivel de cuenta). El campo `month` es **0-indexado** (convenio `Date.getMonth()` de JavaScript); la capa de presentación suma 1 al renderizar. Incluye todos los campos de `BasicSummary` (cash flow, totales income/expense, medias, count) más: `endingBalanceCents` — cadena acumulativa `ending_balance(P) = ending_balance(P-1) + cashFlow(P)`, anclada en `startingBalance` del account o envelope en el primer periodo; `netTransfersCents` — neto de transferencias internas del periodo, plegado en el endingBalance; `budgetCents` / `maxSavingsCents` — snapshots del presupuesto y tope de ahorro del envelope; `notes` — único campo editable por el usuario; `tentative` — el periodo contiene algún movimiento tentativo (display-only); `dirtyState: DirtyState` (`'CLEAN' | 'MODIFIED' | 'DIRTY'`) — `MODIFIED` desencadena recálculo completo de agregados desde los movimientos; `DIRTY` propaga únicamente el endingBalance en la cadena sin releer movimientos. Además guarda **espejos de estadística** (no afectan a la cadena de balance): `summaryWithoutAnomalies` (agregados sin movimientos anómalos, o `null` si no hay), y `summaryCompoundAdjusted` / `summaryCompoundAdjustedWithoutAnomalies` (agregados con la re-atribución de movimientos compuestos aplicada). Las vistas multi-mes se ensamblan al vuelo a partir de los datos mensuales almacenados; los slices que no son un pool de dinero (tags, categorías, filtros arbitrarios) se calculan al vuelo como `FilterSummary`, nunca almacenados.
 
 ### `dist/` — Output (gitignored)
 
@@ -190,7 +219,7 @@ Angular Component
     ↓
 ElectronService (RxJS wrapper sobre Promises)
     ↓
-window.movements / .categories / .accounts / .envelopes / .tags / .settings / .periodSummaries  (contextBridge)
+window.movements / .categories / .accounts / .envelopes / .tags / .settings / .periodSummaries / .periodicMovements / .transfers / .compoundMovements  (contextBridge)
     ↓
 ipcRenderer.invoke(Channels.X)
     ↓
