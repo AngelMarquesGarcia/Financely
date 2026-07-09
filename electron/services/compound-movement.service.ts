@@ -199,6 +199,10 @@ export class CompoundMovementService {
       const children = movementRepository.getByParent(id);
       const ok = compoundMovementRepository.delete(id);
       if (deleteChildren) for (const child of children) movementService.delete(child.id);
+      // The compound is gone: recompute the former owner-month mirror, and — when the children
+      // survive — their own periods too, since all of them now count without the re-attribution.
+      periodSummaryService.touchCompoundOwnerPeriods(compound);
+      if (!deleteChildren) for (const child of children) this.refreshOwnPeriods(child);
       return ok;
     })();
   }
