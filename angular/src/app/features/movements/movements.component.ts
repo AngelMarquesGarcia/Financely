@@ -199,4 +199,14 @@ export class MovementsComponent implements OnInit {
   onCancelled() {
     this.editingMovement = null;
   }
+
+  /** Exports the movements matching the active filter (month / category / text / …) to CSV. */
+  exportCurrentView() {
+    this.electron
+      .exportMovements(this.currentFilter)
+      .pipe(this.errors.toast(), takeUntilDestroyed(this.destroyRef))
+      .subscribe((path) => {
+        if (path) this.notify.success(`Exported to ${path}`);
+      });
+  }
 }

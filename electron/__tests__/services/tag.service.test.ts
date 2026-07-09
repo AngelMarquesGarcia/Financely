@@ -15,16 +15,17 @@ jest.mock('electron', () => ({
 }));
 
 import { DatabaseService } from '../../repository/database.service';
+import { resetTestDb } from '../helpers/reset-db';
 import { tagService } from '../../services/tag.service';
 import { AppErrorCode } from '@shared/error-codes';
 
 describe('TagService', () => {
   beforeAll(() => {
-    DatabaseService.getInstance().migrate();
+    resetTestDb();
   });
 
   beforeEach(() => {
-    DatabaseService.getInstance().migrate();
+    resetTestDb();
   });
 
   it('create throws TAG_TYPE_REQUIRED for empty type', () => {

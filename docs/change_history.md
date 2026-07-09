@@ -627,6 +627,40 @@ Un **movimiento compuesto** agrupa movimientos reales que existen por separado b
 
 ---
 
+## 09/07/2026
+
+### Importación / exportación CSV y copia de seguridad de la base de datos
+
+Funcionalidad completa para **importar movimientos en masa** desde CSV, **exportarlos** (todo o filtrado), y hacer **copias de seguridad completas** de la BD. Metodología spec→plan→implement; decisiones cerradas en la fase de spec. Biblioteca: **PapaParse** (parse + unparse) en el main process. Formato "ligero" plano; el "pesado" multi-archivo/XLSX queda diferido.
+
+**Formato CSV ligero:** columnas `name, concept, quantity, date, account, category, envelope, tags, notes, anomalous, template, group`. `quantity` decimal con signo (signo→`isPositive`, magnitud→cents); `date` `YYYY-MM-DD` o `YYYY-MM` (día 01); `envelope` nombre único o mini-sintaxis de split `Food:12.50|Fun:3.00`; `tags` lista `type/name` separada por `|` (escape con `\`); `account` se escribe al exportar pero se **ignora** al importar (los movimientos entran en la cuenta elegida).
+
+**Refactor del ciclo de vida de la BD** ([electron/repository/database.service.ts](electron/repository/database.service.ts)): `migrate()` pasa a ser **no destructivo** (solo `ensureSchema()`: crea tablas/índices si faltan + defaults mínimos). El drop + seed de demo se extrae a métodos explícitos `dropAllTables()` y `createExampleData()` (solo testing/dev). La categoría por defecto pasa de `Salary` a **`Uncategorized`** (neutral; destino de reasignación al borrar y bucket de importación, reusando la guarda de default indeleteable). El arnés de tests de integración migra a un helper `resetTestDb()` (`dropAllTables() + createExampleData()`) en las 10 suites.
+
+**Import (create-only)** ([electron/services/import-export.service.ts](electron/services/import-export.service.ts)): `previewImport(csv, accountId)` es **puro y no persiste** — parsea (delimitador autodetectado, decimales con coma tolerados: es-ES), resuelve referencias por nombre único (categoría/envelope no encontrados → buckets `Uncategorized`/`Unassigned`, marcados como issue), tags desconocidos marcados para crear; devuelve `{ drafts, issues }` (`MovementDraftT[]` + `ImportIssueT[]`; las filas con error de bloqueo se excluyen de `drafts`). `commitImport(drafts, accountId)` persiste en **una transacción** (reusa `movementService.create` → validación + hooks de period summary + overflow; transacciones anidadas vía savepoints), auto-crea tags y re-vincula template/group por nombre.
+
+**Export** (mismo servicio): `exportMovements(filter?)` reusa `movementRepository.getAllMovements(filter)` (undefined = todo, rango de meses, o cualquier filtro). **Rechaza** la exportación si la selección contiene movimientos tentativos (`EXPORT_CONTAINS_TENTATIVE`). Resuelve ids→nombres, formatea el importe con signo, escribe con BOM UTF-8.
+
+**Backup / restore** (`database.service.ts`): `backup(dest)` usa la API de backup online de better-sqlite3. `restore(src)` valida el archivo (segunda conexión de solo lectura), luego copia **in-place** vía `ATTACH` en una transacción (todo-o-nada) — **no** reabre la conexión, porque los repositorios cachean el handle al cargar el módulo (desviación respecto al plan, que fijaba file-swap + reopen; el ATTACH+copy evita el handle obsoleto). Restaurar reemplaza **toda** la BD (no es merge).
+
+**IPC:** dos APIs nuevas — `importExport` (previewImport/commitImport/exportMovements) y `database` (backup/restore + dropAllTables/seedExampleData, estos dos marcados testing-only). Channels, handlers ([import-export.handler.ts](electron/ipc/import-export.handler.ts) y [database.handler.ts](electron/ipc/database.handler.ts) — dueños del `dialog` nativo y `fs`; los servicios quedan libres de Electron), preload, interfaces `ImportExport`/`Database`. Nuevos códigos `EXPORT_CONTAINS_TENTATIVE`, `IMPORT_MISSING_COLUMNS`, `BACKUP_FAILED`, `RESTORE_INVALID_FILE`. Nuevo [shared/money.ts](shared/money.ts) (`parseSignedMoney`/`formatSignedMoney`, sign-aware).
+
+#### Frontend
+
+- **Wiring** ([types/global.d.ts](angular/src/app/types/global.d.ts), [electron.service.ts](angular/src/app/core/services/electron.service.ts)): tipado de `window.importExport`/`window.database` + wrappers RxJS.
+- **Diálogo de previsualización** ([features/import-export/import-preview-dialog/](angular/src/app/features/import-export/)): tabla de **solo lectura** de los drafts + resumen de issues agrupado por código (informativos vs. filas descartadas), botones Create / Cancel (sin edición inline — decisión cerrada en spec).
+- **Sección "Data" en Settings** ([settings.component.ts](angular/src/app/features/settings/settings.component.ts)): selector de cuenta + "Import from CSV…" (→ previewImport → diálogo → commitImport), "Export all movements…", "Back up database…", "Restore from backup…" (confirmación danger + recarga), y subsección "Developer / testing" (Delete all data / Seed example data). Las operaciones de BD completa hacen `window.location.reload()`.
+- **Export filtrado** ([movements.component.ts](angular/src/app/features/movements/movements.component.ts)): botón "Export current view…" que pasa el `MovementFilter` activo (exporta el mes/filtro visible).
+- **Errores:** textos nuevos en [error-text.service.ts](angular/src/app/core/services/error-text.service.ts).
+
+**Tests:** backend — [import-export.service.test.ts](electron/__tests__/services/import-export.service.test.ts) (formato export + guarda de tentativos + filtro; parse: buckets, tags, fechas `YYYY-MM`/`YYYY-MM-DD`, splits, decimal coma, delimitador `;`, columnas faltantes; commit transaccional + rollback; round-trip) y [database.service.test.ts](electron/__tests__/services/database.service.test.ts) (ensureSchema idempotente, drop/seed, `Uncategorized` default, backup+restore, archivo inválido). Frontend — `import-preview-dialog` (render, resumen de issues, close true/false) y `settings` ampliado (export/backup/import/restore/seed).
+
+**Verificación:** **213/213** Jest verdes; **107/107** Vitest verdes; `type-check`, `build:dev` y `npm run lint` limpios. Smoke-test manual entregado al usuario.
+
+**Diferido:** export "pesado" multi-archivo/XLSX; mapeo de columnas para CSVs ajenos (banco); creación on-the-spot de template/group inexistentes al importar; tests E2E.
+
+---
+
 ## Pasos siguientes
 
 ### Pendientes arrastrados de auditorías previas

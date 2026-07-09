@@ -9,6 +9,8 @@ import { registerEnvelopeHandlers } from './ipc/envelopes.handler';
 import { registerTagHandlers } from './ipc/tags.handler';
 import { registerSettingsHandlers } from './ipc/settings.handler';
 import { registerPeriodSummaryHandlers } from './ipc/period-summaries.handler';
+import { registerImportExportHandlers } from './ipc/import-export.handler';
+import { registerDatabaseHandlers } from './ipc/database.handler';
 import { periodSummaryService } from './services/period-summary.service';
 import { PATHS } from './config/paths';
 import { getStartURL } from './config/environment';
@@ -45,5 +47,7 @@ app.whenReady().then(() => {
   registerTagHandlers();
   registerSettingsHandlers();
   registerPeriodSummaryHandlers();
+  registerImportExportHandlers();
+  registerDatabaseHandlers();
   createWindow();
 });

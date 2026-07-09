@@ -15,6 +15,7 @@ jest.mock('electron', () => ({
 }));
 
 import { DatabaseService } from '../../repository/database.service';
+import { resetTestDb } from '../helpers/reset-db';
 import { accountService } from '../../services/account.service';
 import { movementService } from '../../services/movement.service';
 import { envelopeService } from '../../services/envelope.service';
@@ -22,11 +23,11 @@ import { AppErrorCode } from '@shared/error-codes';
 
 describe('AccountService', () => {
   beforeAll(() => {
-    DatabaseService.getInstance().migrate();
+    resetTestDb();
   });
 
   beforeEach(() => {
-    DatabaseService.getInstance().migrate();
+    resetTestDb();
   });
 
   it('create throws ACCOUNT_NAME_REQUIRED for empty name', () => {

@@ -77,4 +77,13 @@ export const Channels = {
   PERIOD_SUMMARY_GET_BY_PERIOD: 'periodSummary:getByPeriod',
   PERIOD_SUMMARY_UPDATE: 'periodSummary:update',
   PERIOD_SUMMARY_DELETE: 'periodSummary:delete',
+
+  IMPORT_EXPORT_PREVIEW: 'importExport:preview',
+  IMPORT_EXPORT_COMMIT: 'importExport:commit',
+  IMPORT_EXPORT_EXPORT: 'importExport:export',
+
+  DB_BACKUP: 'database:backup',
+  DB_RESTORE: 'database:restore',
+  DB_DROP_ALL: 'database:dropAllTables',
+  DB_SEED_EXAMPLE: 'database:seedExampleData',
 } as const;

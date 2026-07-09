@@ -279,3 +279,53 @@ export type PeriodT = {
   year: number;
   month: number;
 };
+
+/** A single parsed-but-unpersisted CSV row, produced by the import preview and fully committable:
+ *  references are already resolved to ids (unmatched category/envelope fell back to the default
+ *  buckets), except tags with `id === null`, which are created at commit time. `templateName`/
+ *  `groupName` are informational labels, matched by name at commit only if they still exist. */
+export type MovementDraftT = {
+  name: string;
+  concept: string | null;
+  quantityCents: number;
+  isPositive: boolean;
+  date: Date;
+  categoryName: string;
+  categoryId: number;
+  /** Per-envelope allocation (single entry for a non-split row); amounts sum to `quantityCents`. */
+  envelopes: { name: string; id: number; amountCents: number }[];
+  tags: { type: string; name: string; id: number | null }[];
+  additionalNotes: string | null;
+  isAnomalous: boolean;
+  templateName: string | null;
+  groupName: string | null;
+};
+
+/** Non-blocking codes annotate a committable draft (fallback applied / tag will be created / label
+ *  unresolved); blocking codes mark a row that was excluded from `drafts` and cannot be imported. */
+export type ImportIssueCode =
+  // informational — the row is still in `drafts`
+  | 'CATEGORY_NOT_FOUND'
+  | 'ENVELOPE_NOT_FOUND'
+  | 'TAG_WILL_CREATE'
+  | 'TEMPLATE_NOT_FOUND'
+  | 'GROUP_NOT_FOUND'
+  // blocking — the row was dropped from `drafts`
+  | 'NAME_MISSING'
+  | 'AMOUNT_INVALID'
+  | 'DATE_INVALID'
+  | 'SPLIT_SUM_MISMATCH';
+
+/** One problem found while parsing a CSV, keyed by the 0-based data-row index (header excluded). */
+export type ImportIssueT = {
+  row: number;
+  code: ImportIssueCode;
+  detail?: string;
+};
+
+/** Result of previewing a CSV import: the committable `drafts` plus every `issue` found (informational
+ *  and blocking). Blocking-issue rows are absent from `drafts`. Nothing is persisted by the preview. */
+export type ImportResultT = {
+  drafts: MovementDraftT[];
+  issues: ImportIssueT[];
+};

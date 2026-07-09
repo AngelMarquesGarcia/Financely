@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { Channels } from './ipc/channels';
-import { MovementT, CategoryT, MovementFilter, AppSettings, AccountT, EnvelopeT, TagT, PeriodSummaryT, PeriodicMovementT, CompoundMovementT, NewCompoundFields, NewCompoundChild } from '../shared/types';
+import { MovementT, CategoryT, MovementFilter, AppSettings, AccountT, EnvelopeT, TagT, PeriodSummaryT, PeriodicMovementT, CompoundMovementT, NewCompoundFields, NewCompoundChild, MovementDraftT } from '../shared/types';
 
 type NewPeriodicTemplate = Omit<
   PeriodicMovementT,
@@ -196,4 +196,20 @@ contextBridge.exposeInMainWorld('settings', {
   getAll: (): Promise<AppSettings> => ipcRenderer.invoke(Channels.SETTINGS_GET),
   save: (partial: Partial<AppSettings>): Promise<void> =>
     ipcRenderer.invoke(Channels.SETTINGS_SET, partial),
+});
+
+contextBridge.exposeInMainWorld('importExport', {
+  previewImport: (targetAccountId: number) =>
+    ipcRenderer.invoke(Channels.IMPORT_EXPORT_PREVIEW, { targetAccountId }),
+  commitImport: (drafts: MovementDraftT[], targetAccountId: number) =>
+    ipcRenderer.invoke(Channels.IMPORT_EXPORT_COMMIT, { drafts, targetAccountId }),
+  exportMovements: (filter?: MovementFilter) =>
+    ipcRenderer.invoke(Channels.IMPORT_EXPORT_EXPORT, filter),
+});
+
+contextBridge.exposeInMainWorld('database', {
+  backup: () => ipcRenderer.invoke(Channels.DB_BACKUP),
+  restore: () => ipcRenderer.invoke(Channels.DB_RESTORE),
+  dropAllTables: () => ipcRenderer.invoke(Channels.DB_DROP_ALL),
+  seedExampleData: () => ipcRenderer.invoke(Channels.DB_SEED_EXAMPLE),
 });

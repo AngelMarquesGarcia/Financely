@@ -231,6 +231,17 @@ export class MovementRepository {
     );
   }
 
+  /** Guard source: does the account hold any tentative movement at all (any month)? Used by the CSV
+   *  import guard — importing into an account with unreviewed movements is refused. */
+  hasAnyTentativeInAccount(accountId: number): boolean {
+    const row = this.db
+      .prepare(
+        `SELECT 1 FROM ${tables.movements} WHERE account_id = ? AND is_tentative = 1 LIMIT 1`,
+      )
+      .get(accountId);
+    return row != undefined;
+  }
+
   /** Guard source: does any tentative movement exist in this account for the given month? */
   hasTentativeInAccountMonth(accountId: number, year: number, month: number): boolean {
     const row = this.db

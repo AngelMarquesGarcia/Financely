@@ -15,6 +15,7 @@ jest.mock('electron', () => ({
 }));
 
 import { DatabaseService } from '../../repository/database.service';
+import { resetTestDb } from '../helpers/reset-db';
 import { periodSummaryService } from '../../services/period-summary.service';
 import { periodSummaryRepository } from '../../repository/period-summary-repository.service';
 import { envelopeRepository } from '../../repository/envelope-repository.service';
@@ -53,11 +54,11 @@ const one = (envelopeId: number, amount: number) => new Map([[envelopeId, amount
 
 describe('PeriodSummaryService', () => {
   beforeAll(() => {
-    DatabaseService.getInstance().migrate();
+    resetTestDb();
   });
 
   beforeEach(() => {
-    DatabaseService.getInstance().migrate();
+    resetTestDb();
   });
 
   // ── checkExists / getByPeriod (not found) ────────────────────────────────
@@ -596,7 +597,7 @@ describe('PeriodSummaryService', () => {
 
 describe('PeriodSummaryService — compound re-attribution (Phase 2)', () => {
   beforeEach(() => {
-    DatabaseService.getInstance().migrate();
+    resetTestDb();
   });
 
   const APR = new Date(2026, 3, 15);

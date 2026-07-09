@@ -15,6 +15,7 @@ jest.mock('electron', () => ({
 }));
 
 import { DatabaseService } from '../../repository/database.service';
+import { resetTestDb } from '../helpers/reset-db';
 import { transferService } from '../../services/transfer.service';
 import { transferRepository } from '../../repository/transfer-repository.service';
 import { movementService } from '../../services/movement.service';
@@ -43,11 +44,11 @@ const one = (envelopeId: number, amount: number) => new Map([[envelopeId, amount
 
 describe('TransferService', () => {
   beforeAll(() => {
-    DatabaseService.getInstance().migrate();
+    resetTestDb();
   });
 
   beforeEach(() => {
-    DatabaseService.getInstance().migrate();
+    resetTestDb();
   });
 
   // ── create + validation ────────────────────────────────────────────────────

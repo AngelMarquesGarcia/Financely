@@ -55,6 +55,7 @@ angular/
 │   │   │   ├── categories/                       # categories-list/, category-form/, categories.component.*
 │   │   │   ├── compounds/                        # compounds-list/, compound-form/, compound-delete-dialog/, compounds.component.* — compound movements
 │   │   │   ├── envelopes/                        # envelope-form/, envelopes-list/, envelopes.component.*
+│   │   │   ├── import-export/                    # import-preview-dialog — CSV import preview dialog
 │   │   │   ├── month-overview/                   # MonthOverviewComponent — account + envelope PeriodSummaries for a given month
 │   │   │   ├── movements/                        # movement-form/, movements-list/, movements-filter/, movement-list-compact/, movement-detail-dialog/, movements.component.*
 │   │   │   ├── periodic-movements/               # periodic-movements-list/, periodic-movement-form/, periodic-movements.component.*
@@ -137,9 +138,11 @@ electron/
 │   ├── transfers.handler.ts              # Internal envelope-to-envelope transfers
 │   ├── compound-movements.handler.ts     # Compound movements (grouping / cancelable)
 │   ├── tags.handler.ts
-│   └── settings.handler.ts
+│   ├── settings.handler.ts
+│   ├── import-export.handler.ts          # CSV import/export (native dialog + fs)
+│   └── database.handler.ts               # Backup/restore + drop/seed (testing)
 ├── repository/
-│   ├── database.service.ts               # SQLite (better-sqlite3), migrate(), seed
+│   ├── database.service.ts               # SQLite; non-destructive migrate(), dropAllTables/createExampleData (dev), backup/restore
 │   ├── schema.ts                         # DDL (per-table schema strings)
 │   ├── date-utils.ts                     # Date ↔ ISO YYYY-MM-DD conversion (TZ-stable)
 │   ├── movement-repository.service.ts    # Incl. per-envelope allocation (movement_envelope table)
@@ -164,7 +167,8 @@ electron/
 │   ├── compound-movement.service.ts      # Compound movements (D2/D6/D11/D12/D16 validations)
 │   ├── compound-summary.ts               # computeCompoundAdjusted() — stats re-attribution
 │   ├── tag.service.ts
-│   └── settings.service.ts               # electron-store (AppSettings)
+│   ├── settings.service.ts               # electron-store (AppSettings)
+│   └── import-export.service.ts          # CSV movement import/export (PapaParse)
 ├── __tests__/                            # Jest integration tests (real better-sqlite3)
 │   ├── jest.setup.ts                     # Global mock for better-sqlite3
 │   ├── shared/
@@ -212,7 +216,8 @@ shared/
 ├── types.ts        # IPC wire types (plain, serializable): MovementT, CategoryT, AccountT, EnvelopeT, TagT, PeriodT, PeriodSummaryT, PeriodicMovementT, TransferT, CompoundMovementT, FilterSummaryT/FilterSummaryEntry, AccountStats, BasicSummary, AppSettings, MovementFilter, DirtyState
 ├── domain.ts       # Domain classes with methods: Period, Movement, PeriodSummary, PeriodicMovement, Transfer, CompoundMovement, Account, Category, Envelope, Tag — each with a static from(d: XyzT): Xyz factory
 ├── defaults.ts     # DEFAULT_COLOR_ORDER and DEFAULT_CATEGORY_ICONS — single source of truth for both frontend and backend
-├── interfaces.ts   # IPC contracts: Movements, Categories, Accounts, Envelopes, Tags, Settings, PeriodSummaries, PeriodicMovements, Transfers, CompoundMovements
+├── money.ts        # parseSignedMoney / formatSignedMoney — sign-aware money helpers (CSV import/export)
+├── interfaces.ts   # IPC contracts: Movements, Categories, Accounts, Envelopes, Tags, Settings, PeriodSummaries, PeriodicMovements, Transfers, CompoundMovements, ImportExport, Database
 └── error-codes.ts  # AppErrorCode const + AppError class — backend throws, frontend resolves to text
 ```
 
@@ -353,7 +358,7 @@ The renderer is sandboxed: it cannot touch Node.js or the filesystem directly. A
 [ ElectronService ]            angular/src/app/core/services/electron.service.ts
         │ wraps Promises into RxJS Observables
         ▼
-[ window.movements / .categories / .accounts / .envelopes / .tags / .settings / .periodSummaries / .periodicMovements / .transfers / .compoundMovements ]   (contextBridge)
+[ window.movements / .categories / .accounts / .envelopes / .tags / .settings / .periodSummaries / .periodicMovements / .transfers / .compoundMovements / .importExport / .database ]   (contextBridge)
         │ ipcRenderer.invoke(Channels.X, payload)
         ▼
 ─────────── IPC boundary (preload.ts → main.ts) ───────────

@@ -15,6 +15,7 @@ jest.mock('electron', () => ({
 }));
 
 import { DatabaseService } from '../../repository/database.service';
+import { resetTestDb } from '../helpers/reset-db';
 import { envelopeService } from '../../services/envelope.service';
 import { accountService } from '../../services/account.service';
 import { movementService } from '../../services/movement.service';
@@ -23,11 +24,11 @@ import { AppErrorCode } from '@shared/error-codes';
 
 describe('EnvelopeService — delete, setDefault, and account-create side effect', () => {
   beforeAll(() => {
-    DatabaseService.getInstance().migrate();
+    resetTestDb();
   });
 
   beforeEach(() => {
-    DatabaseService.getInstance().migrate();
+    resetTestDb();
   });
 
   it('delete refuses when the target is the default envelope', () => {

@@ -15,17 +15,18 @@ jest.mock('electron', () => ({
 }));
 
 import { DatabaseService } from '../../repository/database.service';
+import { resetTestDb } from '../helpers/reset-db';
 import { categoryService } from '../../services/category.service';
 import { movementService } from '../../services/movement.service';
 import { AppErrorCode } from '@shared/error-codes';
 
 describe('CategoryService — delete & setDefault behavior', () => {
   beforeAll(() => {
-    DatabaseService.getInstance().migrate();
+    resetTestDb();
   });
 
   beforeEach(() => {
-    DatabaseService.getInstance().migrate();
+    resetTestDb();
   });
 
   it('delete refuses when no default is set', () => {

@@ -67,6 +67,14 @@ const ERROR_MESSAGES: Record<string, string> = {
     'The owner month must be one of the months its movements fall in.',
   [AppErrorCode.COMPOUND_ANOMALY_CHILD_CONFLICT]:
     'A movement cannot be marked non-anomalous while its compound is anomalous.',
+  [AppErrorCode.EXPORT_CONTAINS_TENTATIVE]:
+    'This selection has movements awaiting review — confirm or cancel them before exporting.',
+  [AppErrorCode.IMPORT_ACCOUNT_HAS_TENTATIVE]:
+    'The target account has movements awaiting review — confirm or cancel them before importing.',
+  [AppErrorCode.IMPORT_MISSING_COLUMNS]:
+    'The CSV must have at least concept, quantity and date columns.',
+  [AppErrorCode.BACKUP_FAILED]: 'The database backup could not be completed.',
+  [AppErrorCode.RESTORE_INVALID_FILE]: "That file isn't a valid Financely backup.",
   [AppErrorCode.CONSTRAINT_VIOLATION]: 'This item already exists or violates a uniqueness rule.',
   [AppErrorCode.UNKNOWN]: 'Something went wrong.',
 };

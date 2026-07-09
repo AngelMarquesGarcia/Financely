@@ -15,6 +15,7 @@ jest.mock('electron', () => ({
 }));
 
 import { DatabaseService } from '../../repository/database.service';
+import { resetTestDb } from '../helpers/reset-db';
 import { compoundMovementService } from '../../services/compound-movement.service';
 import { movementService } from '../../services/movement.service';
 import { accountService } from '../../services/account.service';
@@ -60,8 +61,8 @@ const fields = (over: Partial<NewCompoundFields> = {}): NewCompoundFields => ({
 });
 
 describe('CompoundMovementService — creation & membership rules', () => {
-  beforeAll(() => DatabaseService.getInstance().migrate());
-  beforeEach(() => DatabaseService.getInstance().migrate());
+  beforeAll(() => resetTestDb());
+  beforeEach(() => resetTestDb());
 
   it('creates a compound from existing movements and parents them', () => {
     const { env1 } = refs();
@@ -164,7 +165,7 @@ describe('CompoundMovementService — creation & membership rules', () => {
 });
 
 describe('CompoundMovementService — owner month', () => {
-  beforeEach(() => DatabaseService.getInstance().migrate());
+  beforeEach(() => resetTestDb());
 
   it('defaults the owner month to the earliest child month', () => {
     const { env1 } = refs();
@@ -208,7 +209,7 @@ describe('CompoundMovementService — owner month', () => {
 });
 
 describe('CompoundMovementService — anomaly inheritance (D2)', () => {
-  beforeEach(() => DatabaseService.getInstance().migrate());
+  beforeEach(() => resetTestDb());
 
   it('forces existing children anomalous when the compound is anomalous', () => {
     const { env1 } = refs();
@@ -241,7 +242,7 @@ describe('CompoundMovementService — anomaly inheritance (D2)', () => {
 });
 
 describe('CompoundMovementService — add / remove / dissolve', () => {
-  beforeEach(() => DatabaseService.getInstance().migrate());
+  beforeEach(() => resetTestDb());
 
   it('addMember links an eligible movement', () => {
     const { env1 } = refs();
@@ -305,7 +306,7 @@ describe('CompoundMovementService — add / remove / dissolve', () => {
 });
 
 describe('CompoundMovementService — update & delete', () => {
-  beforeEach(() => DatabaseService.getInstance().migrate());
+  beforeEach(() => resetTestDb());
 
   it('updates name and notes', () => {
     const { env1 } = refs();

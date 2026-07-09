@@ -1,4 +1,4 @@
-import { MovementT, CategoryT, MovementFilter, AppSettings, AccountT, AccountStats, EnvelopeT, TagT, TransferT, PeriodSummaryT, PeriodicMovementT, FilterSummaryT, CompoundMovementT, NewCompoundFields, NewCompoundChild } from './types';
+import { MovementT, CategoryT, MovementFilter, AppSettings, AccountT, AccountStats, EnvelopeT, TagT, TransferT, PeriodSummaryT, PeriodicMovementT, FilterSummaryT, CompoundMovementT, NewCompoundFields, NewCompoundChild, MovementDraftT, ImportResultT } from './types';
 
 export interface Movements {
   create(
@@ -149,6 +149,29 @@ export interface Tags {
 export interface Settings {
   getAll(): Promise<AppSettings>;
   save(partial: Partial<AppSettings>): Promise<void>;
+}
+
+export interface ImportExport {
+  /** Opens a file picker, reads the chosen CSV, and returns a preview. Saves NOTHING. `null` = the
+   *  user cancelled the picker. */
+  previewImport(targetAccountId: number): Promise<ImportResultT | null>;
+  /** Persists preview drafts as movements in one transaction. Returns the number created. */
+  commitImport(drafts: MovementDraftT[], targetAccountId: number): Promise<number>;
+  /** Serializes movements matching `filter` (omit = all) to CSV and prompts for a save location.
+   *  Returns the written path, or `null` if the user cancelled. Rejects if the selection is tentative. */
+  exportMovements(filter?: MovementFilter): Promise<string | null>;
+}
+
+export interface Database {
+  /** Prompts for a destination and writes a full DB backup. Returns the path, or `null` if cancelled. */
+  backup(): Promise<string | null>;
+  /** Prompts for a backup file and restores it, replacing ALL current data. `true` = restored,
+   *  `false` = cancelled; rejects (`RESTORE_INVALID_FILE`) on an invalid file. */
+  restore(): Promise<boolean>;
+  /** TESTING/DEV ONLY. Wipes all data, leaving an empty schema with the minimal defaults. */
+  dropAllTables(): Promise<void>;
+  /** TESTING/DEV ONLY. Seeds the sample/demo dataset. */
+  seedExampleData(): Promise<void>;
 }
 
 export interface PeriodSummaries {

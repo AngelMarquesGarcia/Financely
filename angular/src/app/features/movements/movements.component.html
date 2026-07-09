@@ -49,6 +49,7 @@
         <input type="checkbox" [(ngModel)]="showSummaryAnomalies" />
         Include anomalous movements
       </label>
+      <button type="button" class="btn" (click)="exportCurrentView()">Export current view…</button>
       <app-filter-summary [summary]="filterSummary" [showAnomalies]="showSummaryAnomalies" />
     </div>
   }

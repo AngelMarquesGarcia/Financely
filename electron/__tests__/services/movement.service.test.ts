@@ -15,6 +15,7 @@ jest.mock('electron', () => ({
 }));
 
 import { DatabaseService } from '../../repository/database.service';
+import { resetTestDb } from '../helpers/reset-db';
 import { movementService } from '../../services/movement.service';
 import { Movement } from '@shared/domain';
 import { AppErrorCode } from '@shared/error-codes';
@@ -24,11 +25,11 @@ const one = (envelopeId: number, amount: number) => new Map([[envelopeId, amount
 
 describe('MovementService — validation and CRUD', () => {
   beforeAll(() => {
-    DatabaseService.getInstance().migrate();
+    resetTestDb();
   });
 
   beforeEach(() => {
-    DatabaseService.getInstance().migrate();
+    resetTestDb();
   });
 
   // ── Validation guards ──────────────────────────────────────────────────────
@@ -180,7 +181,7 @@ describe('MovementService — validation and CRUD', () => {
 
 describe('MovementService — split across envelopes (CU3)', () => {
   beforeEach(() => {
-    DatabaseService.getInstance().migrate();
+    resetTestDb();
   });
 
   /** Category + two distinct envelope ids from the seed. */
@@ -257,7 +258,7 @@ describe('MovementService — split across envelopes (CU3)', () => {
 
 describe('MovementService — tentative instances, confirm and the previous-month guard', () => {
   beforeEach(() => {
-    DatabaseService.getInstance().migrate();
+    resetTestDb();
   });
 
   function refs() {

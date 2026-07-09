@@ -15,6 +15,7 @@ jest.mock('electron', () => ({
 }));
 
 import { DatabaseService } from '../../repository/database.service';
+import { resetTestDb } from '../helpers/reset-db';
 import { filterSummaryService } from '../../services/filter-summary.service';
 import { movementService } from '../../services/movement.service';
 import { envelopeService } from '../../services/envelope.service';
@@ -37,8 +38,8 @@ const one = (envelopeId: number, amount: number) => new Map([[envelopeId, amount
 /** create(name, concept, qty, isPositive, date, categoryId, envMap, notes, isAnomalous, templateId, isTentative, accountId) */
 
 describe('FilterSummaryService', () => {
-  beforeAll(() => DatabaseService.getInstance().migrate());
-  beforeEach(() => DatabaseService.getInstance().migrate());
+  beforeAll(() => resetTestDb());
+  beforeEach(() => resetTestDb());
 
   it('breaks a multi-month interval into per-month children plus an interval aggregate, snapping to whole months', () => {
     const { acc, def } = freshDefault('FSInterval');

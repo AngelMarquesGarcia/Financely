@@ -54,6 +54,7 @@ angular/
 │   │   │   ├── categories/                   # categories-list/, category-form/, categories.component.*
 │   │   │   ├── compounds/                    # compounds-list/, compound-form/, compound-delete-dialog/, compounds.component.* — movimientos compuestos
 │   │   │   ├── envelopes/                    # envelope-form/, envelopes-list/, envelopes.component.*
+│   │   │   ├── import-export/                # import-preview-dialog — previsualización de importación CSV
 │   │   │   ├── month-overview/               # MonthOverviewComponent — resumen mensual de account + envelopes
 │   │   │   ├── movements/                    # movement-form/, movements-list/, movements-filter/, movement-list-compact/, movement-detail-dialog/, movements.component.*
 │   │   │   ├── periodic-movements/           # periodic-movements-list/, periodic-movement-form/, periodic-movements.component.*
@@ -126,9 +127,11 @@ electron/
 │   ├── transfers.handler.ts              # Transferencias internas entre envelopes
 │   ├── compound-movements.handler.ts     # Movimientos compuestos (agrupación / cancelable)
 │   ├── tags.handler.ts
-│   └── settings.handler.ts
+│   ├── settings.handler.ts
+│   ├── import-export.handler.ts          # Importación/exportación CSV (dialog + fs)
+│   └── database.handler.ts               # Backup/restore + drop/seed (testing)
 ├── repository/
-│   ├── database.service.ts               # SQLite con better-sqlite3, migrate(), seed
+│   ├── database.service.ts               # SQLite; migrate() no destructivo, dropAllTables/createExampleData (dev), backup/restore
 │   ├── schema.ts                         # DDL + migraciones declarativas
 │   ├── date-utils.ts                     # Conversión Date ↔ ISO YYYY-MM-DD (estable a TZ)
 │   ├── movement-repository.service.ts    # Incl. asignación por envelope (tabla movement_envelope)
@@ -153,7 +156,8 @@ electron/
 │   ├── compound-movement.service.ts      # Movimientos compuestos (validaciones D2/D6/D11/D12/D16)
 │   ├── compound-summary.ts               # computeCompoundAdjusted() — re-atribución de stats
 │   ├── tag.service.ts
-│   └── settings.service.ts               # electron-store (AppSettings)
+│   ├── settings.service.ts               # electron-store (AppSettings)
+│   └── import-export.service.ts          # Import/export CSV de movimientos (PapaParse)
 ├── __tests__/
 │   ├── jest.setup.ts                     # Mock global de better-sqlite3
 │   ├── shared/
@@ -188,10 +192,11 @@ El output de esbuild va a `dist/main/` (dos archivos: `main.js` y `preload.js`).
 
 ```
 shared/
-├── types.ts       # Tipos wire IPC (plain objects serializables): MovementT, CategoryT, AccountT, EnvelopeT, TagT, PeriodT, PeriodSummaryT, PeriodicMovementT, TransferT, CompoundMovementT, FilterSummaryT/FilterSummaryEntry, AccountStats, BasicSummary, AppSettings, MovementFilter, DirtyState
+├── types.ts       # Tipos wire IPC (plain objects serializables): MovementT, CategoryT, AccountT, EnvelopeT, TagT, PeriodT, PeriodSummaryT, PeriodicMovementT, TransferT, CompoundMovementT, FilterSummaryT/FilterSummaryEntry, AccountStats, BasicSummary, AppSettings, MovementFilter, DirtyState, MovementDraftT/ImportIssueT/ImportResultT
 ├── domain.ts      # Clases de dominio con métodos: Period, Movement, PeriodSummary, PeriodicMovement, Transfer, CompoundMovement, Account, Category, Envelope, Tag — cada una con static from(d: XyzT): Xyz
 ├── defaults.ts    # DEFAULT_COLOR_ORDER y DEFAULT_CATEGORY_ICONS — fuente única, importada por frontend y backend
-├── interfaces.ts  # Movements, Categories, Accounts, Envelopes, Tags, Settings, PeriodSummaries, PeriodicMovements, Transfers, CompoundMovements (contratos IPC)
+├── money.ts       # parseSignedMoney / formatSignedMoney — helpers de dinero con signo (import/export CSV)
+├── interfaces.ts  # Movements, Categories, Accounts, Envelopes, Tags, Settings, PeriodSummaries, PeriodicMovements, Transfers, CompoundMovements, ImportExport, Database (contratos IPC)
 └── error-codes.ts # AppErrorCode + AppError — usado por backend (throw) y frontend (resolve a texto)
 ```
 
@@ -219,7 +224,7 @@ Angular Component
     ↓
 ElectronService (RxJS wrapper sobre Promises)
     ↓
-window.movements / .categories / .accounts / .envelopes / .tags / .settings / .periodSummaries / .periodicMovements / .transfers / .compoundMovements  (contextBridge)
+window.movements / .categories / .accounts / .envelopes / .tags / .settings / .periodSummaries / .periodicMovements / .transfers / .compoundMovements / .importExport / .database  (contextBridge)
     ↓
 ipcRenderer.invoke(Channels.X)
     ↓

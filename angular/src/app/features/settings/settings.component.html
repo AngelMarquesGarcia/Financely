@@ -63,5 +63,48 @@
         />
       </div>
     </div>
+
+    <div class="settings-section">
+      <h3 class="settings-section__title">Data</h3>
+
+      <div class="settings-subsection">
+        <span class="settings-subsection__label">Import movements</span>
+        <div class="data-row">
+          <select class="data-select" [(ngModel)]="selectedAccountId">
+            @for (a of accounts; track a.id) {
+              <option [ngValue]="a.id">{{ a.name }}</option>
+            }
+          </select>
+          <button
+            type="button"
+            class="btn"
+            [disabled]="selectedAccountId === null"
+            (click)="onImport()"
+          >
+            Import from CSV…
+          </button>
+        </div>
+        <p class="data-hint">Imported movements are created in the selected account.</p>
+      </div>
+
+      <div class="settings-subsection">
+        <span class="settings-subsection__label">Export &amp; backup</span>
+        <div class="data-row">
+          <button type="button" class="btn" (click)="onExportAll()">Export all movements…</button>
+          <button type="button" class="btn" (click)="onBackup()">Back up database…</button>
+          <button type="button" class="btn" (click)="onRestore()">Restore from backup…</button>
+        </div>
+        <p class="data-hint">Restore replaces all current data with the backup.</p>
+      </div>
+
+      <div class="settings-subsection">
+        <span class="settings-subsection__label">Developer / testing</span>
+        <div class="data-row">
+          <button type="button" class="btn btn--delete" (click)="onWipeData()">Delete all data</button>
+          <button type="button" class="btn" (click)="onSeedData()">Seed example data</button>
+        </div>
+        <p class="data-hint">These reset the local database — for testing only.</p>
+      </div>
+    </div>
   </div>
 </div>

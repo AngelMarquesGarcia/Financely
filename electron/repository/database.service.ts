@@ -18,13 +18,33 @@ import {
   TransferSchema,
 } from './schema';
 import { tables } from '../constants';
+import { AppError, AppErrorCode } from '@shared/error-codes';
 
 export class DatabaseService {
   private static instance: DatabaseService;
 
   private readonly SCHEMA_VERSION = 1;
 
+  /** Single long-lived connection. Every repository captures this handle at module load, so it must
+   *  never be reopened — `restore()` copies data in-place (ATTACH) rather than swapping the file. */
   readonly db: InstanceType<typeof Database>;
+
+  /** Data tables in FK dependency order (parents → children); reversed for deletes. Excludes `meta`. */
+  private readonly dataTablesParentFirst = [
+    tables.accounts,
+    tables.tags,
+    tables.envelopes,
+    tables.categories,
+    tables.periodicMovements,
+    tables.periodicMovementEnvelopes,
+    tables.compoundMovements,
+    tables.movements,
+    tables.movementEnvelopes,
+    tables.transfers,
+    tables.movementTags,
+    tables.periodicMovementTags,
+    tables.periodSummaries,
+  ];
 
   private constructor() {
     this.db = new Database(path.join(app.getPath('userData'), 'electron_database.db'));
@@ -37,7 +57,207 @@ export class DatabaseService {
     return DatabaseService.instance;
   }
 
-  private initDatabase(): void {
+  /**
+   * Runs on every app start. Idempotent and non-destructive: creates any missing tables/indexes and
+   * seeds the minimal defaults the app needs to function, preserving existing data. Populating the app
+   * with demo data (and wiping it) is now explicit and front-triggered via `createExampleData()` /
+   * `dropAllTables()`.
+   */
+  migrate(): void {
+    this.ensureSchema();
+  }
+
+  /** Creates tables/indexes if absent and seeds the minimal bootstrap defaults. Data-preserving. */
+  private ensureSchema(): void {
+    //#region Create Tables (idempotent — FK dependency order: parent → child → junction)
+    this.db
+      .prepare(`CREATE TABLE IF NOT EXISTS ${tables.metadata} (key TEXT PRIMARY KEY, value TEXT)`)
+      .run();
+
+    this.db.prepare(`CREATE TABLE IF NOT EXISTS ${tables.accounts} (${AccountSchema})`).run();
+    this.db.prepare(`CREATE TABLE IF NOT EXISTS ${tables.tags} (${TagSchema})`).run();
+    this.db.prepare(`CREATE TABLE IF NOT EXISTS ${tables.envelopes} (${EnvelopeSchema})`).run();
+    this.db.prepare(`CREATE TABLE IF NOT EXISTS ${tables.categories} (${CategorySchema})`).run();
+    this.db
+      .prepare(`CREATE TABLE IF NOT EXISTS ${tables.periodicMovements} (${PeriodicMovementSchema})`)
+      .run();
+    this.db
+      .prepare(
+        `CREATE TABLE IF NOT EXISTS ${tables.periodicMovementEnvelopes} (${PeriodicMovementEnvelopeSchema})`,
+      )
+      .run();
+    // compound_movements before movements (movements.parent_id references it).
+    this.db
+      .prepare(`CREATE TABLE IF NOT EXISTS ${tables.compoundMovements} (${CompoundMovementSchema})`)
+      .run();
+    this.db.prepare(`CREATE TABLE IF NOT EXISTS ${tables.movements} (${MovementSchema})`).run();
+    this.db
+      .prepare(`CREATE TABLE IF NOT EXISTS ${tables.movementEnvelopes} (${MovementEnvelopeSchema})`)
+      .run();
+    this.db.prepare(`CREATE TABLE IF NOT EXISTS ${tables.transfers} (${TransferSchema})`).run();
+    this.db.prepare(`CREATE TABLE IF NOT EXISTS ${tables.movementTags} (${MovementTagSchema})`).run();
+    this.db
+      .prepare(`CREATE TABLE IF NOT EXISTS ${tables.periodicMovementTags} (${PeriodicMovementTagSchema})`)
+      .run();
+    this.db.prepare(`CREATE TABLE IF NOT EXISTS ${tables.periodSummaries} (${PeriodSummarySchema})`).run();
+
+    // Per-envelope allocation lookups (listing an envelope's movements joins on envelope_id).
+    this.db
+      .prepare(
+        `CREATE INDEX IF NOT EXISTS idx_movement_envelopes_envelope ON ${tables.movementEnvelopes}(envelope_id)`,
+      )
+      .run();
+    this.db
+      .prepare(
+        `CREATE INDEX IF NOT EXISTS idx_periodic_movement_envelopes_envelope ON ${tables.periodicMovementEnvelopes}(envelope_id)`,
+      )
+      .run();
+    // Compound membership lookups (listing a compound's children filters on parent_id).
+    this.db
+      .prepare(`CREATE INDEX IF NOT EXISTS idx_movements_parent ON ${tables.movements}(parent_id)`)
+      .run();
+
+    // Logical key of a period summary. COALESCE(envelope_id, -1) because SQLite treats NULLs as
+    // distinct in a plain UNIQUE, which would let duplicate account-level rows (null envelope) slip in.
+    this.db
+      .prepare(
+        `CREATE UNIQUE INDEX IF NOT EXISTS uq_period_summary_key
+           ON ${tables.periodSummaries}(account_id, COALESCE(envelope_id, -1), year, month)`,
+      )
+      .run();
+    //#endregion
+
+    //#region Partial unique indexes (enforce single default per scope)
+    this.db
+      .prepare(
+        `CREATE UNIQUE INDEX IF NOT EXISTS uq_account_default ON ${tables.accounts}(is_default) WHERE is_default = 1`,
+      )
+      .run();
+    this.db
+      .prepare(
+        `CREATE UNIQUE INDEX IF NOT EXISTS uq_envelope_default ON ${tables.envelopes}(account_id) WHERE is_default = 1`,
+      )
+      .run();
+    this.db
+      .prepare(
+        `CREATE UNIQUE INDEX IF NOT EXISTS uq_category_default ON ${tables.categories}(is_default) WHERE is_default = 1`,
+      )
+      .run();
+    //#endregion
+
+    //#region Seed minimal defaults (needed for the app to function on an empty DB)
+    this.db
+      .prepare(`INSERT OR IGNORE INTO ${tables.accounts} (name, is_default) VALUES ('Default', 1)`)
+      .run();
+    const defaultAccount = this.db
+      .prepare(`SELECT id FROM ${tables.accounts} WHERE is_default = 1 LIMIT 1`)
+      .get() as { id: number } | undefined;
+    if (defaultAccount) {
+      this.db
+        .prepare(
+          `INSERT OR IGNORE INTO ${tables.envelopes} (name, account_id, is_default) VALUES ('Unassigned', ?, 1)`,
+        )
+        .run(defaultAccount.id);
+    }
+    // The neutral catch-all/default category: the reassign-on-delete target and the import fallback
+    // bucket. Undeletable via the existing default-category guard.
+    this.db
+      .prepare(`INSERT OR IGNORE INTO ${tables.categories} (name, is_default) VALUES ('Uncategorized', 1)`)
+      .run();
+    //#endregion
+
+    //#region Handle Schema version
+    const row = this.db
+      .prepare(`SELECT value FROM ${tables.metadata} WHERE key = 'schema_version'`)
+      .get() as { value: string } | undefined;
+    const currentSchemaVersion = row ? parseInt(row.value) : 0;
+
+    if (currentSchemaVersion < this.SCHEMA_VERSION) {
+      this.db
+        .prepare(
+          `INSERT OR REPLACE INTO ${tables.metadata} (key, value) VALUES ('schema_version', '${this.SCHEMA_VERSION}')`,
+        )
+        .run();
+    }
+    //#endregion
+  }
+
+  /**
+   * TESTING / MAINTENANCE ONLY. Drops every data table (the `meta` table is preserved so persisted
+   * settings survive). Exposed over the `Database` IPC surface for the dev-only "delete all data"
+   * action — never call this from normal app flows.
+   */
+  dropAllTables(): void {
+    // Drop in reverse FK dependency order: junction → child → parent.
+    for (const table of [...this.dataTablesParentFirst].reverse()) {
+      this.db.prepare(`DROP TABLE IF EXISTS ${table}`).run();
+    }
+  }
+
+  /**
+   * TESTING / MAINTENANCE ONLY. Ensures the schema exists, then seeds the sample/demo dataset (example
+   * accounts, envelopes, categories, tags, movements and periodic templates). Exposed over the
+   * `Database` IPC surface for the dev-only "seed example data" action.
+   */
+  createExampleData(): void {
+    this.ensureSchema();
+    this.seedExampleData();
+  }
+
+  /** Full-database backup to `destPath` via SQLite's online backup API (safe while the app runs). */
+  backup(destPath: string): Promise<void> {
+    return this.db.backup(destPath).then(() => undefined);
+  }
+
+  /**
+   * Restores a full backup, replacing ALL current data (all-or-nothing; not a merge). The file is
+   * validated first, then its contents are copied into the live connection in a single transaction via
+   * ATTACH — the connection object is never swapped, so the handles the repositories cache stay valid.
+   */
+  restore(srcPath: string): void {
+    this.validateBackupFile(srcPath);
+    this.ensureSchema();
+
+    const escaped = srcPath.replace(/'/g, "''");
+    this.db.exec(`ATTACH DATABASE '${escaped}' AS backup`);
+    try {
+      this.db.transaction(() => {
+        // Delete children-first, then copy parents-first. Column order matches (single schema v1).
+        for (const table of [...this.dataTablesParentFirst].reverse()) {
+          this.db.prepare(`DELETE FROM main.${table}`).run();
+        }
+        for (const table of this.dataTablesParentFirst) {
+          this.db.prepare(`INSERT INTO main.${table} SELECT * FROM backup.${table}`).run();
+        }
+      })();
+    } finally {
+      this.db.exec(`DETACH DATABASE backup`);
+    }
+  }
+
+  /** Opens the candidate file read-only and checks it looks like one of our databases. */
+  private validateBackupFile(srcPath: string): void {
+    let probe: InstanceType<typeof Database> | undefined;
+    try {
+      probe = new Database(srcPath, { readonly: true, fileMustExist: true });
+      const hasTable = (name: string) =>
+        probe!
+          .prepare(`SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?`)
+          .get(name) != undefined;
+      if (!hasTable(tables.metadata) || !hasTable(tables.movements)) {
+        throw new AppError(AppErrorCode.RESTORE_INVALID_FILE);
+      }
+    } catch (e) {
+      if (e instanceof AppError) throw e;
+      throw new AppError(AppErrorCode.RESTORE_INVALID_FILE);
+    } finally {
+      probe?.close();
+    }
+  }
+
+  /** The sample dataset, used by `createExampleData()`. Inserts via raw SQL (bypasses service hooks),
+   *  so period summaries must be built afterwards by the caller (`backfillPeriodSummaries`). */
+  private seedExampleData(): void {
     const insertCat = this.db.prepare(
       `INSERT OR IGNORE INTO ${tables.categories} (name, color, emoji) VALUES (:name, :color, :emoji)`,
     );
@@ -49,11 +269,6 @@ export class DatabaseService {
       { name: 'Entertainment', color: '#8b5cf6', emoji: '🎬' },
       { name: 'Health', color: '#f97316', emoji: '💊' },
     ]) insertCat.run(cat);
-
-    // Seed a default category (Salary) so reassign-on-delete has a target out of the box.
-    this.db
-      .prepare(`UPDATE ${tables.categories} SET is_default = 1 WHERE name = 'Salary'`)
-      .run();
 
     const insertTag = this.db.prepare(
       `INSERT OR IGNORE INTO ${tables.tags} (type, name, color) VALUES (:type, :name, :color)`,
@@ -134,9 +349,6 @@ export class DatabaseService {
     addMov({ accountId: defaultAccountId, name: 'May rent', concept: 'ALQUILER MAY', quantityCents: 80000, isPositive: 0, date: '2026-05-01', categoryId: catId('Housing'), notes: null }, new Map([[monthly, 80000]]), [recurring, urgent]);
     addMov({ accountId: defaultAccountId, name: 'Grocery run', concept: 'MERCADONA', quantityCents: 5400, isPositive: 0, date: '2026-05-06', categoryId: catId('Food'), notes: null }, new Map([[monthly, 5400]]), [recurring]);
     addMov({ accountId: defaultAccountId, name: 'Freelance payment', concept: null, quantityCents: 35000, isPositive: 1, date: '2026-05-10', categoryId: catId('Salary'), notes: 'Logo design project' }, new Map([[unassigned, 35000]]), [oneTime]);
-    // The split CU3 demo is the periodic "Monthly salary" template below (savings + monthly), whose
-    // generated instances are divided across two envelopes — kept out of the one-off seed so the
-    // deterministic period-summary fixtures (April/May Savings & Monthly Expenses) stay stable.
 
     // Seed periodic-movement templates. Cursor is left null and the start period is recent, so the
     // first frontend-triggered runDue generates a couple of tentative instances for the current month.
@@ -173,137 +385,5 @@ export class DatabaseService {
     );
     insertPeriodicEnv.run(karateTemplateId, monthly, 4500);
     insertPeriodicTag.run(karateTemplateId, recurring);
-  }
-
-  migrate(): void {
-    //#region Drop data tables (temporary — remove once schema stabilises)
-    // Drop in reverse FK dependency order: junction → child → parent
-    // Meta table is intentionally preserved so persisted settings survive restarts
-    this.db.prepare(`DROP TABLE IF EXISTS ${tables.periodSummaries}`).run();
-    this.db.prepare(`DROP TABLE IF EXISTS ${tables.movementTags}`).run();
-    this.db.prepare(`DROP TABLE IF EXISTS ${tables.periodicMovementTags}`).run();
-    this.db.prepare(`DROP TABLE IF EXISTS ${tables.movementEnvelopes}`).run();
-    this.db.prepare(`DROP TABLE IF EXISTS ${tables.periodicMovementEnvelopes}`).run();
-    this.db.prepare(`DROP TABLE IF EXISTS ${tables.transfers}`).run();
-    this.db.prepare(`DROP TABLE IF EXISTS ${tables.movements}`).run();
-    this.db.prepare(`DROP TABLE IF EXISTS ${tables.compoundMovements}`).run();
-    this.db.prepare(`DROP TABLE IF EXISTS ${tables.periodicMovements}`).run();
-    this.db.prepare(`DROP TABLE IF EXISTS ${tables.categories}`).run();
-    this.db.prepare(`DROP TABLE IF EXISTS ${tables.envelopes}`).run();
-    this.db.prepare(`DROP TABLE IF EXISTS ${tables.accounts}`).run();
-    this.db.prepare(`DROP TABLE IF EXISTS ${tables.tags}`).run();
-    //#endregion
-
-    //#region Create Tables
-    // Create in FK dependency order: parent → child → junction
-    this.db
-      .prepare(
-        `CREATE TABLE IF NOT EXISTS ${tables.metadata} (key TEXT PRIMARY KEY, value TEXT)`,
-      )
-      .run();
-
-    this.db.prepare(`CREATE TABLE ${tables.accounts} (${AccountSchema})`).run();
-    this.db.prepare(`CREATE TABLE ${tables.tags} (${TagSchema})`).run();
-    this.db.prepare(`CREATE TABLE ${tables.envelopes} (${EnvelopeSchema})`).run();
-    this.db.prepare(`CREATE TABLE ${tables.categories} (${CategorySchema})`).run();
-    this.db.prepare(`CREATE TABLE ${tables.periodicMovements} (${PeriodicMovementSchema})`).run();
-    this.db
-      .prepare(
-        `CREATE TABLE ${tables.periodicMovementEnvelopes} (${PeriodicMovementEnvelopeSchema})`,
-      )
-      .run();
-    // compound_movements before movements (movements.parent_id references it).
-    this.db
-      .prepare(`CREATE TABLE ${tables.compoundMovements} (${CompoundMovementSchema})`)
-      .run();
-    this.db.prepare(`CREATE TABLE ${tables.movements} (${MovementSchema})`).run();
-    this.db.prepare(`CREATE TABLE ${tables.movementEnvelopes} (${MovementEnvelopeSchema})`).run();
-    this.db.prepare(`CREATE TABLE ${tables.transfers} (${TransferSchema})`).run();
-    this.db.prepare(`CREATE TABLE ${tables.movementTags} (${MovementTagSchema})`).run();
-    this.db
-      .prepare(`CREATE TABLE ${tables.periodicMovementTags} (${PeriodicMovementTagSchema})`)
-      .run();
-    this.db.prepare(`CREATE TABLE ${tables.periodSummaries} (${PeriodSummarySchema})`).run();
-
-    // Per-envelope allocation lookups (listing an envelope's movements joins on envelope_id).
-    this.db
-      .prepare(
-        `CREATE INDEX IF NOT EXISTS idx_movement_envelopes_envelope ON ${tables.movementEnvelopes}(envelope_id)`,
-      )
-      .run();
-    this.db
-      .prepare(
-        `CREATE INDEX IF NOT EXISTS idx_periodic_movement_envelopes_envelope ON ${tables.periodicMovementEnvelopes}(envelope_id)`,
-      )
-      .run();
-    // Compound membership lookups (listing a compound's children filters on parent_id).
-    this.db
-      .prepare(
-        `CREATE INDEX IF NOT EXISTS idx_movements_parent ON ${tables.movements}(parent_id)`,
-      )
-      .run();
-
-    // Logical key of a period summary. COALESCE(envelope_id, -1) because SQLite treats NULLs as
-    // distinct in a plain UNIQUE, which would let duplicate account-level rows (null envelope) slip in.
-    this.db
-      .prepare(
-        `CREATE UNIQUE INDEX IF NOT EXISTS uq_period_summary_key
-           ON ${tables.periodSummaries}(account_id, COALESCE(envelope_id, -1), year, month)`,
-      )
-      .run();
-    //#endregion
-
-    //#region Partial unique indexes (enforce single default per scope)
-    this.db
-      .prepare(
-        `CREATE UNIQUE INDEX IF NOT EXISTS uq_account_default ON ${tables.accounts}(is_default) WHERE is_default = 1`,
-      )
-      .run();
-    this.db
-      .prepare(
-        `CREATE UNIQUE INDEX IF NOT EXISTS uq_envelope_default ON ${tables.envelopes}(account_id) WHERE is_default = 1`,
-      )
-      .run();
-    this.db
-      .prepare(
-        `CREATE UNIQUE INDEX IF NOT EXISTS uq_category_default ON ${tables.categories}(is_default) WHERE is_default = 1`,
-      )
-      .run();
-    //#endregion
-
-    //#region Seed defaults
-    this.db
-      .prepare(
-        `INSERT OR IGNORE INTO ${tables.accounts} (name, is_default) VALUES ('Default', 1)`,
-      )
-      .run();
-    const defaultAccount = this.db
-      .prepare(`SELECT id FROM ${tables.accounts} WHERE is_default = 1 LIMIT 1`)
-      .get() as { id: number } | undefined;
-    if (defaultAccount) {
-      this.db
-        .prepare(
-          `INSERT OR IGNORE INTO ${tables.envelopes} (name, account_id, is_default) VALUES ('Unassigned', ?, 1)`,
-        )
-        .run(defaultAccount.id);
-    }
-    //#endregion
-
-    this.initDatabase();
-
-    //#region Handle Schema version
-    const row = this.db.prepare(`SELECT value FROM ${tables.metadata} WHERE key = 'schema_version'`).get() as
-      | { value: string }
-      | undefined;
-    const currentSchemaVersion = row ? parseInt(row.value) : 0;
-
-    if (currentSchemaVersion < this.SCHEMA_VERSION) {
-      this.db
-        .prepare(
-          `INSERT OR REPLACE INTO ${tables.metadata} (key, value) VALUES ('schema_version', '${this.SCHEMA_VERSION}')`,
-        )
-        .run();
-    }
-    //#endregion
   }
 }

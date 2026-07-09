@@ -12,6 +12,7 @@ import {
   CompoundMovementT,
   NewCompoundFields,
   NewCompoundChild,
+  MovementDraftT,
 } from '@shared/types';
 
 type NewPeriodicTemplate = Omit<
@@ -33,6 +34,8 @@ export class ElectronService {
   private tags = window.tags;
   private settings = window.settings;
   private periodSummaries = window.periodSummaries;
+  private importExport = window.importExport;
+  private database = window.database;
 
   // Movements
   createMovement(
@@ -353,5 +356,42 @@ export class ElectronService {
 
   saveSettings(partial: Partial<AppSettings>) {
     return from(this.settings.save(partial));
+  }
+
+  // Import / export
+  /** Opens the OS file picker, parses the chosen CSV, and returns a preview (saves nothing).
+   *  Resolves to `null` when the user cancels the picker. */
+  previewImport(targetAccountId: number) {
+    return from(this.importExport.previewImport(targetAccountId));
+  }
+
+  /** Persists preview drafts as movements in one transaction; resolves to the number created. */
+  commitImport(drafts: MovementDraftT[], targetAccountId: number) {
+    return from(this.importExport.commitImport(drafts, targetAccountId));
+  }
+
+  /** Serializes movements matching `filter` (omit = all) to CSV via a save dialog. Resolves to the
+   *  written path, or `null` if cancelled; rejects if the selection contains tentative movements. */
+  exportMovements(filter?: MovementFilter) {
+    return from(this.importExport.exportMovements(filter));
+  }
+
+  // Database backup / maintenance
+  backupDatabase() {
+    return from(this.database.backup());
+  }
+
+  restoreDatabase() {
+    return from(this.database.restore());
+  }
+
+  /** DEV/TESTING: wipes all data (leaving an empty schema with the minimal defaults). */
+  dropAllTables() {
+    return from(this.database.dropAllTables());
+  }
+
+  /** DEV/TESTING: seeds the sample/demo dataset. */
+  seedExampleData() {
+    return from(this.database.seedExampleData());
   }
 }

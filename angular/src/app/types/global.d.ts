@@ -9,6 +9,8 @@ import type {
   Tags,
   Settings,
   PeriodSummaries,
+  ImportExport,
+  Database,
 } from '@shared/interfaces';
 
 declare global {
@@ -23,6 +25,8 @@ declare global {
     tags: Tags;
     settings: Settings;
     periodSummaries: PeriodSummaries;
+    importExport: ImportExport;
+    database: Database;
   }
 }
 

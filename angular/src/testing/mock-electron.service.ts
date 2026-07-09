@@ -2,7 +2,17 @@ import { Injectable } from '@angular/core';
 import { vi } from 'vitest';
 import { of, Observable } from 'rxjs';
 import { ElectronService } from '../app/core/services/electron.service';
-import { MovementT, CategoryT, AppSettings, AccountT, EnvelopeT, TagT } from '@shared/types';
+import {
+  MovementT,
+  CategoryT,
+  AppSettings,
+  AccountT,
+  EnvelopeT,
+  TagT,
+  MovementFilter,
+  MovementDraftT,
+  ImportResultT,
+} from '@shared/types';
 
 @Injectable()
 export class MockElectronService implements Partial<ElectronService> {
@@ -66,4 +76,14 @@ export class MockElectronService implements Partial<ElectronService> {
       of({ useDefaultDate: false, defaultDate: '', colorOrder: [], categoryIcons: [] }),
   );
   saveSettings = vi.fn((_partial: Partial<AppSettings>): Observable<void> => of(undefined));
+
+  previewImport = vi.fn((_accountId: number): Observable<ImportResultT | null> => of(null));
+  commitImport = vi.fn(
+    (_drafts: MovementDraftT[], _accountId: number): Observable<number> => of(0),
+  );
+  exportMovements = vi.fn((_filter?: MovementFilter): Observable<string | null> => of(null));
+  backupDatabase = vi.fn((): Observable<string | null> => of(null));
+  restoreDatabase = vi.fn((): Observable<boolean> => of(false));
+  dropAllTables = vi.fn((): Observable<void> => of(undefined));
+  seedExampleData = vi.fn((): Observable<void> => of(undefined));
 }

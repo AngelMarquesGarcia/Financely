@@ -15,6 +15,7 @@ jest.mock('electron', () => ({
 }));
 
 import { DatabaseService } from '../../repository/database.service';
+import { resetTestDb } from '../helpers/reset-db';
 import { periodicMovementService } from '../../services/periodic-movement.service';
 import { periodicMovementRepository } from '../../repository/periodic-movement-repository.service';
 import { movementRepository } from '../../repository/movement-repository.service';
@@ -61,8 +62,8 @@ function monthsAgo(n: number): { year: number; month: number } {
 }
 
 describe('PeriodicMovementService', () => {
-  beforeAll(() => DatabaseService.getInstance().migrate());
-  beforeEach(() => DatabaseService.getInstance().migrate());
+  beforeAll(() => resetTestDb());
+  beforeEach(() => resetTestDb());
 
   // ── CRUD + validation ──────────────────────────────────────────────────────
 
