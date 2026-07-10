@@ -279,7 +279,14 @@ export class ElectronService {
     overflowsTo?: number | null,
   ) {
     return from(
-      this.envelopes.create(name, accountId, startingBalance, budgetCents, maxSavingsCents, overflowsTo),
+      this.envelopes.create(
+        name,
+        accountId,
+        startingBalance,
+        budgetCents,
+        maxSavingsCents,
+        overflowsTo,
+      ),
     );
   }
 

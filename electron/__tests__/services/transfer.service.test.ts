@@ -181,7 +181,16 @@ describe('TransferService', () => {
     const capped = Number(envelopeService.create('Capped', acc, 0, 30000, 60000)); // threshold 90000
     const cat = firstCategoryId();
 
-    movementService.create('Big income', null, 100000, true, new Date(2026, 3, 10), cat, one(capped, 100000), null);
+    movementService.create(
+      'Big income',
+      null,
+      100000,
+      true,
+      new Date(2026, 3, 10),
+      cat,
+      one(capped, 100000),
+      null,
+    );
 
     const transfers = transferService.getAll();
     expect(transfers).toHaveLength(1);
@@ -200,7 +209,16 @@ describe('TransferService', () => {
     const acc = defaultAccountId();
     const capped = Number(envelopeService.create('Capped', acc, 0, 30000, 60000)); // threshold 90000
     const cat = firstCategoryId();
-    movementService.create('Modest', null, 50000, true, new Date(2026, 3, 10), cat, one(capped, 50000), null);
+    movementService.create(
+      'Modest',
+      null,
+      50000,
+      true,
+      new Date(2026, 3, 10),
+      cat,
+      one(capped, 50000),
+      null,
+    );
     expect(transferService.getAll()).toHaveLength(0);
   });
 
@@ -208,7 +226,16 @@ describe('TransferService', () => {
     const acc = defaultAccountId();
     const env = Number(envelopeService.create('Uncapped', acc, 0, 30000, null));
     const cat = firstCategoryId();
-    movementService.create('Huge', null, 999999, true, new Date(2026, 3, 10), cat, one(env, 999999), null);
+    movementService.create(
+      'Huge',
+      null,
+      999999,
+      true,
+      new Date(2026, 3, 10),
+      cat,
+      one(env, 999999),
+      null,
+    );
     expect(transferService.getAll()).toHaveLength(0);
   });
 
@@ -217,7 +244,16 @@ describe('TransferService', () => {
     const sink = Number(envelopeService.create('Sink', acc));
     const capped = Number(envelopeService.create('Capped', acc, 0, 30000, 60000, sink));
     const cat = firstCategoryId();
-    movementService.create('Big income', null, 100000, true, new Date(2026, 3, 10), cat, one(capped, 100000), null);
+    movementService.create(
+      'Big income',
+      null,
+      100000,
+      true,
+      new Date(2026, 3, 10),
+      cat,
+      one(capped, 100000),
+      null,
+    );
 
     const transfers = transferService.getAll();
     expect(transfers).toHaveLength(1);
@@ -230,7 +266,16 @@ describe('TransferService', () => {
     const capped = Number(envelopeService.create('Capped', acc, 0, 30000, 60000)); // threshold 90000
     const cat = firstCategoryId();
     const movId = Number(
-      movementService.create('Income', null, 50000, true, new Date(2026, 3, 10), cat, one(capped, 50000), null),
+      movementService.create(
+        'Income',
+        null,
+        50000,
+        true,
+        new Date(2026, 3, 10),
+        cat,
+        one(capped, 50000),
+        null,
+      ),
     );
     expect(transferService.getAll()).toHaveLength(0); // 50000 < 90000
 
@@ -243,8 +288,8 @@ describe('TransferService', () => {
     const transfers = transferService.getAll();
     expect(transfers).toHaveLength(1);
     expect(transfers[0].quantityCents).toBe(30000); // 120000 − 90000
-    expect(periodSummaryService.getByPeriod(new Period(acc, capped, 2026, 3)).endingBalanceCents).toBe(
-      90000,
-    );
+    expect(
+      periodSummaryService.getByPeriod(new Period(acc, capped, 2026, 3)).endingBalanceCents,
+    ).toBe(90000);
   });
 });

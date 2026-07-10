@@ -20,7 +20,11 @@ function pickOpenPath(event: IpcMainInvokeEvent, title: string): string | undefi
   return result?.[0];
 }
 
-function pickSavePath(event: IpcMainInvokeEvent, title: string, defaultName: string): string | undefined {
+function pickSavePath(
+  event: IpcMainInvokeEvent,
+  title: string,
+  defaultName: string,
+): string | undefined {
   const win = BrowserWindow.fromWebContents(event.sender);
   const options: Electron.SaveDialogSyncOptions = {
     title,
@@ -44,8 +48,9 @@ export function registerImportExportHandlers(): void {
 
   ipcMain.handle(
     Channels.IMPORT_EXPORT_COMMIT,
-    ipcHandle((_event: IpcMainInvokeEvent, arg: { drafts: MovementDraftT[]; targetAccountId: number }) =>
-      importExportService.commitImport(arg.drafts, arg.targetAccountId),
+    ipcHandle(
+      (_event: IpcMainInvokeEvent, arg: { drafts: MovementDraftT[]; targetAccountId: number }) =>
+        importExportService.commitImport(arg.drafts, arg.targetAccountId),
     ),
   );
 

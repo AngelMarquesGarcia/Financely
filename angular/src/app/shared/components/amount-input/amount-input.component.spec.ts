@@ -5,7 +5,10 @@ import { AmountInputComponent } from './amount-input.component';
 
 @Component({
   imports: [AmountInputComponent],
-  template: `<app-amount-input [amountCents]="amountCents" (amountCentsChange)="onChange($event)" />`,
+  template: `<app-amount-input
+    [amountCents]="amountCents"
+    (amountCentsChange)="onChange($event)"
+  />`,
 })
 class Host {
   amountCents: number | null = null;

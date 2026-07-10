@@ -35,7 +35,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   [AppErrorCode.ACCOUNT_DELETE_DEFAULT]: 'Cannot delete the default account.',
   [AppErrorCode.ENVELOPE_NAME_REQUIRED]: 'Envelope name cannot be empty.',
   [AppErrorCode.ENVELOPE_ACCOUNT_REQUIRED]: 'An envelope must belong to an account.',
-  [AppErrorCode.ENVELOPE_UPDATE_DEFAULT]: 'Use the "Set as default" action to change the default envelope.',
+  [AppErrorCode.ENVELOPE_UPDATE_DEFAULT]:
+    'Use the "Set as default" action to change the default envelope.',
   [AppErrorCode.ENVELOPE_DELETE_DEFAULT]: 'Cannot delete the default envelope.',
   [AppErrorCode.ENVELOPE_NO_ACCOUNT]: 'Cannot delete an envelope with no account.',
   [AppErrorCode.ENVELOPE_ACCOUNT_NO_DEFAULT]:
@@ -46,8 +47,10 @@ const ERROR_MESSAGES: Record<string, string> = {
   [AppErrorCode.ENVELOPE_OVERFLOWS_TO_SELF]: 'An envelope cannot overflow into itself.',
   [AppErrorCode.ENVELOPE_ORPHAN_DEFAULT]: 'Cannot set default on an envelope with no account.',
   [AppErrorCode.TRANSFER_SAME_ENVELOPE]: 'A transfer must be between two different envelopes.',
-  [AppErrorCode.TRANSFER_AMOUNT_INVALID]: 'Transfer amount must be a positive whole number of cents.',
-  [AppErrorCode.TRANSFER_CROSS_ACCOUNT]: 'Transfers are only allowed between envelopes of the same account.',
+  [AppErrorCode.TRANSFER_AMOUNT_INVALID]:
+    'Transfer amount must be a positive whole number of cents.',
+  [AppErrorCode.TRANSFER_CROSS_ACCOUNT]:
+    'Transfers are only allowed between envelopes of the same account.',
   [AppErrorCode.TRANSFER_DATE_INVALID]: 'The transfer date is invalid.',
   [AppErrorCode.TRANSFER_NOT_FOUND]: 'Transfer not found.',
   [AppErrorCode.TAG_TYPE_REQUIRED]: 'Tag type cannot be empty.',
@@ -55,11 +58,15 @@ const ERROR_MESSAGES: Record<string, string> = {
   [AppErrorCode.COMPOUND_NAME_REQUIRED]: 'Compound name cannot be empty.',
   [AppErrorCode.COMPOUND_NOT_FOUND]: 'Compound movement not found.',
   [AppErrorCode.COMPOUND_TOO_FEW_CHILDREN]: 'A compound needs at least two movements.',
-  [AppErrorCode.COMPOUND_CROSS_ACCOUNT]: 'All movements in a compound must belong to the same account.',
+  [AppErrorCode.COMPOUND_CROSS_ACCOUNT]:
+    'All movements in a compound must belong to the same account.',
   [AppErrorCode.COMPOUND_CHILD_SPLIT]: 'A split movement cannot be part of a compound.',
-  [AppErrorCode.COMPOUND_CHILD_PERIODIC]: 'A generated periodic movement cannot be part of a compound.',
-  [AppErrorCode.COMPOUND_CHILD_TENTATIVE]: 'A movement awaiting review cannot be part of a compound.',
-  [AppErrorCode.COMPOUND_CHILD_ALREADY_PARENTED]: 'That movement already belongs to another compound.',
+  [AppErrorCode.COMPOUND_CHILD_PERIODIC]:
+    'A generated periodic movement cannot be part of a compound.',
+  [AppErrorCode.COMPOUND_CHILD_TENTATIVE]:
+    'A movement awaiting review cannot be part of a compound.',
+  [AppErrorCode.COMPOUND_CHILD_ALREADY_PARENTED]:
+    'That movement already belongs to another compound.',
   [AppErrorCode.COMPOUND_CHILD_NOT_MEMBER]: 'That movement is not a member of this compound.',
   [AppErrorCode.COMPOUND_CANCELABLE_MULTI_ENVELOPE]:
     'A cancelable compound requires all its movements to share one envelope.',

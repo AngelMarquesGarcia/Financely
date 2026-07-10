@@ -58,7 +58,9 @@ export class SettingsComponent implements OnInit {
           this.useDefaultDate = s.useDefaultDate;
           this.defaultDate = s.defaultDate || new Date().toISOString().substring(0, 10);
           this.colorOrder = s.colorOrder?.length ? [...s.colorOrder] : [...DEFAULT_COLOR_ORDER];
-          this.categoryIcons = s.categoryIcons?.length ? [...s.categoryIcons] : [...DEFAULT_CATEGORY_ICONS];
+          this.categoryIcons = s.categoryIcons?.length
+            ? [...s.categoryIcons]
+            : [...DEFAULT_CATEGORY_ICONS];
         },
         error: (e: Error) => this.notify.error(this.errorText.resolve(e.message)),
       });
@@ -150,7 +152,11 @@ export class SettingsComponent implements OnInit {
               { data: { result, accountName }, maxWidth: 'min(60rem, 96vw)' },
             )
             .afterClosed()
-            .pipe(switchMap((ok) => (ok ? this.electron.commitImport(result.drafts, accountId) : of(null))));
+            .pipe(
+              switchMap((ok) =>
+                ok ? this.electron.commitImport(result.drafts, accountId) : of(null),
+              ),
+            );
         }),
         this.errors.toast(),
         takeUntilDestroyed(this.destroyRef),

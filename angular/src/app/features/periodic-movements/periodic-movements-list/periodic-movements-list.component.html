@@ -7,17 +7,17 @@
       </button>
       <div class="add-wrap">
         <button class="add-btn" type="button" (click)="openCreate()"><fa-icon [icon]="faPlus" /></button>
-      @if (showForm) {
-        <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
-        <div class="popover-backdrop" (click)="closeForm()"></div>
-        <div class="popover popover--wide">
-          <app-periodic-movement-form
-            [editingTemplate]="editingTemplate"
-            (saved)="onSaved()"
-            (cancelled)="closeForm()"
-          />
-        </div>
-      }
+        @if (showForm) {
+          <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+          <div class="popover-backdrop" (click)="closeForm()"></div>
+          <div class="popover popover--wide">
+            <app-periodic-movement-form
+              [editingTemplate]="editingTemplate"
+              (saved)="onSaved()"
+              (cancelled)="closeForm()"
+            />
+          </div>
+        }
       </div>
     </div>
   </div>

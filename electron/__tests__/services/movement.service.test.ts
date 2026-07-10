@@ -74,20 +74,48 @@ describe('MovementService — validation and CRUD', () => {
 
   it('create returns a positive id on success', () => {
     const db = DatabaseService.getInstance().db;
-    const catId = Number((db.prepare('SELECT id FROM categories LIMIT 1').get() as { id: number } | undefined)?.id ?? 1);
-    const envId = Number((db.prepare('SELECT id FROM envelopes LIMIT 1').get() as { id: number } | undefined)?.id ?? 1);
+    const catId = Number(
+      (db.prepare('SELECT id FROM categories LIMIT 1').get() as { id: number } | undefined)?.id ??
+        1,
+    );
+    const envId = Number(
+      (db.prepare('SELECT id FROM envelopes LIMIT 1').get() as { id: number } | undefined)?.id ?? 1,
+    );
 
-    const id = movementService.create('Rent', 'Monthly rent', 50000, false, new Date('2024-01-01'), catId, one(envId, 50000), null);
+    const id = movementService.create(
+      'Rent',
+      'Monthly rent',
+      50000,
+      false,
+      new Date('2024-01-01'),
+      catId,
+      one(envId, 50000),
+      null,
+    );
     expect(Number(id)).toBeGreaterThan(0);
   });
 
   it('persists the anomalous flag on create and on update (user-owned, unlike tentative)', () => {
     const db = DatabaseService.getInstance().db;
-    const catId = Number((db.prepare('SELECT id FROM categories LIMIT 1').get() as { id: number }).id);
-    const envId = Number((db.prepare('SELECT id FROM envelopes LIMIT 1').get() as { id: number }).id);
+    const catId = Number(
+      (db.prepare('SELECT id FROM categories LIMIT 1').get() as { id: number }).id,
+    );
+    const envId = Number(
+      (db.prepare('SELECT id FROM envelopes LIMIT 1').get() as { id: number }).id,
+    );
 
     const id = Number(
-      movementService.create('Laptop', null, 150000, false, new Date('2024-07-01'), catId, one(envId, 150000), null, true),
+      movementService.create(
+        'Laptop',
+        null,
+        150000,
+        false,
+        new Date('2024-07-01'),
+        catId,
+        one(envId, 150000),
+        null,
+        true,
+      ),
     );
     expect(movementService.getById(id)?.isAnomalous).toBe(true);
 
@@ -103,7 +131,24 @@ describe('MovementService — validation and CRUD', () => {
     const row = db.prepare('SELECT * FROM movements LIMIT 1').get() as { id: number } | undefined;
     if (!row) return;
     expect(() =>
-      movementService.update(Movement.from({ id: row.id, accountId: 1, name: '  ', concept: null, quantityCents: 100, isPositive: true, date: new Date(), categoryId: 1, envelopeIdMap: one(1, 100), additionalNotes: null, templateId: null, isTentative: false, isAnomalous: false, parentId: null })),
+      movementService.update(
+        Movement.from({
+          id: row.id,
+          accountId: 1,
+          name: '  ',
+          concept: null,
+          quantityCents: 100,
+          isPositive: true,
+          date: new Date(),
+          categoryId: 1,
+          envelopeIdMap: one(1, 100),
+          additionalNotes: null,
+          templateId: null,
+          isTentative: false,
+          isAnomalous: false,
+          parentId: null,
+        }),
+      ),
     ).toThrow(AppErrorCode.MOVEMENT_NAME_REQUIRED);
   });
 
@@ -111,9 +156,25 @@ describe('MovementService — validation and CRUD', () => {
 
   it('delete returns true for existing movement', () => {
     const db = DatabaseService.getInstance().db;
-    const catId = Number((db.prepare('SELECT id FROM categories LIMIT 1').get() as { id: number } | undefined)?.id ?? 1);
-    const envId = Number((db.prepare('SELECT id FROM envelopes LIMIT 1').get() as { id: number } | undefined)?.id ?? 1);
-    const id = Number(movementService.create('Temp', null, 100, true, new Date('2024-01-01'), catId, one(envId, 100), null));
+    const catId = Number(
+      (db.prepare('SELECT id FROM categories LIMIT 1').get() as { id: number } | undefined)?.id ??
+        1,
+    );
+    const envId = Number(
+      (db.prepare('SELECT id FROM envelopes LIMIT 1').get() as { id: number } | undefined)?.id ?? 1,
+    );
+    const id = Number(
+      movementService.create(
+        'Temp',
+        null,
+        100,
+        true,
+        new Date('2024-01-01'),
+        catId,
+        one(envId, 100),
+        null,
+      ),
+    );
     expect(movementService.delete(id)).toBe(true);
   });
 
@@ -137,12 +198,49 @@ describe('MovementService — validation and CRUD', () => {
 
   it('deleteMany removes all listed ids and returns the count', () => {
     const db = DatabaseService.getInstance().db;
-    const catId = Number((db.prepare('SELECT id FROM categories LIMIT 1').get() as { id: number }).id);
-    const envId = Number((db.prepare('SELECT id FROM envelopes LIMIT 1').get() as { id: number }).id);
+    const catId = Number(
+      (db.prepare('SELECT id FROM categories LIMIT 1').get() as { id: number }).id,
+    );
+    const envId = Number(
+      (db.prepare('SELECT id FROM envelopes LIMIT 1').get() as { id: number }).id,
+    );
     const ids = [
-      Number(movementService.create('Bulk A', null, 100, true, new Date('2024-02-01'), catId, one(envId, 100), null)),
-      Number(movementService.create('Bulk B', null, 200, true, new Date('2024-02-02'), catId, one(envId, 200), null)),
-      Number(movementService.create('Bulk C', null, 300, true, new Date('2024-02-03'), catId, one(envId, 300), null)),
+      Number(
+        movementService.create(
+          'Bulk A',
+          null,
+          100,
+          true,
+          new Date('2024-02-01'),
+          catId,
+          one(envId, 100),
+          null,
+        ),
+      ),
+      Number(
+        movementService.create(
+          'Bulk B',
+          null,
+          200,
+          true,
+          new Date('2024-02-02'),
+          catId,
+          one(envId, 200),
+          null,
+        ),
+      ),
+      Number(
+        movementService.create(
+          'Bulk C',
+          null,
+          300,
+          true,
+          new Date('2024-02-03'),
+          catId,
+          one(envId, 300),
+          null,
+        ),
+      ),
     ];
     const deleted = movementService.deleteMany(ids);
     expect(deleted).toBe(3);
@@ -165,10 +263,32 @@ describe('MovementService — validation and CRUD', () => {
 
   it('suggestNames returns prefix-matching distinct names', () => {
     const db = DatabaseService.getInstance().db;
-    const catId = Number((db.prepare('SELECT id FROM categories LIMIT 1').get() as { id: number }).id);
-    const envId = Number((db.prepare('SELECT id FROM envelopes LIMIT 1').get() as { id: number }).id);
-    movementService.create('Ahorramas', null, 100, false, new Date('2024-03-01'), catId, one(envId, 100), null);
-    movementService.create('Ahorro vivienda', null, 100, false, new Date('2024-03-02'), catId, one(envId, 100), null);
+    const catId = Number(
+      (db.prepare('SELECT id FROM categories LIMIT 1').get() as { id: number }).id,
+    );
+    const envId = Number(
+      (db.prepare('SELECT id FROM envelopes LIMIT 1').get() as { id: number }).id,
+    );
+    movementService.create(
+      'Ahorramas',
+      null,
+      100,
+      false,
+      new Date('2024-03-01'),
+      catId,
+      one(envId, 100),
+      null,
+    );
+    movementService.create(
+      'Ahorro vivienda',
+      null,
+      100,
+      false,
+      new Date('2024-03-02'),
+      catId,
+      one(envId, 100),
+      null,
+    );
     const results = movementService.suggestNames('Ahor');
     expect(results).toEqual(expect.arrayContaining(['Ahorramas', 'Ahorro vivienda']));
   });
@@ -187,8 +307,12 @@ describe('MovementService — split across envelopes (CU3)', () => {
   /** Category + two distinct envelope ids from the seed. */
   function refs() {
     const db = DatabaseService.getInstance().db;
-    const catId = Number((db.prepare('SELECT id FROM categories LIMIT 1').get() as { id: number }).id);
-    const envs = db.prepare('SELECT id FROM envelopes ORDER BY id LIMIT 2').all() as { id: number }[];
+    const catId = Number(
+      (db.prepare('SELECT id FROM categories LIMIT 1').get() as { id: number }).id,
+    );
+    const envs = db.prepare('SELECT id FROM envelopes ORDER BY id LIMIT 2').all() as {
+      id: number;
+    }[];
     return { catId, envId: envs[0].id, envId2: envs[1].id };
   }
 
@@ -199,8 +323,17 @@ describe('MovementService — split across envelopes (CU3)', () => {
       envId2,
       id: Number(
         movementService.create(
-          'Salary', null, 2000, true, new Date('2024-05-01'), catId,
-          new Map([[envId, 1500], [envId2, 500]]), null,
+          'Salary',
+          null,
+          2000,
+          true,
+          new Date('2024-05-01'),
+          catId,
+          new Map([
+            [envId, 1500],
+            [envId2, 500],
+          ]),
+          null,
         ),
       ),
     };
@@ -217,14 +350,38 @@ describe('MovementService — split across envelopes (CU3)', () => {
   it('rejects a split whose shares do not sum to the total', () => {
     const { catId, envId, envId2 } = refs();
     expect(() =>
-      movementService.create('Bad', null, 2000, true, new Date('2024-05-01'), catId, new Map([[envId, 1500], [envId2, 400]]), null),
+      movementService.create(
+        'Bad',
+        null,
+        2000,
+        true,
+        new Date('2024-05-01'),
+        catId,
+        new Map([
+          [envId, 1500],
+          [envId2, 400],
+        ]),
+        null,
+      ),
     ).toThrow(AppErrorCode.MOVEMENT_SPLIT_SUM_MISMATCH);
   });
 
   it('rejects a split with a non-positive share', () => {
     const { catId, envId, envId2 } = refs();
     expect(() =>
-      movementService.create('Bad', null, 2000, true, new Date('2024-05-01'), catId, new Map([[envId, 2000], [envId2, 0]]), null),
+      movementService.create(
+        'Bad',
+        null,
+        2000,
+        true,
+        new Date('2024-05-01'),
+        catId,
+        new Map([
+          [envId, 2000],
+          [envId2, 0],
+        ]),
+        null,
+      ),
     ).toThrow(AppErrorCode.MOVEMENT_SPLIT_AMOUNT_INVALID);
   });
 
@@ -263,15 +420,31 @@ describe('MovementService — tentative instances, confirm and the previous-mont
 
   function refs() {
     const db = DatabaseService.getInstance().db;
-    const catId = Number((db.prepare('SELECT id FROM categories LIMIT 1').get() as { id: number }).id);
-    const envId = Number((db.prepare('SELECT id FROM envelopes LIMIT 1').get() as { id: number }).id);
+    const catId = Number(
+      (db.prepare('SELECT id FROM categories LIMIT 1').get() as { id: number }).id,
+    );
+    const envId = Number(
+      (db.prepare('SELECT id FROM envelopes LIMIT 1').get() as { id: number }).id,
+    );
     return { catId, envId };
   }
 
   it('confirm clears the tentative flag', () => {
     const { catId, envId } = refs();
     const id = Number(
-      movementService.create('Salary', null, 1000, true, new Date('2024-06-10'), catId, one(envId, 1000), null, false, null, true),
+      movementService.create(
+        'Salary',
+        null,
+        1000,
+        true,
+        new Date('2024-06-10'),
+        catId,
+        one(envId, 1000),
+        null,
+        false,
+        null,
+        true,
+      ),
     );
     expect(movementService.getById(id)?.isTentative).toBe(true);
     expect(movementService.confirm(id)).toBe(true);
@@ -281,39 +454,119 @@ describe('MovementService — tentative instances, confirm and the previous-mont
   it('confirm throws MOVEMENT_NOT_TENTATIVE for an already-confirmed movement', () => {
     const { catId, envId } = refs();
     const id = Number(
-      movementService.create('Manual', null, 1000, false, new Date('2024-06-10'), catId, one(envId, 1000), null),
+      movementService.create(
+        'Manual',
+        null,
+        1000,
+        false,
+        new Date('2024-06-10'),
+        catId,
+        one(envId, 1000),
+        null,
+      ),
     );
     expect(() => movementService.confirm(id)).toThrow(AppErrorCode.MOVEMENT_NOT_TENTATIVE);
   });
 
   it('a tentative creation is exempt from the previous-month guard', () => {
     const { catId, envId } = refs();
-    movementService.create('Mar', null, 1000, false, new Date('2024-03-10'), catId, one(envId, 1000), null, false, 1, true);
+    movementService.create(
+      'Mar',
+      null,
+      1000,
+      false,
+      new Date('2024-03-10'),
+      catId,
+      one(envId, 1000),
+      null,
+      false,
+      1,
+      true,
+    );
     // April tentative is allowed even though March is still tentative
     const id = Number(
-      movementService.create('Apr', null, 1000, false, new Date('2024-04-10'), catId, one(envId, 1000), null, false, null, true),
+      movementService.create(
+        'Apr',
+        null,
+        1000,
+        false,
+        new Date('2024-04-10'),
+        catId,
+        one(envId, 1000),
+        null,
+        false,
+        null,
+        true,
+      ),
     );
     expect(id).toBeGreaterThan(0);
   });
 
   it('a confirmed creation is blocked when the previous month has a tentative', () => {
     const { catId, envId } = refs();
-    movementService.create('Mar', null, 1000, false, new Date('2024-03-10'), catId, one(envId, 1000), null, false, 1, true);
+    movementService.create(
+      'Mar',
+      null,
+      1000,
+      false,
+      new Date('2024-03-10'),
+      catId,
+      one(envId, 1000),
+      null,
+      false,
+      1,
+      true,
+    );
     expect(() =>
-      movementService.create('Apr', null, 1000, false, new Date('2024-04-10'), catId, one(envId, 1000), null),
+      movementService.create(
+        'Apr',
+        null,
+        1000,
+        false,
+        new Date('2024-04-10'),
+        catId,
+        one(envId, 1000),
+        null,
+      ),
     ).toThrow(AppErrorCode.MOVEMENT_PREVIOUS_MONTH_TENTATIVE);
   });
 
   it('confirm is blocked out of order, then allowed once the earlier month is clean', () => {
     const { catId, envId } = refs();
     const mar = Number(
-      movementService.create('Mar', null, 1000, false, new Date('2024-03-10'), catId, one(envId, 1000), null, false, null, true),
+      movementService.create(
+        'Mar',
+        null,
+        1000,
+        false,
+        new Date('2024-03-10'),
+        catId,
+        one(envId, 1000),
+        null,
+        false,
+        null,
+        true,
+      ),
     );
     const apr = Number(
-      movementService.create('Apr', null, 1000, false, new Date('2024-04-10'), catId, one(envId, 1000), null, false, null, true),
+      movementService.create(
+        'Apr',
+        null,
+        1000,
+        false,
+        new Date('2024-04-10'),
+        catId,
+        one(envId, 1000),
+        null,
+        false,
+        null,
+        true,
+      ),
     );
     // April cannot be confirmed while March is still tentative
-    expect(() => movementService.confirm(apr)).toThrow(AppErrorCode.MOVEMENT_PREVIOUS_MONTH_TENTATIVE);
+    expect(() => movementService.confirm(apr)).toThrow(
+      AppErrorCode.MOVEMENT_PREVIOUS_MONTH_TENTATIVE,
+    );
     // confirm March first (its previous month is clean), then April succeeds
     expect(movementService.confirm(mar)).toBe(true);
     expect(movementService.confirm(apr)).toBe(true);

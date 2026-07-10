@@ -8,8 +8,10 @@ const storeData: Record<string, unknown> = {};
 
 jest.mock('electron-store', () => {
   return jest.fn().mockImplementation(({ defaults }: { defaults: Record<string, unknown> }) => ({
-    get: (key: string) => key in storeData ? storeData[key] : defaults[key],
-    set: (key: string, value: unknown) => { storeData[key] = value; },
+    get: (key: string) => (key in storeData ? storeData[key] : defaults[key]),
+    set: (key: string, value: unknown) => {
+      storeData[key] = value;
+    },
   }));
 });
 

@@ -2,7 +2,12 @@ import { Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { forkJoin, switchMap, of } from 'rxjs';
-import { faArrowDown, faArrowUp, faBoxArchive, faScaleBalanced } from '@fortawesome/free-solid-svg-icons';
+import {
+  faArrowDown,
+  faArrowUp,
+  faBoxArchive,
+  faScaleBalanced,
+} from '@fortawesome/free-solid-svg-icons';
 import { ConfirmService } from '../../core/services/confirm.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { ElectronService } from '../../core/services/electron.service';

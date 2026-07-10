@@ -45,7 +45,9 @@
       <label class="form__label" for="tr-amount">Amount</label>
       <app-amount-input
         inputId="tr-amount"
-        [inputClass]="showErrors && !(amountCents && amountCents > 0) ? 'form__input form__input--error' : 'form__input'"
+        [inputClass]="
+          showErrors && !(amountCents && amountCents > 0) ? 'form__input form__input--error' : 'form__input'
+        "
         [amountCents]="amountCents"
         (amountCentsChange)="amountCents = $event"
       />
@@ -61,12 +63,7 @@
 
     <div class="form__group form__group--full">
       <label class="form__label" for="tr-notes">Notes</label>
-      <input
-        id="tr-notes"
-        class="form__input"
-        [(ngModel)]="notes"
-        placeholder="Optional notes…"
-      />
+      <input id="tr-notes" class="form__input" [(ngModel)]="notes" placeholder="Optional notes…" />
     </div>
 
     <div class="form__actions form__group--full">

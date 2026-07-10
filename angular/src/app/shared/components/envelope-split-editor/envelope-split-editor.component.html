@@ -1,11 +1,7 @@
 <div class="split">
   @for (row of rows; track row.key) {
     <div class="split__row">
-      <select
-        class="form__input split__envelope"
-        [(ngModel)]="row.envelopeId"
-        (ngModelChange)="onChange()"
-      >
+      <select class="form__input split__envelope" [(ngModel)]="row.envelopeId" (ngModelChange)="onChange()">
         <option [ngValue]="null" disabled>Select envelope…</option>
         @for (e of envelopes; track e.id) {
           <option [ngValue]="e.id">{{ e.name }}</option>

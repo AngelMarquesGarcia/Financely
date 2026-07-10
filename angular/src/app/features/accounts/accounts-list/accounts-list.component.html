@@ -20,7 +20,9 @@
               <td>{{ a.id }}</td>
               <td>
                 {{ a.name }}
-                @if (a.isDefault) { <span class="default-badge">default</span> }
+                @if (a.isDefault) {
+                  <span class="default-badge">default</span>
+                }
               </td>
               <td>{{ a.description ?? '—' }}</td>
               <td>

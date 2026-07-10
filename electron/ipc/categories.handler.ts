@@ -16,7 +16,10 @@ export function registerCategoryHandlers(): void {
     ),
   );
 
-  ipcMain.handle(Channels.CATEGORY_GET_ALL, ipcHandle(() => categoryService.getAll()));
+  ipcMain.handle(
+    Channels.CATEGORY_GET_ALL,
+    ipcHandle(() => categoryService.getAll()),
+  );
 
   ipcMain.handle(
     Channels.CATEGORY_GET_BY_ID,
@@ -25,7 +28,9 @@ export function registerCategoryHandlers(): void {
 
   ipcMain.handle(
     Channels.CATEGORY_UPDATE,
-    ipcHandle((_event: IpcMainInvokeEvent, category: CategoryT) => categoryService.update(Category.from(category))),
+    ipcHandle((_event: IpcMainInvokeEvent, category: CategoryT) =>
+      categoryService.update(Category.from(category)),
+    ),
   );
 
   ipcMain.handle(

@@ -57,7 +57,13 @@ export class TransferFormComponent {
     if (!this.isValid) return;
     const date = new Date(this.date + 'T00:00:00');
     this.electron
-      .createTransfer(this.fromEnvelopeId!, this.toEnvelopeId!, this.amountCents!, date, this.notes || null)
+      .createTransfer(
+        this.fromEnvelopeId!,
+        this.toEnvelopeId!,
+        this.amountCents!,
+        date,
+        this.notes || null,
+      )
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {

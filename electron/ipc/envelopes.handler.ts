@@ -31,7 +31,10 @@ export function registerEnvelopeHandlers(): void {
     ),
   );
 
-  ipcMain.handle(Channels.ENVELOPE_GET_ALL, ipcHandle(() => envelopeService.getAll()));
+  ipcMain.handle(
+    Channels.ENVELOPE_GET_ALL,
+    ipcHandle(() => envelopeService.getAll()),
+  );
 
   ipcMain.handle(
     Channels.ENVELOPE_GET_BY_ID,
@@ -40,7 +43,9 @@ export function registerEnvelopeHandlers(): void {
 
   ipcMain.handle(
     Channels.ENVELOPE_UPDATE,
-    ipcHandle((_event: IpcMainInvokeEvent, envelope: EnvelopeT) => envelopeService.update(Envelope.from(envelope))),
+    ipcHandle((_event: IpcMainInvokeEvent, envelope: EnvelopeT) =>
+      envelopeService.update(Envelope.from(envelope)),
+    ),
   );
 
   ipcMain.handle(

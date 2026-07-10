@@ -8,7 +8,12 @@ import { ImportResultT, MovementDraftT } from '@shared/types';
 export type ImportPreviewData = { result: ImportResultT; accountName: string };
 
 /** Issue codes that caused a row to be dropped from `drafts` (vs. informational fall-backs). */
-const BLOCKING_CODES = new Set(['NAME_MISSING', 'AMOUNT_INVALID', 'DATE_INVALID', 'SPLIT_SUM_MISMATCH']);
+const BLOCKING_CODES = new Set([
+  'NAME_MISSING',
+  'AMOUNT_INVALID',
+  'DATE_INVALID',
+  'SPLIT_SUM_MISMATCH',
+]);
 
 const ISSUE_LABELS: Record<string, string> = {
   TAG_WILL_CREATE: 'new tag(s) will be created',

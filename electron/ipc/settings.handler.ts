@@ -5,7 +5,10 @@ import { settingsService } from '../services/settings.service';
 import { AppSettings } from '@shared/types';
 
 export function registerSettingsHandlers(): void {
-  ipcMain.handle(Channels.SETTINGS_GET, ipcHandle(() => settingsService.getAll()));
+  ipcMain.handle(
+    Channels.SETTINGS_GET,
+    ipcHandle(() => settingsService.getAll()),
+  );
 
   ipcMain.handle(
     Channels.SETTINGS_SET,

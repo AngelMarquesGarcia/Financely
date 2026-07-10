@@ -1,8 +1,4 @@
 <div class="transfers-page">
   <app-transfer-form [envelopes]="envelopes" (created)="onCreated()" />
-  <app-transfers-list
-    [transfers]="transfers"
-    [envelopes]="envelopes"
-    (deleteRequested)="onDeleteRequested($event)"
-  />
+  <app-transfers-list [transfers]="transfers" [envelopes]="envelopes" (deleteRequested)="onDeleteRequested($event)" />
 </div>

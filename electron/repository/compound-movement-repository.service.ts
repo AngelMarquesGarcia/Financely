@@ -116,7 +116,9 @@ export class CompoundMovementRepository {
   /** Deletes the compound row. Any surviving children are un-parented by the `parent_id` FK
    *  (`ON DELETE SET NULL`); the service decides whether children are deleted first. */
   delete(id: number): boolean {
-    return this.db.prepare(`DELETE FROM ${tables.compoundMovements} WHERE id = ?`).run(id).changes > 0;
+    return (
+      this.db.prepare(`DELETE FROM ${tables.compoundMovements} WHERE id = ?`).run(id).changes > 0
+    );
   }
 }
 

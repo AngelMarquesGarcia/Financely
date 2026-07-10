@@ -3,11 +3,9 @@ import { Component, Input } from '@angular/core';
 @Component({
   selector: 'app-button',
   template: `
-    <button
-      [type]="type"
-      [disabled]="disabled"
-      [class]="'btn btn--' + variant"
-    ><ng-content /></button>
+    <button [type]="type" [disabled]="disabled" [class]="'btn btn--' + variant">
+      <ng-content />
+    </button>
   `,
 })
 export class ButtonComponent {

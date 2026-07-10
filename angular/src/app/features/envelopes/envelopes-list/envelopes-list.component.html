@@ -22,7 +22,9 @@
               <td>{{ e.id }}</td>
               <td>
                 {{ e.name }}
-                @if (e.isDefault) { <span class="default-badge">default</span> }
+                @if (e.isDefault) {
+                  <span class="default-badge">default</span>
+                }
               </td>
               <td class="account-cell">{{ accountName(e.accountId) }}</td>
               <td class="amount">{{ balanceCents(e) | money }}</td>

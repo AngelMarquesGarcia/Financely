@@ -46,6 +46,10 @@
     color: var(--c-text-muted);
   }
 
-  &--positive .stat-card__value { color: var(--c-income-text); }
-  &--negative .stat-card__value { color: var(--c-expense-text); }
+  &--positive .stat-card__value {
+    color: var(--c-income-text);
+  }
+  &--negative .stat-card__value {
+    color: var(--c-expense-text);
+  }
 }

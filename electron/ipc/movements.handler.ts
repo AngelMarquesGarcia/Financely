@@ -26,7 +26,9 @@ export function registerMovementHandlers(): void {
 
   ipcMain.handle(
     Channels.MOVEMENT_GET_ALL,
-    ipcHandle((_event: IpcMainInvokeEvent, filter?: MovementFilter) => movementService.getAll(filter)),
+    ipcHandle((_event: IpcMainInvokeEvent, filter?: MovementFilter) =>
+      movementService.getAll(filter),
+    ),
   );
 
   ipcMain.handle(

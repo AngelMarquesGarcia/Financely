@@ -43,12 +43,16 @@ describe('TagService', () => {
 
   it('update throws TAG_TYPE_REQUIRED for blank type', () => {
     const id = Number(tagService.create('income', 'Salary', '#00ff00'));
-    expect(() => tagService.update({ id, type: '  ', name: 'Salary', color: '#00ff00' })).toThrow(AppErrorCode.TAG_TYPE_REQUIRED);
+    expect(() => tagService.update({ id, type: '  ', name: 'Salary', color: '#00ff00' })).toThrow(
+      AppErrorCode.TAG_TYPE_REQUIRED,
+    );
   });
 
   it('update throws TAG_NAME_REQUIRED for blank name', () => {
     const id = Number(tagService.create('income', 'Salary2', '#00ff00'));
-    expect(() => tagService.update({ id, type: 'income', name: '', color: '#00ff00' })).toThrow(AppErrorCode.TAG_NAME_REQUIRED);
+    expect(() => tagService.update({ id, type: 'income', name: '', color: '#00ff00' })).toThrow(
+      AppErrorCode.TAG_NAME_REQUIRED,
+    );
   });
 
   it('delete returns true for existing tag', () => {
@@ -59,7 +63,9 @@ describe('TagService', () => {
 
   it('addToMovement is idempotent (INSERT OR IGNORE)', () => {
     const db = DatabaseService.getInstance().db;
-    const movId = (db.prepare('SELECT id FROM movements LIMIT 1').get() as { id: number } | undefined)?.id;
+    const movId = (
+      db.prepare('SELECT id FROM movements LIMIT 1').get() as { id: number } | undefined
+    )?.id;
     if (!movId) return;
 
     const tagId = Number(tagService.create('label', 'Idempotent', '#111111'));
@@ -72,7 +78,9 @@ describe('TagService', () => {
 
   it('removeFromMovement removes the junction row', () => {
     const db = DatabaseService.getInstance().db;
-    const movId = (db.prepare('SELECT id FROM movements LIMIT 1').get() as { id: number } | undefined)?.id;
+    const movId = (
+      db.prepare('SELECT id FROM movements LIMIT 1').get() as { id: number } | undefined
+    )?.id;
     if (!movId) return;
 
     const tagId = Number(tagService.create('label', 'ToRemove', '#222222'));
@@ -85,7 +93,9 @@ describe('TagService', () => {
 
   it('getForMovement returns only tags for the given movement', () => {
     const db = DatabaseService.getInstance().db;
-    const movId = (db.prepare('SELECT id FROM movements LIMIT 1').get() as { id: number } | undefined)?.id;
+    const movId = (
+      db.prepare('SELECT id FROM movements LIMIT 1').get() as { id: number } | undefined
+    )?.id;
     if (!movId) return;
 
     const tagId = Number(tagService.create('label', 'Tagged', '#333333'));

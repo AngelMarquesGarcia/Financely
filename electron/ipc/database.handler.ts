@@ -22,7 +22,9 @@ export function registerDatabaseHandlers(): void {
         defaultPath: 'financely-backup.db',
         filters: DB_FILTERS,
       };
-      const savePath = win ? dialog.showSaveDialogSync(win, options) : dialog.showSaveDialogSync(options);
+      const savePath = win
+        ? dialog.showSaveDialogSync(win, options)
+        : dialog.showSaveDialogSync(options);
       if (!savePath) return null;
       try {
         await DatabaseService.getInstance().backup(savePath);
@@ -42,7 +44,9 @@ export function registerDatabaseHandlers(): void {
         filters: DB_FILTERS,
         properties: ['openFile'],
       };
-      const result = win ? dialog.showOpenDialogSync(win, options) : dialog.showOpenDialogSync(options);
+      const result = win
+        ? dialog.showOpenDialogSync(win, options)
+        : dialog.showOpenDialogSync(options);
       const filePath = result?.[0];
       if (!filePath) return false;
       // Throws RESTORE_INVALID_FILE (an AppError) when the file isn't one of our databases.

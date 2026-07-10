@@ -92,7 +92,8 @@ export class TransferService {
 
     const envelope = envelopeService.getById(envelopeId);
     if (envelope == undefined) return;
-    const target = envelope.overflowsTo ?? envelopeRepository.getDefaultForAccount(period.accountId);
+    const target =
+      envelope.overflowsTo ?? envelopeRepository.getDefaultForAccount(period.accountId);
     if (target == null || target === envelopeId) return; // nowhere to send / would self-loop
 
     this.create(envelopeId, target, excess, new Date(period.year, period.month, 1), true);

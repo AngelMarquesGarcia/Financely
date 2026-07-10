@@ -30,13 +30,17 @@ describe('FormFieldComponent', () => {
     const fixture = TestBed.createComponent(Host);
     fixture.componentInstance.error = 'Required.';
     fixture.detectChanges();
-    expect((fixture.nativeElement as HTMLElement).querySelector('.form__error')?.textContent).toContain('Required.');
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('.form__error')?.textContent,
+    ).toContain('Required.');
   });
 
   it('marks optional with "(optional)" suffix', () => {
     const fixture = TestBed.createComponent(Host);
     fixture.componentInstance.optional = true;
     fixture.detectChanges();
-    expect((fixture.nativeElement as HTMLElement).querySelector('.form__label-optional')?.textContent).toContain('optional');
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('.form__label-optional')?.textContent,
+    ).toContain('optional');
   });
 });

@@ -75,12 +75,7 @@
               <option [ngValue]="a.id">{{ a.name }}</option>
             }
           </select>
-          <button
-            type="button"
-            class="btn"
-            [disabled]="selectedAccountId === null"
-            (click)="onImport()"
-          >
+          <button type="button" class="btn" [disabled]="selectedAccountId === null" (click)="onImport()">
             Import from CSV…
           </button>
         </div>

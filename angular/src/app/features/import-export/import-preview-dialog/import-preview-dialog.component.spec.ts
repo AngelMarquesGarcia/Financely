@@ -1,9 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
-import {
-  ImportPreviewDialogComponent,
-  ImportPreviewData,
-} from './import-preview-dialog.component';
+import { ImportPreviewDialogComponent, ImportPreviewData } from './import-preview-dialog.component';
 import { DIALOG_DATA } from '../../../core/services/dialog.tokens';
 import { DialogRef } from '../../../core/services/dialog-ref';
 import { ImportResultT, MovementDraftT } from '@shared/types';

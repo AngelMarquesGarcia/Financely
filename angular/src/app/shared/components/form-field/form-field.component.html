@@ -1,6 +1,9 @@
 <div class="form__group" [class.form__group--full]="full">
   <label class="form__label" [attr.for]="forId">
-    {{ label }}@if (optional) { <span class="form__label-optional"> (optional)</span> }
+    {{ label }}
+    @if (optional) {
+      <span class="form__label-optional"> (optional)</span>
+    }
   </label>
   <ng-content />
   @if (error) {

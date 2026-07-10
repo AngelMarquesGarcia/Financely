@@ -137,13 +137,9 @@ export class PeriodSummaryRepository {
          ORDER BY year DESC, month DESC
          LIMIT 1`,
       )
-      .get(
-        period.accountId,
-        period.envelopeId,
-        period.year,
-        period.year,
-        period.month,
-      ) as RawRow | undefined;
+      .get(period.accountId, period.envelopeId, period.year, period.year, period.month) as
+      | RawRow
+      | undefined;
     return row ? toSummary(row) : undefined;
   }
 
@@ -170,9 +166,7 @@ export class PeriodSummaryRepository {
 
   /** Removes every summary for an envelope — used when the envelope itself is deleted. */
   deleteAllForEnvelope(envelopeId: number): void {
-    this.db
-      .prepare(`DELETE FROM ${tables.periodSummaries} WHERE envelope_id = ?`)
-      .run(envelopeId);
+    this.db.prepare(`DELETE FROM ${tables.periodSummaries} WHERE envelope_id = ?`).run(envelopeId);
   }
 
   update(s: PeriodSummaryT): boolean {
@@ -360,16 +354,31 @@ function toSummary(r: RawRow): PeriodSummaryT {
     tentative: r.tentative === 1,
     // Each mirror's seven columns are written together, so a null count means "no mirror stored".
     summaryWithoutAnomalies: toBasic(
-      r.woMovementCount, r.woCashFlowCents, r.woTotalIncomeCents, r.woTotalExpenseCents,
-      r.woAvgExpenseCents, r.woAvgIncomeCents, r.woAvgMovementAmountCents,
+      r.woMovementCount,
+      r.woCashFlowCents,
+      r.woTotalIncomeCents,
+      r.woTotalExpenseCents,
+      r.woAvgExpenseCents,
+      r.woAvgIncomeCents,
+      r.woAvgMovementAmountCents,
     ),
     summaryCompoundAdjusted: toBasic(
-      r.caMovementCount, r.caCashFlowCents, r.caTotalIncomeCents, r.caTotalExpenseCents,
-      r.caAvgExpenseCents, r.caAvgIncomeCents, r.caAvgMovementAmountCents,
+      r.caMovementCount,
+      r.caCashFlowCents,
+      r.caTotalIncomeCents,
+      r.caTotalExpenseCents,
+      r.caAvgExpenseCents,
+      r.caAvgIncomeCents,
+      r.caAvgMovementAmountCents,
     ),
     summaryCompoundAdjustedWithoutAnomalies: toBasic(
-      r.cawoMovementCount, r.cawoCashFlowCents, r.cawoTotalIncomeCents, r.cawoTotalExpenseCents,
-      r.cawoAvgExpenseCents, r.cawoAvgIncomeCents, r.cawoAvgMovementAmountCents,
+      r.cawoMovementCount,
+      r.cawoCashFlowCents,
+      r.cawoTotalIncomeCents,
+      r.cawoTotalExpenseCents,
+      r.cawoAvgExpenseCents,
+      r.cawoAvgIncomeCents,
+      r.cawoAvgMovementAmountCents,
     ),
   };
 }
@@ -415,7 +424,8 @@ function toRow(s: PeriodSummaryT): Record<string, unknown> {
     cawoTotalExpenseCents: s.summaryCompoundAdjustedWithoutAnomalies?.totalExpenseCents ?? null,
     cawoAvgExpenseCents: s.summaryCompoundAdjustedWithoutAnomalies?.avgExpenseCents ?? null,
     cawoAvgIncomeCents: s.summaryCompoundAdjustedWithoutAnomalies?.avgIncomeCents ?? null,
-    cawoAvgMovementAmountCents: s.summaryCompoundAdjustedWithoutAnomalies?.avgMovementAmountCents ?? null,
+    cawoAvgMovementAmountCents:
+      s.summaryCompoundAdjustedWithoutAnomalies?.avgMovementAmountCents ?? null,
     cawoMovementCount: s.summaryCompoundAdjustedWithoutAnomalies?.movementCount ?? null,
   };
 }

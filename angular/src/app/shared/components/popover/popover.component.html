@@ -1,11 +1,6 @@
 <ng-content select="[popoverTrigger]" />
 @if (open) {
-  <button
-    class="popover-backdrop"
-    type="button"
-    (click)="backdropClick.emit()"
-    aria-label="Close"
-  ></button>
+  <button class="popover-backdrop" type="button" (click)="backdropClick.emit()" aria-label="Close"></button>
   <div
     class="popover-panel"
     [class.popover-panel--right]="align === 'right'"

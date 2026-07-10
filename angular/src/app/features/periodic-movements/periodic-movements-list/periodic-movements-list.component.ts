@@ -168,7 +168,11 @@ export class PeriodicMovementsListComponent {
     const date = new Date(this.instanceDate + 'T00:00:00');
     const op =
       this.instanceMode === 'current'
-        ? this.electron.instantiatePeriodicMovementCurrentMonth(t.id, date, this.instanceAmountCents)
+        ? this.electron.instantiatePeriodicMovementCurrentMonth(
+            t.id,
+            date,
+            this.instanceAmountCents,
+          )
         : this.electron.createAdditionalPeriodicInstance(t.id, date, this.instanceAmountCents);
     op.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {

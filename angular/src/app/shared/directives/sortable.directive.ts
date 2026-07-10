@@ -1,4 +1,12 @@
-import { Directive, ElementRef, input, output, AfterViewInit, OnDestroy, inject } from '@angular/core';
+import {
+  Directive,
+  ElementRef,
+  input,
+  output,
+  AfterViewInit,
+  OnDestroy,
+  inject,
+} from '@angular/core';
 import Sortable, { SortableOptions } from 'sortablejs';
 
 export interface SortEvent {

@@ -50,9 +50,8 @@ export class AccountRepository {
 
   deleteAccount(id: number): boolean {
     return (
-      this.db
-        .prepare(`DELETE FROM ${tables.accounts} WHERE id = ? AND is_default = 0`)
-        .run(id).changes === 1
+      this.db.prepare(`DELETE FROM ${tables.accounts} WHERE id = ? AND is_default = 0`).run(id)
+        .changes === 1
     );
   }
 
@@ -83,7 +82,9 @@ export class AccountRepository {
          FROM ${tables.movements}`,
       )
       .get() as { income: number; expense: number; incomeWo: number; expenseWo: number };
-    const e = this.db.prepare(`SELECT COUNT(*) AS n FROM ${tables.envelopes}`).get() as { n: number };
+    const e = this.db.prepare(`SELECT COUNT(*) AS n FROM ${tables.envelopes}`).get() as {
+      n: number;
+    };
     return {
       totalIncomeCents: m.income,
       totalExpenseCents: m.expense,
@@ -95,9 +96,21 @@ export class AccountRepository {
   }
 }
 
-type RawAccount = { id: number; name: string; description: string | null; isDefault: number; startingBalance: number };
+type RawAccount = {
+  id: number;
+  name: string;
+  description: string | null;
+  isDefault: number;
+  startingBalance: number;
+};
 function toAccount(r: RawAccount): AccountT {
-  return { id: r.id, name: r.name, description: r.description ?? undefined, isDefault: r.isDefault === 1, startingBalance: r.startingBalance };
+  return {
+    id: r.id,
+    name: r.name,
+    description: r.description ?? undefined,
+    isDefault: r.isDefault === 1,
+    startingBalance: r.startingBalance,
+  };
 }
 
 export const accountRepository = new AccountRepository();

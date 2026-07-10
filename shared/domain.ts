@@ -283,12 +283,22 @@ export class Transfer implements TransferT {
 
   /** The source envelope's period (money leaves here). */
   fromPeriod(): Period {
-    return new Period(this.accountId, this.fromEnvelopeId, this.date.getFullYear(), this.date.getMonth());
+    return new Period(
+      this.accountId,
+      this.fromEnvelopeId,
+      this.date.getFullYear(),
+      this.date.getMonth(),
+    );
   }
 
   /** The destination envelope's period (money arrives here). */
   toPeriod(): Period {
-    return new Period(this.accountId, this.toEnvelopeId, this.date.getFullYear(), this.date.getMonth());
+    return new Period(
+      this.accountId,
+      this.toEnvelopeId,
+      this.date.getFullYear(),
+      this.date.getMonth(),
+    );
   }
 
   static from(d: TransferT): Transfer {

@@ -95,11 +95,17 @@ export class DatabaseService {
       .prepare(`CREATE TABLE IF NOT EXISTS ${tables.movementEnvelopes} (${MovementEnvelopeSchema})`)
       .run();
     this.db.prepare(`CREATE TABLE IF NOT EXISTS ${tables.transfers} (${TransferSchema})`).run();
-    this.db.prepare(`CREATE TABLE IF NOT EXISTS ${tables.movementTags} (${MovementTagSchema})`).run();
     this.db
-      .prepare(`CREATE TABLE IF NOT EXISTS ${tables.periodicMovementTags} (${PeriodicMovementTagSchema})`)
+      .prepare(`CREATE TABLE IF NOT EXISTS ${tables.movementTags} (${MovementTagSchema})`)
       .run();
-    this.db.prepare(`CREATE TABLE IF NOT EXISTS ${tables.periodSummaries} (${PeriodSummarySchema})`).run();
+    this.db
+      .prepare(
+        `CREATE TABLE IF NOT EXISTS ${tables.periodicMovementTags} (${PeriodicMovementTagSchema})`,
+      )
+      .run();
+    this.db
+      .prepare(`CREATE TABLE IF NOT EXISTS ${tables.periodSummaries} (${PeriodSummarySchema})`)
+      .run();
 
     // Per-envelope allocation lookups (listing an envelope's movements joins on envelope_id).
     this.db
@@ -162,7 +168,9 @@ export class DatabaseService {
     // The neutral catch-all/default category: the reassign-on-delete target and the import fallback
     // bucket. Undeletable via the existing default-category guard.
     this.db
-      .prepare(`INSERT OR IGNORE INTO ${tables.categories} (name, is_default) VALUES ('Uncategorized', 1)`)
+      .prepare(
+        `INSERT OR IGNORE INTO ${tables.categories} (name, is_default) VALUES ('Uncategorized', 1)`,
+      )
       .run();
     //#endregion
 
@@ -268,7 +276,8 @@ export class DatabaseService {
       { name: 'Housing', color: '#22c55e', emoji: '🏠' },
       { name: 'Entertainment', color: '#8b5cf6', emoji: '🎬' },
       { name: 'Health', color: '#f97316', emoji: '💊' },
-    ]) insertCat.run(cat);
+    ])
+      insertCat.run(cat);
 
     const insertTag = this.db.prepare(
       `INSERT OR IGNORE INTO ${tables.tags} (type, name, color) VALUES (:type, :name, :color)`,
@@ -278,12 +287,13 @@ export class DatabaseService {
       { type: 'frequency', name: 'One-time', color: '#3b82f6' },
       { type: 'priority', name: 'Urgent', color: '#ef4444' },
       { type: 'priority', name: 'Low', color: '#94a3b8' },
-    ]) insertTag.run(tag);
+    ])
+      insertTag.run(tag);
 
     const defaultAccountId = (
-      this.db
-        .prepare(`SELECT id FROM ${tables.accounts} WHERE is_default = 1 LIMIT 1`)
-        .get() as { id: number }
+      this.db.prepare(`SELECT id FROM ${tables.accounts} WHERE is_default = 1 LIMIT 1`).get() as {
+        id: number;
+      }
     ).id;
 
     const insertEnv = this.db.prepare(
@@ -294,15 +304,15 @@ export class DatabaseService {
 
     const catId = (name: string) =>
       (
-        this.db
-          .prepare(`SELECT id FROM ${tables.categories} WHERE name = ?`)
-          .get(name) as { id: number }
+        this.db.prepare(`SELECT id FROM ${tables.categories} WHERE name = ?`).get(name) as {
+          id: number;
+        }
       ).id;
     const envId = (name: string) =>
       (
-        this.db
-          .prepare(`SELECT id FROM ${tables.envelopes} WHERE name = ?`)
-          .get(name) as { id: number }
+        this.db.prepare(`SELECT id FROM ${tables.envelopes} WHERE name = ?`).get(name) as {
+          id: number;
+        }
       ).id;
     const tagId = (name: string) =>
       (
@@ -339,16 +349,146 @@ export class DatabaseService {
       for (const t of tags) insertMovTag.run(id, t);
     };
 
-    addMov({ accountId: defaultAccountId, name: 'April salary', concept: 'NOMINA ABRIL', quantityCents: 220000, isPositive: 1, date: '2026-04-28', categoryId: catId('Salary'), notes: null }, new Map([[savings, 220000]]), [recurring]);
-    addMov({ accountId: defaultAccountId, name: 'April rent', concept: 'ALQUILER ABR', quantityCents: 80000, isPositive: 0, date: '2026-04-01', categoryId: catId('Housing'), notes: null }, new Map([[monthly, 80000]]), [recurring, urgent]);
-    addMov({ accountId: defaultAccountId, name: 'Grocery run', concept: 'MERCADONA', quantityCents: 6700, isPositive: 0, date: '2026-04-04', categoryId: catId('Food'), notes: null }, new Map([[monthly, 6700]]), [recurring]);
-    addMov({ accountId: defaultAccountId, name: 'Bus monthly pass', concept: null, quantityCents: 4000, isPositive: 0, date: '2026-04-02', categoryId: catId('Transport'), notes: null }, new Map([[monthly, 4000]]), [recurring]);
-    addMov({ accountId: defaultAccountId, name: 'Cinema tickets', concept: 'CINESA', quantityCents: 2200, isPositive: 0, date: '2026-04-12', categoryId: catId('Entertainment'), notes: null }, new Map([[monthly, 2200]]), [oneTime]);
-    addMov({ accountId: defaultAccountId, name: 'Pharmacy', concept: null, quantityCents: 1800, isPositive: 0, date: '2026-04-15', categoryId: catId('Health'), notes: 'Ibuprofen and vitamins' }, new Map([[monthly, 1800]]), [oneTime]);
-    addMov({ accountId: defaultAccountId, name: 'May salary', concept: 'NOMINA MAYO', quantityCents: 220000, isPositive: 1, date: '2026-05-28', categoryId: catId('Salary'), notes: null }, new Map([[savings, 220000]]), [recurring]);
-    addMov({ accountId: defaultAccountId, name: 'May rent', concept: 'ALQUILER MAY', quantityCents: 80000, isPositive: 0, date: '2026-05-01', categoryId: catId('Housing'), notes: null }, new Map([[monthly, 80000]]), [recurring, urgent]);
-    addMov({ accountId: defaultAccountId, name: 'Grocery run', concept: 'MERCADONA', quantityCents: 5400, isPositive: 0, date: '2026-05-06', categoryId: catId('Food'), notes: null }, new Map([[monthly, 5400]]), [recurring]);
-    addMov({ accountId: defaultAccountId, name: 'Freelance payment', concept: null, quantityCents: 35000, isPositive: 1, date: '2026-05-10', categoryId: catId('Salary'), notes: 'Logo design project' }, new Map([[unassigned, 35000]]), [oneTime]);
+    addMov(
+      {
+        accountId: defaultAccountId,
+        name: 'April salary',
+        concept: 'NOMINA ABRIL',
+        quantityCents: 220000,
+        isPositive: 1,
+        date: '2026-04-28',
+        categoryId: catId('Salary'),
+        notes: null,
+      },
+      new Map([[savings, 220000]]),
+      [recurring],
+    );
+    addMov(
+      {
+        accountId: defaultAccountId,
+        name: 'April rent',
+        concept: 'ALQUILER ABR',
+        quantityCents: 80000,
+        isPositive: 0,
+        date: '2026-04-01',
+        categoryId: catId('Housing'),
+        notes: null,
+      },
+      new Map([[monthly, 80000]]),
+      [recurring, urgent],
+    );
+    addMov(
+      {
+        accountId: defaultAccountId,
+        name: 'Grocery run',
+        concept: 'MERCADONA',
+        quantityCents: 6700,
+        isPositive: 0,
+        date: '2026-04-04',
+        categoryId: catId('Food'),
+        notes: null,
+      },
+      new Map([[monthly, 6700]]),
+      [recurring],
+    );
+    addMov(
+      {
+        accountId: defaultAccountId,
+        name: 'Bus monthly pass',
+        concept: null,
+        quantityCents: 4000,
+        isPositive: 0,
+        date: '2026-04-02',
+        categoryId: catId('Transport'),
+        notes: null,
+      },
+      new Map([[monthly, 4000]]),
+      [recurring],
+    );
+    addMov(
+      {
+        accountId: defaultAccountId,
+        name: 'Cinema tickets',
+        concept: 'CINESA',
+        quantityCents: 2200,
+        isPositive: 0,
+        date: '2026-04-12',
+        categoryId: catId('Entertainment'),
+        notes: null,
+      },
+      new Map([[monthly, 2200]]),
+      [oneTime],
+    );
+    addMov(
+      {
+        accountId: defaultAccountId,
+        name: 'Pharmacy',
+        concept: null,
+        quantityCents: 1800,
+        isPositive: 0,
+        date: '2026-04-15',
+        categoryId: catId('Health'),
+        notes: 'Ibuprofen and vitamins',
+      },
+      new Map([[monthly, 1800]]),
+      [oneTime],
+    );
+    addMov(
+      {
+        accountId: defaultAccountId,
+        name: 'May salary',
+        concept: 'NOMINA MAYO',
+        quantityCents: 220000,
+        isPositive: 1,
+        date: '2026-05-28',
+        categoryId: catId('Salary'),
+        notes: null,
+      },
+      new Map([[savings, 220000]]),
+      [recurring],
+    );
+    addMov(
+      {
+        accountId: defaultAccountId,
+        name: 'May rent',
+        concept: 'ALQUILER MAY',
+        quantityCents: 80000,
+        isPositive: 0,
+        date: '2026-05-01',
+        categoryId: catId('Housing'),
+        notes: null,
+      },
+      new Map([[monthly, 80000]]),
+      [recurring, urgent],
+    );
+    addMov(
+      {
+        accountId: defaultAccountId,
+        name: 'Grocery run',
+        concept: 'MERCADONA',
+        quantityCents: 5400,
+        isPositive: 0,
+        date: '2026-05-06',
+        categoryId: catId('Food'),
+        notes: null,
+      },
+      new Map([[monthly, 5400]]),
+      [recurring],
+    );
+    addMov(
+      {
+        accountId: defaultAccountId,
+        name: 'Freelance payment',
+        concept: null,
+        quantityCents: 35000,
+        isPositive: 1,
+        date: '2026-05-10',
+        categoryId: catId('Salary'),
+        notes: 'Logo design project',
+      },
+      new Map([[unassigned, 35000]]),
+      [oneTime],
+    );
 
     // Seed periodic-movement templates. Cursor is left null and the start period is recent, so the
     // first frontend-triggered runDue generates a couple of tentative instances for the current month.
@@ -368,9 +508,16 @@ export class DatabaseService {
     // The flagship split template: salary divided across savings + monthly on each generated instance.
     const salaryTemplateId = Number(
       insertPeriodic.run({
-        accountId: defaultAccountId, name: 'Monthly salary', concept: 'NOMINA', quantityCents: 220000,
-        isPositive: 1, dayOfMonth: 28, categoryId: catId('Salary'), notes: null,
-        startYear: 2026, startMonth: 5,
+        accountId: defaultAccountId,
+        name: 'Monthly salary',
+        concept: 'NOMINA',
+        quantityCents: 220000,
+        isPositive: 1,
+        dayOfMonth: 28,
+        categoryId: catId('Salary'),
+        notes: null,
+        startYear: 2026,
+        startMonth: 5,
       }).lastInsertRowid,
     );
     insertPeriodicEnv.run(salaryTemplateId, savings, 170000);
@@ -378,9 +525,16 @@ export class DatabaseService {
     insertPeriodicTag.run(salaryTemplateId, recurring);
     const karateTemplateId = Number(
       insertPeriodic.run({
-        accountId: defaultAccountId, name: 'Karate fee', concept: null, quantityCents: 4500,
-        isPositive: 0, dayOfMonth: 5, categoryId: catId('Health'), notes: 'Dojo monthly fee',
-        startYear: 2026, startMonth: 5,
+        accountId: defaultAccountId,
+        name: 'Karate fee',
+        concept: null,
+        quantityCents: 4500,
+        isPositive: 0,
+        dayOfMonth: 5,
+        categoryId: catId('Health'),
+        notes: 'Dojo monthly fee',
+        startYear: 2026,
+        startMonth: 5,
       }).lastInsertRowid,
     );
     insertPeriodicEnv.run(karateTemplateId, monthly, 4500);

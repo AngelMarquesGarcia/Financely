@@ -90,7 +90,9 @@ export class CompoundsComponent implements OnInit {
       .afterClosed()
       .pipe(
         switchMap((result) =>
-          result ? this.electron.deleteCompoundMovement(compound.id, result.deleteChildren) : of(null),
+          result
+            ? this.electron.deleteCompoundMovement(compound.id, result.deleteChildren)
+            : of(null),
         ),
         this.errors.toast(),
         takeUntilDestroyed(this.destroyRef),

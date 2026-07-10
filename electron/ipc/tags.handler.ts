@@ -13,7 +13,10 @@ export function registerTagHandlers(): void {
     ),
   );
 
-  ipcMain.handle(Channels.TAG_GET_ALL, ipcHandle(() => tagService.getAll()));
+  ipcMain.handle(
+    Channels.TAG_GET_ALL,
+    ipcHandle(() => tagService.getAll()),
+  );
 
   ipcMain.handle(
     Channels.TAG_GET_BY_ID,
@@ -46,7 +49,9 @@ export function registerTagHandlers(): void {
 
   ipcMain.handle(
     Channels.TAG_GET_FOR_MOVEMENT,
-    ipcHandle((_event: IpcMainInvokeEvent, movementId: number) => tagService.getForMovement(movementId)),
+    ipcHandle((_event: IpcMainInvokeEvent, movementId: number) =>
+      tagService.getForMovement(movementId),
+    ),
   );
 
   ipcMain.handle(

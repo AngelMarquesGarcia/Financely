@@ -17,19 +17,25 @@ class HostWithIconComponent {}
 
 describe('EmptyStateComponent', () => {
   it('renders the message text', () => {
-    const fixture = TestBed.configureTestingModule({ imports: [HostComponent] }).createComponent(HostComponent);
+    const fixture = TestBed.configureTestingModule({ imports: [HostComponent] }).createComponent(
+      HostComponent,
+    );
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Nothing here.');
   });
 
   it('applies the empty class to the paragraph', () => {
-    const fixture = TestBed.configureTestingModule({ imports: [HostComponent] }).createComponent(HostComponent);
+    const fixture = TestBed.configureTestingModule({ imports: [HostComponent] }).createComponent(
+      HostComponent,
+    );
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.empty')).not.toBeNull();
   });
 
   it('renders icon inside .empty__icon when icon is set', () => {
-    const fixture = TestBed.configureTestingModule({ imports: [HostWithIconComponent] }).createComponent(HostWithIconComponent);
+    const fixture = TestBed.configureTestingModule({
+      imports: [HostWithIconComponent],
+    }).createComponent(HostWithIconComponent);
     fixture.detectChanges();
     const span = fixture.nativeElement.querySelector('.empty__icon');
     expect(span).not.toBeNull();
@@ -37,7 +43,9 @@ describe('EmptyStateComponent', () => {
   });
 
   it('renders no .empty__icon span when icon is not set', () => {
-    const fixture = TestBed.configureTestingModule({ imports: [HostComponent] }).createComponent(HostComponent);
+    const fixture = TestBed.configureTestingModule({ imports: [HostComponent] }).createComponent(
+      HostComponent,
+    );
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.empty__icon')).toBeNull();
   });

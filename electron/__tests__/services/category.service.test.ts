@@ -40,7 +40,9 @@ describe('CategoryService — delete & setDefault behavior', () => {
   it('delete refuses when the target is the current default', () => {
     const defaultCat = categoryService.getAll().find((c) => c.isDefault);
     expect(defaultCat).toBeDefined();
-    expect(() => categoryService.delete(defaultCat!.id)).toThrow(AppErrorCode.CATEGORY_DELETE_DEFAULT);
+    expect(() => categoryService.delete(defaultCat!.id)).toThrow(
+      AppErrorCode.CATEGORY_DELETE_DEFAULT,
+    );
   });
 
   it('delete reassigns movements to the default and removes the target', () => {

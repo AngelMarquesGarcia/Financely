@@ -16,7 +16,13 @@ import { AmountInputComponent } from '../../../shared/components/amount-input/am
 
 @Component({
   selector: 'app-movements-filter',
-  imports: [FormsModule, FaIconComponent, TagPickerComponent, PopoverComponent, AmountInputComponent],
+  imports: [
+    FormsModule,
+    FaIconComponent,
+    TagPickerComponent,
+    PopoverComponent,
+    AmountInputComponent,
+  ],
   templateUrl: './movements-filter.component.html',
   styleUrl: './movements-filter.component.scss',
 })

@@ -19,7 +19,8 @@
             class="compact-row__amount"
             [class.amount--income]="m.isPositive"
             [class.amount--expense]="!m.isPositive"
-          >{{ signedCents(m) | money }}</span>
+            >{{ signedCents(m) | money }}</span
+          >
         </button>
       }
     }

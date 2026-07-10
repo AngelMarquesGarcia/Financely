@@ -16,9 +16,7 @@ export class TagRepository {
   }
 
   getTagById(id: number): TagT | undefined {
-    return this.db
-      .prepare(`SELECT * FROM ${tables.tags} WHERE id = ?`)
-      .get(id) as TagT | undefined;
+    return this.db.prepare(`SELECT * FROM ${tables.tags} WHERE id = ?`).get(id) as TagT | undefined;
   }
 
   updateTag(tag: TagT): boolean {
@@ -37,9 +35,7 @@ export class TagRepository {
 
   addTagToMovement(tagId: number, movementId: number): void {
     this.db
-      .prepare(
-        `INSERT OR IGNORE INTO ${tables.movementTags} (movement_id, tag_id) VALUES (?, ?)`,
-      )
+      .prepare(`INSERT OR IGNORE INTO ${tables.movementTags} (movement_id, tag_id) VALUES (?, ?)`)
       .run(movementId, tagId);
   }
 

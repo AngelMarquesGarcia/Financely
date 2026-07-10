@@ -15,7 +15,9 @@ function setup(open: boolean, title?: string) {
     open = open;
     title = title;
     closed = vi.fn();
-    onClose() { this.closed(); }
+    onClose() {
+      this.closed();
+    }
   }
   const fixture = TestBed.configureTestingModule({ imports: [H] }).createComponent(H);
   fixture.detectChanges();
@@ -42,7 +44,9 @@ describe('ModalComponent', () => {
 
   it('projects footer content via [modalFooter] slot', () => {
     const fixture = setup(true);
-    expect(fixture.nativeElement.querySelector('.modal-panel [modalFooter]')?.textContent).toBe('Footer');
+    expect(fixture.nativeElement.querySelector('.modal-panel [modalFooter]')?.textContent).toBe(
+      'Footer',
+    );
   });
 
   it('renders header with title and close button when title is set', () => {

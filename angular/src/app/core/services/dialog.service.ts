@@ -23,7 +23,10 @@ export class DialogService {
   private readonly overlay = inject(Overlay);
   private readonly injector = inject(Injector);
 
-  open<T, D = unknown, R = unknown>(component: Type<T>, config: DialogConfig<D> = {}): DialogRef<R> {
+  open<T, D = unknown, R = unknown>(
+    component: Type<T>,
+    config: DialogConfig<D> = {},
+  ): DialogRef<R> {
     const extraClasses = Array.isArray(config.panelClass)
       ? config.panelClass
       : config.panelClass

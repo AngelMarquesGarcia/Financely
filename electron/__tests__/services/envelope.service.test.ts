@@ -34,7 +34,9 @@ describe('EnvelopeService — delete, setDefault, and account-create side effect
   it('delete refuses when the target is the default envelope', () => {
     const defaultEnv = envelopeService.getAll().find((e) => e.isDefault);
     expect(defaultEnv).toBeDefined();
-    expect(() => envelopeService.delete(defaultEnv!.id)).toThrow(AppErrorCode.ENVELOPE_DELETE_DEFAULT);
+    expect(() => envelopeService.delete(defaultEnv!.id)).toThrow(
+      AppErrorCode.ENVELOPE_DELETE_DEFAULT,
+    );
   });
 
   it('delete reassigns movements to the account default and removes the envelope', () => {
@@ -63,13 +65,24 @@ describe('EnvelopeService — delete, setDefault, and account-create side effect
     const monthly = envs.find((e) => e.name === 'Monthly Expenses')!;
     const unassigned = envs.find((e) => e.name === 'Unassigned' && e.isDefault)!;
     const db = DatabaseService.getInstance().db;
-    const catId = Number((db.prepare('SELECT id FROM categories LIMIT 1').get() as { id: number }).id);
+    const catId = Number(
+      (db.prepare('SELECT id FROM categories LIMIT 1').get() as { id: number }).id,
+    );
 
     // A movement split across the doomed envelope and the account default.
     const movId = Number(
       movementService.create(
-        'Split', null, 3000, false, new Date(2026, 3, 9), catId,
-        new Map([[monthly.id, 2000], [unassigned.id, 1000]]), null,
+        'Split',
+        null,
+        3000,
+        false,
+        new Date(2026, 3, 9),
+        catId,
+        new Map([
+          [monthly.id, 2000],
+          [unassigned.id, 1000],
+        ]),
+        null,
       ),
     );
 

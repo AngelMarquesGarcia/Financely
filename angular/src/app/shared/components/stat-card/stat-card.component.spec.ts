@@ -28,6 +28,8 @@ describe('StatCardComponent', () => {
     fixture.componentRef.setInput('value', 'V');
     fixture.componentRef.setInput('tone', 'positive');
     fixture.detectChanges();
-    expect((fixture.nativeElement as HTMLElement).querySelector('.stat-card--positive')).not.toBeNull();
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('.stat-card--positive'),
+    ).not.toBeNull();
   });
 });

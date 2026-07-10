@@ -1,6 +1,20 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { Channels } from './ipc/channels';
-import { MovementT, CategoryT, MovementFilter, AppSettings, AccountT, EnvelopeT, TagT, PeriodSummaryT, PeriodicMovementT, CompoundMovementT, NewCompoundFields, NewCompoundChild, MovementDraftT } from '../shared/types';
+import {
+  MovementT,
+  CategoryT,
+  MovementFilter,
+  AppSettings,
+  AccountT,
+  EnvelopeT,
+  TagT,
+  PeriodSummaryT,
+  PeriodicMovementT,
+  CompoundMovementT,
+  NewCompoundFields,
+  NewCompoundChild,
+  MovementDraftT,
+} from '../shared/types';
 
 type NewPeriodicTemplate = Omit<
   PeriodicMovementT,
@@ -72,7 +86,12 @@ contextBridge.exposeInMainWorld('periodicMovements', {
     amountCents?: number,
     envelopeIdMap?: Map<number, number>,
   ) =>
-    ipcRenderer.invoke(Channels.PERIODIC_CREATE_ADDITIONAL, { id, date, amountCents, envelopeIdMap }),
+    ipcRenderer.invoke(Channels.PERIODIC_CREATE_ADDITIONAL, {
+      id,
+      date,
+      amountCents,
+      envelopeIdMap,
+    }),
 });
 
 contextBridge.exposeInMainWorld('transfers', {
@@ -127,7 +146,8 @@ contextBridge.exposeInMainWorld('categories', {
 });
 
 contextBridge.exposeInMainWorld('accounts', {
-  create: (name: string, description?: string, startingBalance?: number) => ipcRenderer.invoke(Channels.ACCOUNT_CREATE, { name, description, startingBalance }),
+  create: (name: string, description?: string, startingBalance?: number) =>
+    ipcRenderer.invoke(Channels.ACCOUNT_CREATE, { name, description, startingBalance }),
   getAll: () => ipcRenderer.invoke(Channels.ACCOUNT_GET_ALL),
   getById: (id: number) => ipcRenderer.invoke(Channels.ACCOUNT_GET_BY_ID, id),
   update: (account: AccountT) => ipcRenderer.invoke(Channels.ACCOUNT_UPDATE, account),
@@ -178,15 +198,18 @@ contextBridge.exposeInMainWorld('tags', {
 });
 
 contextBridge.exposeInMainWorld('periodSummaries', {
-  create: (summary: PeriodSummaryT) =>
-    ipcRenderer.invoke(Channels.PERIOD_SUMMARY_CREATE, summary),
-  upsert: (summary: PeriodSummaryT) =>
-    ipcRenderer.invoke(Channels.PERIOD_SUMMARY_UPSERT, summary),
+  create: (summary: PeriodSummaryT) => ipcRenderer.invoke(Channels.PERIOD_SUMMARY_CREATE, summary),
+  upsert: (summary: PeriodSummaryT) => ipcRenderer.invoke(Channels.PERIOD_SUMMARY_UPSERT, summary),
   getAll: () => ipcRenderer.invoke(Channels.PERIOD_SUMMARY_GET_ALL),
   getLatest: (envelopeId: number) =>
     ipcRenderer.invoke(Channels.PERIOD_SUMMARY_GET_LATEST, envelopeId),
   getByPeriod: (accountId: number, envelopeId: number | null, year: number, month: number) =>
-    ipcRenderer.invoke(Channels.PERIOD_SUMMARY_GET_BY_PERIOD, { accountId, envelopeId, year, month }),
+    ipcRenderer.invoke(Channels.PERIOD_SUMMARY_GET_BY_PERIOD, {
+      accountId,
+      envelopeId,
+      year,
+      month,
+    }),
   update: (summary: PeriodSummaryT) => ipcRenderer.invoke(Channels.PERIOD_SUMMARY_UPDATE, summary),
   delete: (accountId: number, envelopeId: number | null, year: number, month: number) =>
     ipcRenderer.invoke(Channels.PERIOD_SUMMARY_DELETE, { accountId, envelopeId, year, month }),

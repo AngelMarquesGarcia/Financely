@@ -36,8 +36,9 @@ export function registerPeriodicMovementHandlers(): void {
 
   ipcMain.handle(
     Channels.PERIODIC_UPDATE,
-    ipcHandle((_event: IpcMainInvokeEvent, arg: { template: PeriodicMovementT; tagIds: number[] }) =>
-      periodicMovementService.update(arg.template, arg.tagIds),
+    ipcHandle(
+      (_event: IpcMainInvokeEvent, arg: { template: PeriodicMovementT; tagIds: number[] }) =>
+        periodicMovementService.update(arg.template, arg.tagIds),
     ),
   );
 

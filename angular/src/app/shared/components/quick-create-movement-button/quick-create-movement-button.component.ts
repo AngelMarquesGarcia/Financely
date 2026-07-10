@@ -28,10 +28,16 @@ import { MovementFormComponent } from '../../../features/movements/movement-form
       }
     </button>
   `,
-  styles: [`
-    :host { display: inline-block; }
-    .qcm-label { margin-left: 0.375rem; }
-  `],
+  styles: [
+    `
+      :host {
+        display: inline-block;
+      }
+      .qcm-label {
+        margin-left: 0.375rem;
+      }
+    `,
+  ],
 })
 export class QuickCreateMovementButtonComponent {
   private dialog = inject(DialogService);

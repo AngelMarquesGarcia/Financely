@@ -21,9 +21,13 @@
               <td>
                 <div class="cat-name">
                   <span class="color-dot" [style.background]="c.color ?? '#64748b'"></span>
-                  @if (c.emoji) { <span>{{ c.emoji }}</span> }
+                  @if (c.emoji) {
+                    <span>{{ c.emoji }}</span>
+                  }
                   {{ c.name }}
-                  @if (c.isDefault) { <span class="default-badge">default</span> }
+                  @if (c.isDefault) {
+                    <span class="default-badge">default</span>
+                  }
                 </div>
               </td>
               <td>{{ c.movementCount ?? 0 }}</td>

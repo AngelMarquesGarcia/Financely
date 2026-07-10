@@ -4,11 +4,7 @@
   </h2>
 
   <div class="form">
-    <app-form-field
-      label="Name"
-      forId="name"
-      [error]="showErrors && !name.trim() ? 'Name is required.' : null"
-    >
+    <app-form-field label="Name" forId="name" [error]="showErrors && !name.trim() ? 'Name is required.' : null">
       <input
         id="name"
         class="form__input"

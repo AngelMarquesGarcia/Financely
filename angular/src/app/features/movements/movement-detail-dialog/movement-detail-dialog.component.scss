@@ -99,8 +99,12 @@
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 
-  &--income { color: #16a34a; }
-  &--expense { color: #dc2626; }
+  &--income {
+    color: #16a34a;
+  }
+  &--expense {
+    color: #dc2626;
+  }
 }
 
 .badge {

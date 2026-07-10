@@ -9,13 +9,24 @@ import { ErrorReporter } from '../../core/services/error-reporter.service';
 import { DataRefreshService } from '../../core/services/data-refresh.service';
 import { DialogService } from '../../core/services/dialog.service';
 import { FormsModule } from '@angular/forms';
-import { CategoryT, CompoundMovementT, EnvelopeT, FilterSummaryT, MovementT, MovementFilter, TagT } from '@shared/types';
+import {
+  CategoryT,
+  CompoundMovementT,
+  EnvelopeT,
+  FilterSummaryT,
+  MovementT,
+  MovementFilter,
+  TagT,
+} from '@shared/types';
 import { MovementFormComponent } from './movement-form/movement-form.component';
 import { MovementsListComponent } from './movements-list/movements-list.component';
 import { MovementListCompactComponent } from './movement-list-compact/movement-list-compact.component';
 import { ModalComponent } from '../../shared/components/modal/modal.component';
 import { FilterSummaryComponent } from '../../shared/components/filter-summary/filter-summary.component';
-import { CompoundFormComponent, CompoundFormData } from '../compounds/compound-form/compound-form.component';
+import {
+  CompoundFormComponent,
+  CompoundFormData,
+} from '../compounds/compound-form/compound-form.component';
 
 @Component({
   selector: 'app-movements',

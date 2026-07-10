@@ -25,16 +25,32 @@ tr.month-separator:first-child td {
   padding-top: 0.4rem;
 }
 
-tr.row--income td { background: var(--c-income-bg); }
-tr.row--expense td { background: var(--c-expense-bg); }
-tr.row--income:hover td { background: var(--c-income-bg-hover); }
-tr.row--expense:hover td { background: var(--c-expense-bg-hover); }
-tr.row--selected td { box-shadow: inset 3px 0 0 var(--c-primary); }
+tr.row--income td {
+  background: var(--c-income-bg);
+}
+tr.row--expense td {
+  background: var(--c-expense-bg);
+}
+tr.row--income:hover td {
+  background: var(--c-income-bg-hover);
+}
+tr.row--expense:hover td {
+  background: var(--c-expense-bg-hover);
+}
+tr.row--selected td {
+  box-shadow: inset 3px 0 0 var(--c-primary);
+}
 
 /* Tentative (auto-generated, awaiting review) rows are tinted amber. */
-tr.row--tentative td { background: #fef9c3; }
-tr.row--tentative:hover td { background: #fef08a; }
-tr.row--tentative td:first-child { box-shadow: inset 3px 0 0 #f59e0b; }
+tr.row--tentative td {
+  background: #fef9c3;
+}
+tr.row--tentative:hover td {
+  background: #fef08a;
+}
+tr.row--tentative td:first-child {
+  box-shadow: inset 3px 0 0 #f59e0b;
+}
 
 .badge--tentative {
   margin-left: 0.5rem;
@@ -46,7 +62,9 @@ tr.row--tentative td:first-child { box-shadow: inset 3px 0 0 #f59e0b; }
 
 /* Anomalous (excluded from statistics) rows carry a violet left-edge accent — the income/expense
    tint is preserved (unlike tentative), since an anomalous movement is still real money. */
-tr.row--anomalous td:first-child { box-shadow: inset 3px 0 0 #8b5cf6; }
+tr.row--anomalous td:first-child {
+  box-shadow: inset 3px 0 0 #8b5cf6;
+}
 
 .badge--anomalous {
   margin-left: 0.5rem;
@@ -76,8 +94,12 @@ tr.row--anomalous td:first-child { box-shadow: inset 3px 0 0 #8b5cf6; }
   font-variant-numeric: tabular-nums;
 }
 
-tr.row--income .amount { color: var(--c-income-text); }
-tr.row--expense .amount { color: var(--c-expense-text); }
+tr.row--income .amount {
+  color: var(--c-income-text);
+}
+tr.row--expense .amount {
+  color: var(--c-expense-text);
+}
 
 .badge {
   display: inline-block;

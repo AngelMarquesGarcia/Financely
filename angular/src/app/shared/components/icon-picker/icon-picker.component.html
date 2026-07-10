@@ -8,7 +8,9 @@
           [class.icon-slot--selected]="multiSelect ? selected.has(icon) : value === icon"
           (click)="onIconClick(icon)"
           [title]="icon"
-        >{{ icon }}</button>
+        >
+          {{ icon }}
+        </button>
       }
       @if (!icons.length) {
         <span class="icon-grid__empty">No icons yet.</span>
@@ -21,7 +23,9 @@
         class="icon-slot icon-slot--add"
         (click)="addPopoverOpen = !addPopoverOpen; addInput = ''; addError = ''"
         title="Add icon"
-      >＋</button>
+      >
+        ＋
+      </button>
 
       @if (addPopoverOpen) {
         <button type="button" class="add-backdrop" (click)="addPopoverOpen = false" aria-label="Close"></button>
@@ -48,9 +52,7 @@
     <div class="icon-picker__actions">
       <button type="button" class="btn-link" (click)="resetRequested.emit()">Reset to defaults</button>
       @if (selectedCount > 0) {
-        <button type="button" class="btn-delete" (click)="onDeleteSelected()">
-          Delete ({{ selectedCount }})
-        </button>
+        <button type="button" class="btn-delete" (click)="onDeleteSelected()">Delete ({{ selectedCount }})</button>
       }
     </div>
   }

@@ -12,7 +12,12 @@ import { AppSettings, ImportResultT, MovementDraftT } from '@shared/types';
 const ACCOUNTS = [{ id: 1, name: 'Main', isDefault: true, startingBalance: 0 }];
 
 function makeMocks(settings: Partial<AppSettings> = {}, failLoad = false) {
-  const defaults: AppSettings = { useDefaultDate: false, defaultDate: '', colorOrder: [], categoryIcons: [] };
+  const defaults: AppSettings = {
+    useDefaultDate: false,
+    defaultDate: '',
+    colorOrder: [],
+    categoryIcons: [],
+  };
   const merged = { ...defaults, ...settings };
 
   const mockElectron = {
@@ -34,7 +39,15 @@ function makeMocks(settings: Partial<AppSettings> = {}, failLoad = false) {
   const mockConfirm = { confirm: vi.fn(() => of(true)) };
   const mockRouter = { navigateByUrl: vi.fn(() => Promise.resolve(true)) };
 
-  return { mockElectron, mockNotify, mockDialog, mockConfirm, mockRouter, notifyError, notifySuccess };
+  return {
+    mockElectron,
+    mockNotify,
+    mockDialog,
+    mockConfirm,
+    mockRouter,
+    notifyError,
+    notifySuccess,
+  };
 }
 
 function setup(settings: Partial<AppSettings> = {}, failLoad = false) {
@@ -58,9 +71,19 @@ function setup(settings: Partial<AppSettings> = {}, failLoad = false) {
 
 function makeDraft(): MovementDraftT {
   return {
-    name: 'X', concept: 'X', quantityCents: 100, isPositive: false, date: new Date('2026-06-01'),
-    categoryName: 'Food', categoryId: 1, envelopes: [{ name: 'E', id: 1, amountCents: 100 }],
-    tags: [], additionalNotes: null, isAnomalous: false, templateName: null, groupName: null,
+    name: 'X',
+    concept: 'X',
+    quantityCents: 100,
+    isPositive: false,
+    date: new Date('2026-06-01'),
+    categoryName: 'Food',
+    categoryId: 1,
+    envelopes: [{ name: 'E', id: 1, amountCents: 100 }],
+    tags: [],
+    additionalNotes: null,
+    isAnomalous: false,
+    templateName: null,
+    groupName: null,
   };
 }
 
@@ -145,7 +168,9 @@ describe('SettingsComponent', () => {
 
     it('does not commit when the preview dialog is cancelled', () => {
       const { fixture, mockElectron, mockDialog } = setup();
-      mockElectron.previewImport.mockReturnValue(of<ImportResultT>({ drafts: [makeDraft()], issues: [] }));
+      mockElectron.previewImport.mockReturnValue(
+        of<ImportResultT>({ drafts: [makeDraft()], issues: [] }),
+      );
       mockDialog.open.mockReturnValue({ afterClosed: () => of(false) });
       fixture.componentInstance.onImport();
       expect(mockElectron.commitImport).not.toHaveBeenCalled();

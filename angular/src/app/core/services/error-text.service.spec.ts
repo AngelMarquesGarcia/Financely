@@ -19,7 +19,9 @@ describe('ErrorTextService', () => {
   it('recovers the code from an Electron-wrapped IPC rejection message', () => {
     const wrapped =
       "Error invoking remote method 'movement:create': Error: MOVEMENT_PREVIOUS_MONTH_TENTATIVE";
-    expect(service.resolve(wrapped)).toBe(service.resolve(AppErrorCode.MOVEMENT_PREVIOUS_MONTH_TENTATIVE));
+    expect(service.resolve(wrapped)).toBe(
+      service.resolve(AppErrorCode.MOVEMENT_PREVIOUS_MONTH_TENTATIVE),
+    );
     expect(service.resolve(wrapped)).not.toBe('Something went wrong.');
   });
 });

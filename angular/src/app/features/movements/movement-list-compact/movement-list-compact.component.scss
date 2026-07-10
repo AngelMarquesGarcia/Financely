@@ -45,8 +45,12 @@
     background: #f8fafc;
   }
 
-  &--income:hover { background: #f0fdf4; }
-  &--expense:hover { background: #fef2f2; }
+  &--income:hover {
+    background: #f0fdf4;
+  }
+  &--expense:hover {
+    background: #fef2f2;
+  }
 
   &__name {
     font-size: 0.875rem;
@@ -66,6 +70,10 @@
 }
 
 .amount {
-  &--income { color: #16a34a; }
-  &--expense { color: #dc2626; }
+  &--income {
+    color: #16a34a;
+  }
+  &--expense {
+    color: #dc2626;
+  }
 }

@@ -1,4 +1,10 @@
-import { BasicSummary, FilterSummaryEntry, FilterSummaryT, MovementFilter, MovementT } from '@shared/types';
+import {
+  BasicSummary,
+  FilterSummaryEntry,
+  FilterSummaryT,
+  MovementFilter,
+  MovementT,
+} from '@shared/types';
 import { movementRepository } from '../repository/movement-repository.service';
 import { computeBasicSummary } from './basic-summary';
 

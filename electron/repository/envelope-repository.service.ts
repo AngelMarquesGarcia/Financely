@@ -80,7 +80,9 @@ export class EnvelopeRepository {
     const accountId = env.accountId;
     const tx = this.db.transaction((targetId: number, accId: number) => {
       this.db
-        .prepare(`UPDATE ${tables.envelopes} SET is_default = 0 WHERE account_id = ? AND is_default = 1`)
+        .prepare(
+          `UPDATE ${tables.envelopes} SET is_default = 0 WHERE account_id = ? AND is_default = 1`,
+        )
         .run(accId);
       this.db.prepare(`UPDATE ${tables.envelopes} SET is_default = 1 WHERE id = ?`).run(targetId);
     });
@@ -90,7 +92,12 @@ export class EnvelopeRepository {
   /** Reassigns all movement and periodic-template allocations from one envelope to another. */
   reassignMovements(fromId: number, toId: number): void {
     this.reassignAllocations(tables.movementEnvelopes, 'movement_id', fromId, toId);
-    this.reassignAllocations(tables.periodicMovementEnvelopes, 'periodic_movement_id', fromId, toId);
+    this.reassignAllocations(
+      tables.periodicMovementEnvelopes,
+      'periodic_movement_id',
+      fromId,
+      toId,
+    );
   }
 
   /**
@@ -98,12 +105,7 @@ export class EnvelopeRepository {
    * `toId` row (a split touching both envelopes), the amounts are merged so the total is preserved
    * and the `(owner, envelope)` primary key stays unique.
    */
-  private reassignAllocations(
-    table: string,
-    ownerCol: string,
-    fromId: number,
-    toId: number,
-  ): void {
+  private reassignAllocations(table: string, ownerCol: string, fromId: number, toId: number): void {
     // Owners with both rows: fold the fromId amount into the existing toId row...
     this.db
       .prepare(

@@ -115,9 +115,7 @@ export class EnvelopeFormComponent implements OnChanges {
   }
 
   private syncCategories(envelopeId: number) {
-    const previousIds = this.categories
-      .filter((c) => c.envelopeId === envelopeId)
-      .map((c) => c.id);
+    const previousIds = this.categories.filter((c) => c.envelopeId === envelopeId).map((c) => c.id);
     const toAdd = this.selectedCategoryIds.filter((id) => !previousIds.includes(id));
     const toRemove = previousIds.filter((id) => !this.selectedCategoryIds.includes(id));
     const ops = [
@@ -140,7 +138,16 @@ export class EnvelopeFormComponent implements OnChanges {
     if (this.isEditing) {
       const envelopeId = this.editingEnvelope!.id;
       this.electron
-        .updateEnvelope({ id: envelopeId, name: this.name, accountId: this.accountId, isDefault: this.editingEnvelope!.isDefault, startingBalance: this.startingBalance, budgetCents: this.budgetCents, maxSavingsCents: this.maxSavingsCents, overflowsTo: this.overflowsTo })
+        .updateEnvelope({
+          id: envelopeId,
+          name: this.name,
+          accountId: this.accountId,
+          isDefault: this.editingEnvelope!.isDefault,
+          startingBalance: this.startingBalance,
+          budgetCents: this.budgetCents,
+          maxSavingsCents: this.maxSavingsCents,
+          overflowsTo: this.overflowsTo,
+        })
         .pipe(
           switchMap(() => this.syncCategories(envelopeId)),
           takeUntilDestroyed(this.destroyRef),
@@ -150,7 +157,15 @@ export class EnvelopeFormComponent implements OnChanges {
           error: (e: Error) => this.notify.error(this.errorText.resolve(e.message)),
         });
     } else {
-      this.electron.createEnvelope(this.name, this.accountId, this.startingBalance || undefined, this.budgetCents, this.maxSavingsCents, this.overflowsTo)
+      this.electron
+        .createEnvelope(
+          this.name,
+          this.accountId,
+          this.startingBalance || undefined,
+          this.budgetCents,
+          this.maxSavingsCents,
+          this.overflowsTo,
+        )
         .pipe(
           switchMap((newId) => {
             const envelopeId = Number(newId);

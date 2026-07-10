@@ -1,17 +1,11 @@
-  <div class="movements-page">
+<div class="movements-page">
   <app-modal [open]="editingMovement !== null" (closed)="onCancelled()">
     @if (editingMovement) {
-      <app-movement-form
-        [editingMovement]="editingMovement"
-        (saved)="onSaved()"
-        (cancelled)="onCancelled()"
-      />
+      <app-movement-form [editingMovement]="editingMovement" (saved)="onSaved()" (cancelled)="onCancelled()" />
     }
   </app-modal>
 
-  <app-movement-form
-    (saved)="onSaved()"
-  />
+  <app-movement-form (saved)="onSaved()" />
 
   <div class="card compact-card">
     <div class="card__header">

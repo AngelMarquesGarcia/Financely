@@ -6,9 +6,7 @@
   @if (issueSummary.length) {
     <ul class="ipd__issues">
       @for (issue of issueSummary; track issue.code) {
-        <li class="ipd__issue" [class.ipd__issue--blocking]="issue.blocking">
-          {{ issue.count }} {{ issue.label }}
-        </li>
+        <li class="ipd__issue" [class.ipd__issue--blocking]="issue.blocking">{{ issue.count }} {{ issue.label }}</li>
       }
     </ul>
   }
@@ -50,12 +48,7 @@
 
   <div class="ipd__actions">
     <button class="btn" type="button" (click)="cancel()">Cancel</button>
-    <button
-      class="btn btn--primary"
-      type="button"
-      [disabled]="drafts.length === 0"
-      (click)="create()"
-    >
+    <button class="btn btn--primary" type="button" [disabled]="drafts.length === 0" (click)="create()">
       Create {{ drafts.length }} movement{{ drafts.length === 1 ? '' : 's' }}
     </button>
   </div>

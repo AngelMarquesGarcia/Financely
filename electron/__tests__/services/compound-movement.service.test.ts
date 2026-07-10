@@ -28,7 +28,9 @@ const one = (envelopeId: number, amount: number) => new Map([[envelopeId, amount
 /** Category + three distinct seed envelopes, all on the default account. */
 function refs() {
   const db = DatabaseService.getInstance().db;
-  const catId = Number((db.prepare('SELECT id FROM categories LIMIT 1').get() as { id: number }).id);
+  const catId = Number(
+    (db.prepare('SELECT id FROM categories LIMIT 1').get() as { id: number }).id,
+  );
   const envs = db.prepare('SELECT id FROM envelopes ORDER BY id LIMIT 3').all() as { id: number }[];
   return { catId, env1: envs[0].id, env2: envs[1].id, env3: envs[2].id };
 }
@@ -44,7 +46,17 @@ function mov(
 ): number {
   const { catId } = refs();
   return Number(
-    movementService.create(name, null, amount, isPositive, date, catId, one(envId, amount), null, isAnomalous),
+    movementService.create(
+      name,
+      null,
+      amount,
+      isPositive,
+      date,
+      catId,
+      one(envId, amount),
+      null,
+      isAnomalous,
+    ),
   );
 }
 
@@ -73,14 +85,25 @@ describe('CompoundMovementService — creation & membership rules', () => {
     expect(id).toBeGreaterThan(0);
     expect(movementService.getById(a)?.parentId).toBe(id);
     expect(movementService.getById(b)?.parentId).toBe(id);
-    expect(compoundMovementService.getChildren(id).map((m) => m.id).sort()).toEqual([a, b].sort());
+    expect(
+      compoundMovementService
+        .getChildren(id)
+        .map((m) => m.id)
+        .sort(),
+    ).toEqual([a, b].sort());
   });
 
   it('creates a compound from brand-new children', () => {
     const { catId, env1 } = refs();
     const child = (name: string): NewCompoundChild => ({
-      name, concept: null, quantityCents: 500, isPositive: false, date: APR,
-      categoryId: catId, envelopeIdMap: one(env1, 500), additionalNotes: null,
+      name,
+      concept: null,
+      quantityCents: 500,
+      isPositive: false,
+      date: APR,
+      categoryId: catId,
+      envelopeIdMap: one(env1, 500),
+      additionalNotes: null,
     });
     const id = Number(compoundMovementService.create(fields(), [], [child('A'), child('B')]));
     const children = compoundMovementService.getChildren(id);
@@ -111,10 +134,27 @@ describe('CompoundMovementService — creation & membership rules', () => {
     const a = mov('OnDefault', APR, env1);
     const accB = Number(accountService.create('Bank B'));
     const envB = Number(
-      (db.prepare('SELECT id FROM envelopes WHERE account_id = ? LIMIT 1').get(accB) as { id: number }).id,
+      (
+        db.prepare('SELECT id FROM envelopes WHERE account_id = ? LIMIT 1').get(accB) as {
+          id: number;
+        }
+      ).id,
     );
     const b = Number(
-      movementService.create('OnB', null, 1000, false, APR, catId, one(envB, 1000), null, false, null, false, accB),
+      movementService.create(
+        'OnB',
+        null,
+        1000,
+        false,
+        APR,
+        catId,
+        one(envB, 1000),
+        null,
+        false,
+        null,
+        false,
+        accB,
+      ),
     );
     expect(() => compoundMovementService.create(fields(), [a, b])).toThrow(
       AppErrorCode.COMPOUND_CROSS_ACCOUNT,
@@ -124,7 +164,19 @@ describe('CompoundMovementService — creation & membership rules', () => {
   it('rejects a split movement as a child', () => {
     const { catId, env1, env2 } = refs();
     const split = Number(
-      movementService.create('Split', null, 1000, false, APR, catId, new Map([[env1, 600], [env2, 400]]), null),
+      movementService.create(
+        'Split',
+        null,
+        1000,
+        false,
+        APR,
+        catId,
+        new Map([
+          [env1, 600],
+          [env2, 400],
+        ]),
+        null,
+      ),
     );
     const b = mov('B', APR, env1);
     expect(() => compoundMovementService.create(fields(), [split, b])).toThrow(
@@ -135,7 +187,19 @@ describe('CompoundMovementService — creation & membership rules', () => {
   it('rejects a tentative movement as a child', () => {
     const { catId, env1 } = refs();
     const tentative = Number(
-      movementService.create('Tent', null, 1000, false, APR, catId, one(env1, 1000), null, false, null, true),
+      movementService.create(
+        'Tent',
+        null,
+        1000,
+        false,
+        APR,
+        catId,
+        one(env1, 1000),
+        null,
+        false,
+        null,
+        true,
+      ),
     );
     const b = mov('B', APR, env1);
     expect(() => compoundMovementService.create(fields(), [tentative, b])).toThrow(
@@ -246,7 +310,9 @@ describe('CompoundMovementService — add / remove / dissolve', () => {
 
   it('addMember links an eligible movement', () => {
     const { env1 } = refs();
-    const id = Number(compoundMovementService.create(fields(), [mov('A', APR, env1), mov('B', APR, env1)]));
+    const id = Number(
+      compoundMovementService.create(fields(), [mov('A', APR, env1), mov('B', APR, env1)]),
+    );
     const c = mov('C', APR, env1);
     compoundMovementService.addMember(id, c);
     expect(movementService.getById(c)?.parentId).toBe(id);
@@ -255,7 +321,10 @@ describe('CompoundMovementService — add / remove / dissolve', () => {
   it('addMember rejects an envelope mismatch on a cancelable compound', () => {
     const { env1, env2 } = refs();
     const id = Number(
-      compoundMovementService.create(fields({ isCancelable: true }), [mov('A', APR, env1), mov('B', APR, env1)]),
+      compoundMovementService.create(fields({ isCancelable: true }), [
+        mov('A', APR, env1),
+        mov('B', APR, env1),
+      ]),
     );
     const other = mov('Other', APR, env2);
     expect(() => compoundMovementService.addMember(id, other)).toThrow(
@@ -310,7 +379,9 @@ describe('CompoundMovementService — update & delete', () => {
 
   it('updates name and notes', () => {
     const { env1 } = refs();
-    const id = Number(compoundMovementService.create(fields(), [mov('A', APR, env1), mov('B', APR, env1)]));
+    const id = Number(
+      compoundMovementService.create(fields(), [mov('A', APR, env1), mov('B', APR, env1)]),
+    );
     const c = compoundMovementService.getById(id)!;
     compoundMovementService.update({ ...c, name: 'Asturias', notes: 'road trip' });
     const after = compoundMovementService.getById(id)!;
@@ -320,7 +391,9 @@ describe('CompoundMovementService — update & delete', () => {
 
   it('rejects flipping to cancelable when children span envelopes', () => {
     const { env1, env2 } = refs();
-    const id = Number(compoundMovementService.create(fields(), [mov('A', APR, env1), mov('B', APR, env2)]));
+    const id = Number(
+      compoundMovementService.create(fields(), [mov('A', APR, env1), mov('B', APR, env2)]),
+    );
     const c = compoundMovementService.getById(id)!;
     expect(() => compoundMovementService.update({ ...c, isCancelable: true })).toThrow(
       AppErrorCode.COMPOUND_CANCELABLE_MULTI_ENVELOPE,

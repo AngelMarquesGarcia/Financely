@@ -46,7 +46,10 @@ export class PeriodSummaryService {
     const periods = new Map<string, Period>();
     for (const mov of movementService.getAll()) {
       for (const period of Movement.from(mov).getPeriods()) {
-        periods.set(`${period.accountId}-${period.envelopeId}-${period.year}-${period.month}`, period);
+        periods.set(
+          `${period.accountId}-${period.envelopeId}-${period.year}-${period.month}`,
+          period,
+        );
       }
     }
     for (const period of periods.values()) this.periodTouched(period);

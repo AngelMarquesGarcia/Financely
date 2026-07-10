@@ -1,4 +1,8 @@
-<div class="stat-card" [class.stat-card--positive]="tone === 'positive'" [class.stat-card--negative]="tone === 'negative'">
+<div
+  class="stat-card"
+  [class.stat-card--positive]="tone === 'positive'"
+  [class.stat-card--negative]="tone === 'negative'"
+>
   <div class="stat-card__head">
     @if (icon) {
       <fa-icon class="stat-card__icon" [icon]="icon" />

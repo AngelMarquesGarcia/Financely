@@ -25,9 +25,15 @@ import { AppErrorCode } from '@shared/error-codes';
 
 function ids() {
   const db = DatabaseService.getInstance().db;
-  const accountId = Number((db.prepare('SELECT id FROM accounts LIMIT 1').get() as { id: number }).id);
-  const categoryId = Number((db.prepare('SELECT id FROM categories LIMIT 1').get() as { id: number }).id);
-  const envelopeId = Number((db.prepare('SELECT id FROM envelopes LIMIT 1').get() as { id: number }).id);
+  const accountId = Number(
+    (db.prepare('SELECT id FROM accounts LIMIT 1').get() as { id: number }).id,
+  );
+  const categoryId = Number(
+    (db.prepare('SELECT id FROM categories LIMIT 1').get() as { id: number }).id,
+  );
+  const envelopeId = Number(
+    (db.prepare('SELECT id FROM envelopes LIMIT 1').get() as { id: number }).id,
+  );
   const tagId = Number((db.prepare('SELECT id FROM tags LIMIT 1').get() as { id: number }).id);
   return { accountId, categoryId, envelopeId, tagId };
 }
@@ -93,9 +99,9 @@ describe('PeriodicMovementService', () => {
   });
 
   it('rejects a non-positive amount', () => {
-    expect(() =>
-      periodicMovementService.create({ ...baseFields(), quantityCents: 0 }, []),
-    ).toThrow(AppErrorCode.PERIODIC_AMOUNT_INVALID);
+    expect(() => periodicMovementService.create({ ...baseFields(), quantityCents: 0 }, [])).toThrow(
+      AppErrorCode.PERIODIC_AMOUNT_INVALID,
+    );
   });
 
   it('rejects a non-existent account', () => {
@@ -313,7 +319,10 @@ describe('PeriodicMovementService', () => {
           ...baseFields({ name: over.name ?? 'Split salary' }),
           quantityCents: 2000,
           isPositive: true,
-          envelopeIdMap: new Map([[e1, 1500], [e2, 500]]),
+          envelopeIdMap: new Map([
+            [e1, 1500],
+            [e2, 500],
+          ]),
         },
         [],
       ),
@@ -325,7 +334,14 @@ describe('PeriodicMovementService', () => {
     const [e1, e2] = twoEnvelopes();
     expect(() =>
       periodicMovementService.create(
-        { ...baseFields({ name: 'Bad split' }), quantityCents: 2000, envelopeIdMap: new Map([[e1, 1500], [e2, 400]]) },
+        {
+          ...baseFields({ name: 'Bad split' }),
+          quantityCents: 2000,
+          envelopeIdMap: new Map([
+            [e1, 1500],
+            [e2, 400],
+          ]),
+        },
         [],
       ),
     ).toThrow(AppErrorCode.MOVEMENT_SPLIT_SUM_MISMATCH);
@@ -350,7 +366,13 @@ describe('PeriodicMovementService', () => {
   it('accepts a custom-amount instance when a matching split is supplied', () => {
     const { id, e1, e2 } = splitTemplate();
     periodicMovementService.createAdditionalInstance(
-      id, new Date('2020-03-15'), 3000, new Map([[e1, 2000], [e2, 1000]]),
+      id,
+      new Date('2020-03-15'),
+      3000,
+      new Map([
+        [e1, 2000],
+        [e2, 1000],
+      ]),
     );
     const [inst] = movementRepository.getByTemplate(id);
     expect(inst.quantityCents).toBe(3000);

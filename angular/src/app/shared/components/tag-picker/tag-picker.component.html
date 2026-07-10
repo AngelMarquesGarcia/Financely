@@ -11,13 +11,7 @@
 
   @if (allowCreate) {
     <app-popover [open]="showTagForm" (backdropClick)="showTagForm = false">
-      <app-chip
-        popoverTrigger
-        label="Create tag"
-        variant="action"
-        [icon]="faPlus"
-        (click)="showTagForm = true"
-      />
+      <app-chip popoverTrigger label="Create tag" variant="action" [icon]="faPlus" (click)="showTagForm = true" />
       <app-tag-form
         [existingTypes]="existingTypes"
         (saved)="onTagFormSaved($event)"

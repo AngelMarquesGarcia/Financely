@@ -107,7 +107,8 @@ export class CompoundMovementService {
     const movement = movementRepository.getMovementById(movementId);
     if (movement == undefined) throw new AppError(AppErrorCode.MOVEMENT_NOT_FOUND);
     this.assertEligibleExisting(movement, compound.accountId);
-    if (compound.isCancelable) this.assertMatchesCompoundEnvelope(compoundId, movement.envelopeIdMap);
+    if (compound.isCancelable)
+      this.assertMatchesCompoundEnvelope(compoundId, movement.envelopeIdMap);
 
     this.db.transaction(() => {
       movementRepository.setParent(movementId, compoundId);
@@ -135,7 +136,8 @@ export class CompoundMovementService {
     const compound = this.getCompoundOrThrow(compoundId);
     const movement = movementRepository.getMovementById(movementId);
     if (movement == undefined) throw new AppError(AppErrorCode.MOVEMENT_NOT_FOUND);
-    if (movement.parentId !== compoundId) throw new AppError(AppErrorCode.COMPOUND_CHILD_NOT_MEMBER);
+    if (movement.parentId !== compoundId)
+      throw new AppError(AppErrorCode.COMPOUND_CHILD_NOT_MEMBER);
 
     this.db.transaction(() => {
       movementRepository.setParent(movementId, null);
@@ -279,7 +281,8 @@ export class CompoundMovementService {
   }
 
   private refreshOwnPeriods(m: MovementT): void {
-    for (const period of Movement.from(m).getPeriods()) periodSummaryService.periodTouched(period, false);
+    for (const period of Movement.from(m).getPeriods())
+      periodSummaryService.periodTouched(period, false);
   }
 
   private revalidateOwnerMonth(compound: CompoundMovementT): void {

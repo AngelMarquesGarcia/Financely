@@ -62,11 +62,7 @@
 
     <div class="form__group">
       <label class="form__label" for="budget">Monthly budget</label>
-      <app-amount-input
-        inputId="budget"
-        [amountCents]="budgetCents"
-        (amountCentsChange)="onBudgetChange($event)"
-      />
+      <app-amount-input inputId="budget" [amountCents]="budgetCents" (amountCentsChange)="onBudgetChange($event)" />
       <span class="form__hint">Leave empty for no budget.</span>
     </div>
 

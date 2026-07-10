@@ -1,5 +1,12 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { CategoryT, CompoundMovementT, EnvelopeT, MovementT, MovementFilter, TagT } from '@shared/types';
+import {
+  CategoryT,
+  CompoundMovementT,
+  EnvelopeT,
+  MovementT,
+  MovementFilter,
+  TagT,
+} from '@shared/types';
 import { MoneyPipe } from '../../../shared/pipes/money.pipe';
 import { contrastColor } from '../../../shared/utils';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
@@ -9,7 +16,13 @@ import { QuickCreateMovementButtonComponent } from '../../../shared/components/q
 type HeaderRow = { kind: 'header'; key: string; label: string };
 /** `inactive` = a compound child shown in a non-owner month (greyed, uncounted). `childOf` = shown
  *  inside an expanded owner-month compound group. */
-type MovementRow = { kind: 'movement'; key: string; movement: MovementT; inactive: boolean; childOf?: number };
+type MovementRow = {
+  kind: 'movement';
+  key: string;
+  movement: MovementT;
+  inactive: boolean;
+  childOf?: number;
+};
 /** The owner-month collapsed pseudo-entry for a compound (expands to that month's members, D15). */
 type CompoundGroupRow = {
   kind: 'compound';
@@ -22,7 +35,12 @@ type RowItem = HeaderRow | MovementRow | CompoundGroupRow;
 
 @Component({
   selector: 'app-movements-list',
-  imports: [MoneyPipe, EmptyStateComponent, MovementsFilterComponent, QuickCreateMovementButtonComponent],
+  imports: [
+    MoneyPipe,
+    EmptyStateComponent,
+    MovementsFilterComponent,
+    QuickCreateMovementButtonComponent,
+  ],
   templateUrl: './movements-list.component.html',
   styleUrl: './movements-list.component.scss',
 })
@@ -134,10 +152,22 @@ export class MovementsListComponent {
             (x) => x.parentId === compound.id && this.sameMonth(this.asDate(x.date), d),
           );
           const expanded = this.expandedGroups.has(compound.id);
-          rows.push({ kind: 'compound', key: `c_${compound.id}_${monthKey}`, compound, monthChildren, expanded });
+          rows.push({
+            kind: 'compound',
+            key: `c_${compound.id}_${monthKey}`,
+            compound,
+            monthChildren,
+            expanded,
+          });
           if (expanded) {
             for (const child of monthChildren) {
-              rows.push({ kind: 'movement', key: `m_${child.id}`, movement: child, inactive: false, childOf: compound.id });
+              rows.push({
+                kind: 'movement',
+                key: `m_${child.id}`,
+                movement: child,
+                inactive: false,
+                childOf: compound.id,
+              });
             }
           }
         }

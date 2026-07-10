@@ -77,15 +77,25 @@ export class ImportExportService {
 
     // Resolution maps, built once. Names are matched case-insensitively (friendlier for hand-authored
     // files); category/envelope/account names are unique, tags are unique by (type, name).
-    const catByName = lowerMap(categoryRepository.getAllCategories(), (c) => c.name, (c) => c.id);
-    const envByName = lowerMap(envelopeRepository.getAllEnvelopes(), (e) => e.name, (e) => e.id);
+    const catByName = lowerMap(
+      categoryRepository.getAllCategories(),
+      (c) => c.name,
+      (c) => c.id,
+    );
+    const envByName = lowerMap(
+      envelopeRepository.getAllEnvelopes(),
+      (e) => e.name,
+      (e) => e.id,
+    );
     const tagByKey = new Map(
       tagRepository.getAllTags().map((t) => [tagKey(t.type, t.name), t] as const),
     );
     const templateNames = new Set(
       periodicMovementRepository.getAll().map((t) => t.name.toLowerCase()),
     );
-    const groupNames = new Set(compoundMovementRepository.getAll().map((g) => g.name.toLowerCase()));
+    const groupNames = new Set(
+      compoundMovementRepository.getAll().map((g) => g.name.toLowerCase()),
+    );
 
     const defaultCatId = categoryRepository.getDefault();
     const defaultEnvId = envelopeRepository.getDefaultForAccount(targetAccountId);
@@ -129,7 +139,12 @@ export class ImportExportService {
       }
 
       // Envelope(s): single name (full amount) or `Name:amount|Name:amount` split.
-      const envResult = this.parseEnvelopes(cell('envelope'), quantityCents, envByName, defaultEnvId);
+      const envResult = this.parseEnvelopes(
+        cell('envelope'),
+        quantityCents,
+        envByName,
+        defaultEnvId,
+      );
       if (envResult.error) {
         return add(row, envResult.error, envResult.detail);
       }
@@ -197,7 +212,11 @@ export class ImportExportService {
       (t) => t.name,
       (t) => t.id,
     );
-    const groupIdByName = lowerMap(compoundMovementRepository.getAll(), (g) => g.name, (g) => g.id);
+    const groupIdByName = lowerMap(
+      compoundMovementRepository.getAll(),
+      (g) => g.name,
+      (g) => g.id,
+    );
 
     const ordered = [...drafts].sort((a, b) => toDate(a.date).getTime() - toDate(b.date).getTime());
 
@@ -226,7 +245,7 @@ export class ImportExportService {
         }
 
         const templateId = d.templateName
-          ? templateIdByName.get(d.templateName.toLowerCase()) ?? null
+          ? (templateIdByName.get(d.templateName.toLowerCase()) ?? null)
           : null;
 
         const newId = Number(
@@ -309,7 +328,8 @@ export class ImportExportService {
       const name = unescapeAll(namePart).trim();
       let id = envByName.get(name.toLowerCase());
       if (id == null) {
-        if (defaultEnvId == null) return { envelopes: [], error: 'ENVELOPE_NOT_FOUND', detail: name };
+        if (defaultEnvId == null)
+          return { envelopes: [], error: 'ENVELOPE_NOT_FOUND', detail: name };
         id = defaultEnvId;
         fallback ??= name;
       }
@@ -324,7 +344,11 @@ export class ImportExportService {
       } else if (parts.length === 1) {
         amountCents = quantityCents; // single envelope, no explicit amount → full quantity
       } else {
-        return { envelopes: [], error: 'SPLIT_SUM_MISMATCH', detail: `missing amount for "${name}"` };
+        return {
+          envelopes: [],
+          error: 'SPLIT_SUM_MISMATCH',
+          detail: `missing amount for "${name}"`,
+        };
       }
       if (!Number.isInteger(amountCents) || amountCents <= 0) {
         return { envelopes: [], error: 'SPLIT_SUM_MISMATCH', detail: part };
@@ -368,11 +392,31 @@ export class ImportExportService {
       throw new AppError(AppErrorCode.EXPORT_CONTAINS_TENTATIVE);
     }
 
-    const catById = idMap(categoryRepository.getAllCategories(), (c) => c.id, (c) => c.name);
-    const envById = idMap(envelopeRepository.getAllEnvelopes(), (e) => e.id, (e) => e.name);
-    const accById = idMap(accountRepository.getAllAccounts(), (a) => a.id, (a) => a.name);
-    const tplById = idMap(periodicMovementRepository.getAll(), (t) => t.id, (t) => t.name);
-    const grpById = idMap(compoundMovementRepository.getAll(), (g) => g.id, (g) => g.name);
+    const catById = idMap(
+      categoryRepository.getAllCategories(),
+      (c) => c.id,
+      (c) => c.name,
+    );
+    const envById = idMap(
+      envelopeRepository.getAllEnvelopes(),
+      (e) => e.id,
+      (e) => e.name,
+    );
+    const accById = idMap(
+      accountRepository.getAllAccounts(),
+      (a) => a.id,
+      (a) => a.name,
+    );
+    const tplById = idMap(
+      periodicMovementRepository.getAll(),
+      (t) => t.id,
+      (t) => t.name,
+    );
+    const grpById = idMap(
+      compoundMovementRepository.getAll(),
+      (g) => g.id,
+      (g) => g.name,
+    );
     const tagsByMovement = tagRepository.getTagsForMovements(movements.map((m) => m.id));
 
     const rows = movements.map((m) => ({
@@ -386,8 +430,8 @@ export class ImportExportService {
       tags: formatTags(tagsByMovement[m.id] ?? []),
       notes: m.additionalNotes ?? '',
       anomalous: m.isAnomalous ? 'true' : 'false',
-      template: m.templateId != null ? tplById.get(m.templateId) ?? '' : '',
-      group: m.parentId != null ? grpById.get(m.parentId) ?? '' : '',
+      template: m.templateId != null ? (tplById.get(m.templateId) ?? '') : '',
+      group: m.parentId != null ? (grpById.get(m.parentId) ?? '') : '',
     }));
 
     return Papa.unparse(rows, { columns: [...COLUMNS] });

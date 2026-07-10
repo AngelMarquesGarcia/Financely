@@ -31,9 +31,9 @@ describe('DatabaseService — lifecycle', () => {
   it('migrate() is idempotent and seeds Uncategorized as the default category', () => {
     svc().migrate();
     svc().migrate();
-    const defaults = svc()
-      .db.prepare(`SELECT name FROM categories WHERE is_default = 1`)
-      .all() as { name: string }[];
+    const defaults = svc().db.prepare(`SELECT name FROM categories WHERE is_default = 1`).all() as {
+      name: string;
+    }[];
     expect(defaults).toEqual([{ name: 'Uncategorized' }]);
     expect(count('movements')).toBe(0); // migrate does NOT seed demo data
   });

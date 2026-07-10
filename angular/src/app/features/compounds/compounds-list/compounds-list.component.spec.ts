@@ -33,7 +33,9 @@ describe('CompoundsListComponent', () => {
 
   it('ownerLabel formats the owner month', () => {
     const fixture = create();
-    expect(fixture.componentInstance.ownerLabel(makeCompound({ ownerMonth: 3 }))).toBe('April 2026');
+    expect(fixture.componentInstance.ownerLabel(makeCompound({ ownerMonth: 3 }))).toBe(
+      'April 2026',
+    );
   });
 
   it('ownerLabel reads "Yearly" for a null owner', () => {

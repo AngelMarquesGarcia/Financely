@@ -63,9 +63,7 @@ export class MockElectronService implements Partial<ElectronService> {
   deleteEnvelope = vi.fn((_id: number): Observable<boolean> => of(true));
   setDefaultEnvelope = vi.fn((_id: number): Observable<void> => of(undefined));
 
-  createTag = vi.fn(
-    (_type: string, _name: string, _color: string): Observable<number> => of(1),
-  );
+  createTag = vi.fn((_type: string, _name: string, _color: string): Observable<number> => of(1));
   getAllTags = vi.fn((): Observable<TagT[]> => of([]));
   getTagById = vi.fn((_id: number): Observable<TagT | undefined> => of(undefined));
   updateTag = vi.fn((_tag: TagT): Observable<boolean> => of(true));

@@ -127,9 +127,10 @@ export class MovementFormComponent implements OnInit, OnChanges {
           this.useDefaultDate = s.useDefaultDate ?? false;
           this.loadedDefaultDate = s.defaultDate ?? '';
           if (!this.isEditing) {
-            this.date = this.useDefaultDate && this.loadedDefaultDate
-              ? this.loadedDefaultDate
-              : this.todayString();
+            this.date =
+              this.useDefaultDate && this.loadedDefaultDate
+                ? this.loadedDefaultDate
+                : this.todayString();
           }
         },
         error: (e: Error) => this.notify.error(this.errorText.resolve(e.message)),
@@ -339,24 +340,28 @@ export class MovementFormComponent implements OnInit, OnChanges {
   }
 
   onGearClick() {
-    this.dialog.open(SettingsComponent).afterClosed().pipe(take(1)).subscribe(() => {
-      this.electron
-        .getSettings()
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe({
-          next: (s) => {
-            this.useDefaultDate = s.useDefaultDate ?? false;
-            this.loadedDefaultDate = s.defaultDate ?? '';
-            if (!this.isEditing) {
-              this.date =
-                this.useDefaultDate && this.loadedDefaultDate
-                  ? this.loadedDefaultDate
-                  : this.todayString();
-            }
-          },
-          error: (e: Error) => this.notify.error(this.errorText.resolve(e.message)),
-        });
-    });
+    this.dialog
+      .open(SettingsComponent)
+      .afterClosed()
+      .pipe(take(1))
+      .subscribe(() => {
+        this.electron
+          .getSettings()
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: (s) => {
+              this.useDefaultDate = s.useDefaultDate ?? false;
+              this.loadedDefaultDate = s.defaultDate ?? '';
+              if (!this.isEditing) {
+                this.date =
+                  this.useDefaultDate && this.loadedDefaultDate
+                    ? this.loadedDefaultDate
+                    : this.todayString();
+              }
+            },
+            error: (e: Error) => this.notify.error(this.errorText.resolve(e.message)),
+          });
+      });
   }
 
   cancel() {
@@ -398,7 +403,8 @@ export class MovementFormComponent implements OnInit, OnChanges {
     this.currentTagIds = [];
     this.additionalNotes = null;
     this.isAnomalous = false;
-    this.date = this.useDefaultDate && this.loadedDefaultDate ? this.loadedDefaultDate : this.todayString();
+    this.date =
+      this.useDefaultDate && this.loadedDefaultDate ? this.loadedDefaultDate : this.todayString();
     this.showErrors = false;
   }
 }

@@ -1,9 +1,19 @@
 <div class="month-overview">
   <header class="month-overview__header">
     <div class="month-overview__nav">
-      <button class="btn btn--ghost" type="button" (click)="prevMonth()" [disabled]="!hasPrev" aria-label="Previous month">‹</button>
+      <button
+        class="btn btn--ghost"
+        type="button"
+        (click)="prevMonth()"
+        [disabled]="!hasPrev"
+        aria-label="Previous month"
+      >
+        ‹
+      </button>
       <h1 class="month-overview__title">{{ monthLabel }}</h1>
-      <button class="btn btn--ghost" type="button" (click)="nextMonth()" [disabled]="!hasNext" aria-label="Next month">›</button>
+      <button class="btn btn--ghost" type="button" (click)="nextMonth()" [disabled]="!hasNext" aria-label="Next month">
+        ›
+      </button>
     </div>
     <label class="month-overview__toggle">
       <input type="checkbox" [(ngModel)]="showAnomalies" />

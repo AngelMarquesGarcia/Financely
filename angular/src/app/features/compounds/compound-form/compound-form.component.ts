@@ -1,4 +1,13 @@
-import { Component, DestroyRef, EventEmitter, inject, Input, OnDestroy, OnInit, Output } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  EventEmitter,
+  inject,
+  Input,
+  OnDestroy,
+  OnInit,
+  Output,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { concat, forkJoin, Observable, of, switchMap, take, toArray } from 'rxjs';
@@ -67,7 +76,9 @@ export class CompoundFormComponent implements OnInit, OnDestroy {
 
     forkJoin({
       movements: this.electron.getAllMovements(),
-      children: compound ? this.electron.getCompoundMovementChildren(compound.id) : of<MovementT[]>([]),
+      children: compound
+        ? this.electron.getCompoundMovementChildren(compound.id)
+        : of<MovementT[]>([]),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({

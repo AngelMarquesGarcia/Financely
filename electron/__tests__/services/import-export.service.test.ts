@@ -35,7 +35,9 @@ describe('ImportExportService — export', () => {
   it('emits a header row with all columns and the seeded movements', () => {
     const csv = importExportService.exportMovements();
     const [header] = csv.split('\n');
-    expect(header.trim()).toBe('name,concept,quantity,date,account,category,envelope,tags,notes,anomalous,template,group');
+    expect(header.trim()).toBe(
+      'name,concept,quantity,date,account,category,envelope,tags,notes,anomalous,template,group',
+    );
     expect(csv).toContain('April salary');
     expect(csv).toContain('NOMINA ABRIL');
   });
@@ -55,14 +57,27 @@ describe('ImportExportService — export', () => {
 
   it('rejects an export whose selection contains a tentative movement', () => {
     movementService.create(
-      'Pending', null, 1000, false, new Date('2026-06-03'), catId('Food'),
-      new Map([[envId('Monthly Expenses'), 1000]]), null, false, null, true,
+      'Pending',
+      null,
+      1000,
+      false,
+      new Date('2026-06-03'),
+      catId('Food'),
+      new Map([[envId('Monthly Expenses'), 1000]]),
+      null,
+      false,
+      null,
+      true,
     );
-    expect(() => importExportService.exportMovements()).toThrow(AppErrorCode.EXPORT_CONTAINS_TENTATIVE);
+    expect(() => importExportService.exportMovements()).toThrow(
+      AppErrorCode.EXPORT_CONTAINS_TENTATIVE,
+    );
   });
 
   it('honors a month-range filter', () => {
-    const csv = importExportService.exportMovements({ date: { from: '2026-05-01', to: '2026-05-31' } });
+    const csv = importExportService.exportMovements({
+      date: { from: '2026-05-01', to: '2026-05-31' },
+    });
     expect(csv).toContain('May salary');
     expect(csv).not.toContain('April salary');
   });
@@ -87,7 +102,9 @@ describe('ImportExportService — preview parsing', () => {
     expect(coffee.quantityCents).toBe(350);
     expect(coffee.isPositive).toBe(false);
     expect(coffee.categoryId).toBe(catId('Food'));
-    expect(coffee.envelopes).toEqual([{ name: 'Monthly Expenses', id: envId('Monthly Expenses'), amountCents: 350 }]);
+    expect(coffee.envelopes).toEqual([
+      { name: 'Monthly Expenses', id: envId('Monthly Expenses'), amountCents: 350 },
+    ]);
     expect(coffee.tags).toEqual([{ type: 'merchant', name: 'Starbucks', id: null }]);
 
     const bonus = drafts[1];
@@ -188,10 +205,19 @@ describe('ImportExportService — commit', () => {
 
   it('rolls back the whole batch when any row is invalid', () => {
     const good: MovementDraftT = {
-      name: 'Good', concept: 'Good', quantityCents: 500, isPositive: false,
-      date: new Date('2026-06-01'), categoryName: 'Food', categoryId: catId('Food'),
+      name: 'Good',
+      concept: 'Good',
+      quantityCents: 500,
+      isPositive: false,
+      date: new Date('2026-06-01'),
+      categoryName: 'Food',
+      categoryId: catId('Food'),
       envelopes: [{ name: 'Monthly Expenses', id: envId('Monthly Expenses'), amountCents: 500 }],
-      tags: [], additionalNotes: null, isAnomalous: false, templateName: null, groupName: null,
+      tags: [],
+      additionalNotes: null,
+      isAnomalous: false,
+      templateName: null,
+      groupName: null,
     };
     const bad: MovementDraftT = { ...good, name: 'Bad', quantityCents: 0 };
 
@@ -220,8 +246,17 @@ describe('ImportExportService — tentative guard', () => {
   it('refuses preview and commit when the target account has tentative movements', () => {
     // A tentative movement in the target account.
     movementService.create(
-      'Pending', null, 1000, false, new Date('2026-06-03'), catId('Food'),
-      new Map([[envId('Monthly Expenses'), 1000]]), null, false, null, true,
+      'Pending',
+      null,
+      1000,
+      false,
+      new Date('2026-06-03'),
+      catId('Food'),
+      new Map([[envId('Monthly Expenses'), 1000]]),
+      null,
+      false,
+      null,
+      true,
     );
 
     const csv = 'concept,quantity,date\nCoffee,-3.50,2026-06-01';

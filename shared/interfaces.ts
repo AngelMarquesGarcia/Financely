@@ -1,4 +1,22 @@
-import { MovementT, CategoryT, MovementFilter, AppSettings, AccountT, AccountStats, EnvelopeT, TagT, TransferT, PeriodSummaryT, PeriodicMovementT, FilterSummaryT, CompoundMovementT, NewCompoundFields, NewCompoundChild, MovementDraftT, ImportResultT } from './types';
+import {
+  MovementT,
+  CategoryT,
+  MovementFilter,
+  AppSettings,
+  AccountT,
+  AccountStats,
+  EnvelopeT,
+  TagT,
+  TransferT,
+  PeriodSummaryT,
+  PeriodicMovementT,
+  FilterSummaryT,
+  CompoundMovementT,
+  NewCompoundFields,
+  NewCompoundChild,
+  MovementDraftT,
+  ImportResultT,
+} from './types';
 
 export interface Movements {
   create(
@@ -180,7 +198,17 @@ export interface PeriodSummaries {
   getAll(): Promise<PeriodSummaryT[]>;
   /** The envelope's most recent summary (cleaned), or undefined when it has none yet. */
   getLatest(envelopeId: number): Promise<PeriodSummaryT | undefined>;
-  getByPeriod(accountId: number, envelopeId: number | null, year: number, month: number): Promise<PeriodSummaryT | undefined>;
+  getByPeriod(
+    accountId: number,
+    envelopeId: number | null,
+    year: number,
+    month: number,
+  ): Promise<PeriodSummaryT | undefined>;
   update(summary: PeriodSummaryT): Promise<boolean>;
-  delete(accountId: number, envelopeId: number | null, year: number, month: number): Promise<boolean>;
+  delete(
+    accountId: number,
+    envelopeId: number | null,
+    year: number,
+    month: number,
+  ): Promise<boolean>;
 }

@@ -45,9 +45,48 @@ describe('FilterSummaryService', () => {
     const { acc, def } = freshDefault('FSInterval');
     const cat = firstCategoryId();
     // Feb: two expenses of 1000 (avg 1000). Mar: nothing. Apr: one expense of 4000 (avg 4000).
-    movementService.create('F1', null, 1000, false, new Date(2026, 1, 10), cat, one(def, 1000), null, false, null, false, acc);
-    movementService.create('F2', null, 1000, false, new Date(2026, 1, 20), cat, one(def, 1000), null, false, null, false, acc);
-    movementService.create('A1', null, 4000, false, new Date(2026, 3, 15), cat, one(def, 4000), null, false, null, false, acc);
+    movementService.create(
+      'F1',
+      null,
+      1000,
+      false,
+      new Date(2026, 1, 10),
+      cat,
+      one(def, 1000),
+      null,
+      false,
+      null,
+      false,
+      acc,
+    );
+    movementService.create(
+      'F2',
+      null,
+      1000,
+      false,
+      new Date(2026, 1, 20),
+      cat,
+      one(def, 1000),
+      null,
+      false,
+      null,
+      false,
+      acc,
+    );
+    movementService.create(
+      'A1',
+      null,
+      4000,
+      false,
+      new Date(2026, 3, 15),
+      cat,
+      one(def, 4000),
+      null,
+      false,
+      null,
+      false,
+      acc,
+    );
 
     const result = filterSummaryService.generateFilterSummary({
       accountId: acc,
@@ -75,15 +114,57 @@ describe('FilterSummaryService', () => {
     expect(result.aggregate.summary.totalExpenseCents).toBe(6000);
     expect(result.aggregate.summary.movementCount).toBe(3);
     expect(result.aggregate.summary.avgExpenseCents).toBe(2000);
-    expect(result.aggregate.summary.filters?.date).toEqual({ from: '2026-02-01', to: '2026-04-30' });
+    expect(result.aggregate.summary.filters?.date).toEqual({
+      from: '2026-02-01',
+      to: '2026-04-30',
+    });
   });
 
   it('computes the without-anomalies mirror (null when a slice has none, populated otherwise)', () => {
     const { acc, def } = freshDefault('FSAnom');
     const cat = firstCategoryId();
-    movementService.create('FebOk', null, 1000, false, new Date(2026, 1, 10), cat, one(def, 1000), null, false, null, false, acc);
-    movementService.create('AprOk', null, 1000, false, new Date(2026, 3, 10), cat, one(def, 1000), null, false, null, false, acc);
-    movementService.create('AprAnom', null, 5000, false, new Date(2026, 3, 12), cat, one(def, 5000), null, true, null, false, acc);
+    movementService.create(
+      'FebOk',
+      null,
+      1000,
+      false,
+      new Date(2026, 1, 10),
+      cat,
+      one(def, 1000),
+      null,
+      false,
+      null,
+      false,
+      acc,
+    );
+    movementService.create(
+      'AprOk',
+      null,
+      1000,
+      false,
+      new Date(2026, 3, 10),
+      cat,
+      one(def, 1000),
+      null,
+      false,
+      null,
+      false,
+      acc,
+    );
+    movementService.create(
+      'AprAnom',
+      null,
+      5000,
+      false,
+      new Date(2026, 3, 12),
+      cat,
+      one(def, 5000),
+      null,
+      true,
+      null,
+      false,
+      acc,
+    );
 
     const result = filterSummaryService.generateFilterSummary({
       accountId: acc,
@@ -106,32 +187,81 @@ describe('FilterSummaryService', () => {
     const cat = firstCategoryId();
     const tagId = Number(tagService.create('test', 'FSTag', '#fff'));
     const movId = Number(
-      movementService.create('Split', null, 3000, true, new Date(2026, 3, 10), cat, new Map([[def, 1000], [other, 2000]]), null, false, null, false, acc),
+      movementService.create(
+        'Split',
+        null,
+        3000,
+        true,
+        new Date(2026, 3, 10),
+        cat,
+        new Map([
+          [def, 1000],
+          [other, 2000],
+        ]),
+        null,
+        false,
+        null,
+        false,
+        acc,
+      ),
     );
     tagService.addToMovement(tagId, movId);
     const date = { from: '2026-04-01', to: '2026-04-30' };
 
     // Single-envelope filter → that envelope's slice.
     expect(
-      filterSummaryService.generateFilterSummary({ accountId: acc, envelopeId: def, date }).aggregate.summary.totalIncomeCents,
+      filterSummaryService.generateFilterSummary({ accountId: acc, envelopeId: def, date })
+        .aggregate.summary.totalIncomeCents,
     ).toBe(1000);
     expect(
-      filterSummaryService.generateFilterSummary({ accountId: acc, envelopeId: other, date }).aggregate.summary.totalIncomeCents,
+      filterSummaryService.generateFilterSummary({ accountId: acc, envelopeId: other, date })
+        .aggregate.summary.totalIncomeCents,
     ).toBe(2000);
     // Category / tag filters → the whole movement amount, counted once.
     expect(
-      filterSummaryService.generateFilterSummary({ accountId: acc, categoryId: cat, date }).aggregate.summary.totalIncomeCents,
+      filterSummaryService.generateFilterSummary({ accountId: acc, categoryId: cat, date })
+        .aggregate.summary.totalIncomeCents,
     ).toBe(3000);
     expect(
-      filterSummaryService.generateFilterSummary({ accountId: acc, tags: { ids: [tagId], matchAll: false }, date }).aggregate.summary.totalIncomeCents,
+      filterSummaryService.generateFilterSummary({
+        accountId: acc,
+        tags: { ids: [tagId], matchAll: false },
+        date,
+      }).aggregate.summary.totalIncomeCents,
     ).toBe(3000);
   });
 
   it('defaults to the current month (a single child) when the filter carries no date', () => {
     const { acc, def } = freshDefault('FSDefault');
     const cat = firstCategoryId();
-    movementService.create('Now', null, 1000, true, new Date(), cat, one(def, 1000), null, false, null, false, acc);
-    movementService.create('Old', null, 9999, true, new Date(2020, 0, 15), cat, one(def, 9999), null, false, null, false, acc);
+    movementService.create(
+      'Now',
+      null,
+      1000,
+      true,
+      new Date(),
+      cat,
+      one(def, 1000),
+      null,
+      false,
+      null,
+      false,
+      acc,
+    );
+    movementService.create(
+      'Old',
+      null,
+      9999,
+      true,
+      new Date(2020, 0, 15),
+      cat,
+      one(def, 9999),
+      null,
+      false,
+      null,
+      false,
+      acc,
+    );
 
     const result = filterSummaryService.generateFilterSummary({ accountId: acc });
     expect(result.children).toHaveLength(1);

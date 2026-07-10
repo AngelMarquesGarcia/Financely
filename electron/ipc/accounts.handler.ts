@@ -8,12 +8,18 @@ import { Account } from '@shared/domain';
 export function registerAccountHandlers(): void {
   ipcMain.handle(
     Channels.ACCOUNT_CREATE,
-    ipcHandle((_event: IpcMainInvokeEvent, arg: { name: string; description?: string; startingBalance?: number }) =>
-      accountService.create(arg.name, arg.description, arg.startingBalance),
+    ipcHandle(
+      (
+        _event: IpcMainInvokeEvent,
+        arg: { name: string; description?: string; startingBalance?: number },
+      ) => accountService.create(arg.name, arg.description, arg.startingBalance),
     ),
   );
 
-  ipcMain.handle(Channels.ACCOUNT_GET_ALL, ipcHandle(() => accountService.getAll()));
+  ipcMain.handle(
+    Channels.ACCOUNT_GET_ALL,
+    ipcHandle(() => accountService.getAll()),
+  );
 
   ipcMain.handle(
     Channels.ACCOUNT_GET_BY_ID,
@@ -22,7 +28,9 @@ export function registerAccountHandlers(): void {
 
   ipcMain.handle(
     Channels.ACCOUNT_UPDATE,
-    ipcHandle((_event: IpcMainInvokeEvent, account: AccountT) => accountService.update(Account.from(account))),
+    ipcHandle((_event: IpcMainInvokeEvent, account: AccountT) =>
+      accountService.update(Account.from(account)),
+    ),
   );
 
   ipcMain.handle(
@@ -35,5 +43,8 @@ export function registerAccountHandlers(): void {
     ipcHandle((_event: IpcMainInvokeEvent, id: number) => accountService.setDefault(id)),
   );
 
-  ipcMain.handle(Channels.ACCOUNT_GET_STATS, ipcHandle(() => accountService.getStats()));
+  ipcMain.handle(
+    Channels.ACCOUNT_GET_STATS,
+    ipcHandle(() => accountService.getStats()),
+  );
 }

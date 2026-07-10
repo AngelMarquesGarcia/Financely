@@ -349,15 +349,25 @@ button {
 }
 
 @keyframes overlay-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 // ─── SortableJS drag states ───────────────────────────────────────────────────
 
-.sortable-ghost  { opacity: 0.4; }
-.sortable-chosen { cursor: grabbing; }
-.sortable-drag   { opacity: 0.9; }
+.sortable-ghost {
+  opacity: 0.4;
+}
+.sortable-chosen {
+  cursor: grabbing;
+}
+.sortable-drag {
+  opacity: 0.9;
+}
 
 // ─── Utility: btn-link ────────────────────────────────────────────────────────
 
@@ -400,7 +410,9 @@ button {
     transform 0.1s,
     border-color 0.15s;
 
-  &:hover { transform: scale(1.15); }
+  &:hover {
+    transform: scale(1.15);
+  }
 
   &--selected {
     border-color: #0f172a;
@@ -434,7 +446,9 @@ button {
   }
 
   &--removable {
-    &:hover .swatch__remove { display: flex; }
+    &:hover .swatch__remove {
+      display: flex;
+    }
   }
 }
 

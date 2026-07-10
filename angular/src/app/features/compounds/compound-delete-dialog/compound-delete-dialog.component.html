@@ -1,7 +1,9 @@
 <div class="cdd">
   <h3 class="cdd__title">Delete compound</h3>
   <p class="cdd__message">
-    Delete the compound "{{ data.name }}"? Its {{ data.childCount }} member movement{{ data.childCount === 1 ? '' : 's' }}
+    Delete the compound "{{ data.name }}"? Its {{ data.childCount }} member movement{{
+      data.childCount === 1 ? '' : 's'
+    }}
     will be un-grouped.
   </p>
   <label class="cdd__checkbox">

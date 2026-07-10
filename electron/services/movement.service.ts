@@ -141,7 +141,11 @@ export class MovementService {
   getByPeriod(period: Period): MovementT[] {
     // Account-level periods (null envelope) aren't scoped to one envelope — fetch the whole month.
     if (period.envelopeId == null) {
-      return movementRepository.getMovementsByAccountMonth(period.accountId, period.year, period.month);
+      return movementRepository.getMovementsByAccountMonth(
+        period.accountId,
+        period.year,
+        period.month,
+      );
     }
     return movementRepository.getMovementsByPeriod(period);
   }
@@ -167,7 +171,8 @@ export class MovementService {
     const rechain = stored == undefined || this.balanceInputsChanged(stored, movement);
     const affected = new Map<string, Period>();
     const collect = (periods: Period[]) => {
-      for (const p of periods) affected.set(`${p.accountId}-${p.envelopeId}-${p.year}-${p.month}`, p);
+      for (const p of periods)
+        affected.set(`${p.accountId}-${p.envelopeId}-${p.year}-${p.month}`, p);
     };
     if (stored != undefined) collect(Movement.from(stored).getPeriods());
     collect(movement.getPeriods());

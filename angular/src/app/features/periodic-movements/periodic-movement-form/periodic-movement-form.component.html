@@ -25,7 +25,9 @@
       <label class="form__label" for="per-amount">Default amount</label>
       <app-amount-input
         inputId="per-amount"
-        [inputClass]="showErrors && (amountCents === null || amountCents <= 0) ? 'form__input form__input--error' : 'form__input'"
+        [inputClass]="
+          showErrors && (amountCents === null || amountCents <= 0) ? 'form__input form__input--error' : 'form__input'
+        "
         [amountCents]="amountCents"
         (amountCentsChange)="amountCents = $event"
       />

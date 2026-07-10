@@ -18,12 +18,16 @@
             <td>
               {{ c.name }}
               @if (c.isAnomalous) {
-                <span class="badge badge--anomalous" title="Anomalous — excluded from average/aggregate statistics">✷ anomalous</span>
+                <span class="badge badge--anomalous" title="Anomalous — excluded from average/aggregate statistics"
+                  >✷ anomalous</span
+                >
               }
             </td>
             <td>
               @if (c.isCancelable) {
-                <span class="badge badge--cancelable" title="Members cancel out; the net is the true movement">cancelable</span>
+                <span class="badge badge--cancelable" title="Members cancel out; the net is the true movement"
+                  >cancelable</span
+                >
               } @else {
                 <span class="badge badge--group" title="A grouping of movements viewed together">group</span>
               }

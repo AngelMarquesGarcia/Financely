@@ -29,7 +29,8 @@ export class EntitySelectComponent<T extends { id: number }> {
   @Output() selectedIdsChange = new EventEmitter<number[]>();
 
   /** How to derive a label for an item. Required. */
-  @Input() labelFn: (item: T) => string = (item) => String((item as { name?: string }).name ?? item.id);
+  @Input() labelFn: (item: T) => string = (item) =>
+    String((item as { name?: string }).name ?? item.id);
   /** Optional color hex for the chip + popover dot. */
   @Input() colorFn?: (item: T) => string | undefined;
   /** Optional emoji rendered alongside the label. */

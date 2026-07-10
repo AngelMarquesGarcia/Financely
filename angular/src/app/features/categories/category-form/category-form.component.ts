@@ -65,7 +65,9 @@ export class CategoryFormComponent implements OnInit, OnChanges {
               this.color = this.presetColors[5] ?? this.presetColors[0];
             }
           }
-          this.availableIcons = s.categoryIcons?.length ? [...s.categoryIcons] : [...DEFAULT_CATEGORY_ICONS];
+          this.availableIcons = s.categoryIcons?.length
+            ? [...s.categoryIcons]
+            : [...DEFAULT_CATEGORY_ICONS];
         },
         error: (e: Error) => this.notify.error(this.errorText.resolve(e.message)),
       });

@@ -21,7 +21,9 @@
           [attr.aria-selected]="i === highlight"
           (mousedown)="select(s); $event.preventDefault()"
           (mouseenter)="highlight = i"
-        >{{ s }}</button>
+        >
+          {{ s }}
+        </button>
       }
     </div>
   }

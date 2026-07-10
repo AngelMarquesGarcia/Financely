@@ -18,7 +18,9 @@ export class ConfirmService {
 
   confirm(request: ConfirmRequest): Observable<boolean> {
     return this.dialog
-      .open<ConfirmDialogComponent, ConfirmRequest, boolean>(ConfirmDialogComponent, { data: request })
+      .open<ConfirmDialogComponent, ConfirmRequest, boolean>(ConfirmDialogComponent, {
+        data: request,
+      })
       .afterClosed()
       .pipe(map((result) => result ?? false));
   }

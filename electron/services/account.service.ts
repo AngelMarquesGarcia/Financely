@@ -12,7 +12,9 @@ export class AccountService {
     if (!name.trim()) throw new AppError(AppErrorCode.ACCOUNT_NAME_REQUIRED);
 
     const tx = this.db.transaction((n: string, d: string | undefined, sb: number) => {
-      const accountId = Number(accountRepository.insertAccount({ name: n, description: d, startingBalance: sb }));
+      const accountId = Number(
+        accountRepository.insertAccount({ name: n, description: d, startingBalance: sb }),
+      );
       const envelopeId = Number(
         envelopeRepository.insertEnvelope({
           name: n,

@@ -7,7 +7,11 @@
   <div class="detail__body">
     <div class="detail-row">
       <span class="detail-label">Amount</span>
-      <span class="detail-value amount" [class.amount--income]="movement.isPositive" [class.amount--expense]="!movement.isPositive">
+      <span
+        class="detail-value amount"
+        [class.amount--income]="movement.isPositive"
+        [class.amount--expense]="!movement.isPositive"
+      >
         {{ signedCents() | money }}
       </span>
     </div>
@@ -32,7 +36,12 @@
             class="badge"
             [style.background]="category.color ?? '#64748b'"
             [style.color]="contrastColor(category.color ?? '#64748b')"
-          >@if (category.emoji) { {{ category.emoji }} } {{ category.name }}</span>
+          >
+            @if (category.emoji) {
+              {{ category.emoji }}
+            }
+            {{ category.name }}</span
+          >
         } @else {
           <span class="badge badge--none">—</span>
         }

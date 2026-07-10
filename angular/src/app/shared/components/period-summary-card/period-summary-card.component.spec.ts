@@ -88,7 +88,10 @@ describe('PeriodSummaryCardComponent', () => {
   });
 
   it('falls back to the plain without-anomalies mirror when no compound-without exists', () => {
-    const comp = make(makeSummary({ summaryWithoutAnomalies: basic({ cashFlowCents: -5000 }) }), false);
+    const comp = make(
+      makeSummary({ summaryWithoutAnomalies: basic({ cashFlowCents: -5000 }) }),
+      false,
+    );
     expect(comp.effective.cashFlowCents).toBe(-5000);
   });
 });

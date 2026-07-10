@@ -15,7 +15,7 @@
       <label class="form__label" for="mov-name">Name</label>
       <app-autocomplete-input
         inputId="mov-name"
-        [inputClass]="(showErrors && !name.trim()) ? 'form__input form__input--error' : 'form__input'"
+        [inputClass]="showErrors && !name.trim() ? 'form__input form__input--error' : 'form__input'"
         placeholder="e.g. February rent"
         [value]="name"
         (valueChange)="name = $event"
@@ -44,7 +44,11 @@
       <label class="form__label" for="mov-amount">Amount</label>
       <app-amount-input
         inputId="mov-amount"
-        [inputClass]="showErrors && validationErrors.includes('Amount must be positive and non-zero.') ? 'form__input form__input--error' : 'form__input'"
+        [inputClass]="
+          showErrors && validationErrors.includes('Amount must be positive and non-zero.')
+            ? 'form__input form__input--error'
+            : 'form__input'
+        "
         [amountCents]="amountCents"
         (amountCentsChange)="amountCents = $event"
       />

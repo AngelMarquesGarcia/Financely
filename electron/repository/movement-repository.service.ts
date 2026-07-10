@@ -101,7 +101,8 @@ export class MovementRepository {
         isAnomalous: m.isAnomalous ? 1 : 0,
         parentId: m.parentId ?? null,
       }).lastInsertRowid;
-      for (const [envelopeId, amount] of m.envelopeIdMap) insertAlloc.run(Number(id), envelopeId, amount);
+      for (const [envelopeId, amount] of m.envelopeIdMap)
+        insertAlloc.run(Number(id), envelopeId, amount);
       return id;
     })(mov);
   }

@@ -158,7 +158,13 @@ export class PeriodicMovementService {
       throw new AppError(AppErrorCode.PERIODIC_ALREADY_INSTANTIATED);
     }
 
-    const newId = this.instantiate(PeriodicMovement.from(t), target, false, amountCents, envelopeIdMap);
+    const newId = this.instantiate(
+      PeriodicMovement.from(t),
+      target,
+      false,
+      amountCents,
+      envelopeIdMap,
+    );
     periodicMovementRepository.setCursor(id, now.getFullYear(), now.getMonth());
     return newId;
   }
