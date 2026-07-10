@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
+import { Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { SettingsComponent } from './settings.component';
 import { ElectronService } from '../../core/services/electron.service';
@@ -31,8 +32,9 @@ function makeMocks(settings: Partial<AppSettings> = {}, failLoad = false) {
   const mockNotify = { error: notifyError, success: notifySuccess, info: vi.fn() };
   const mockDialog = { open: vi.fn(() => ({ afterClosed: () => of(true) })) };
   const mockConfirm = { confirm: vi.fn(() => of(true)) };
+  const mockRouter = { navigateByUrl: vi.fn(() => Promise.resolve(true)) };
 
-  return { mockElectron, mockNotify, mockDialog, mockConfirm, notifyError, notifySuccess };
+  return { mockElectron, mockNotify, mockDialog, mockConfirm, mockRouter, notifyError, notifySuccess };
 }
 
 function setup(settings: Partial<AppSettings> = {}, failLoad = false) {
@@ -45,6 +47,7 @@ function setup(settings: Partial<AppSettings> = {}, failLoad = false) {
       { provide: NotificationService, useValue: mocks.mockNotify },
       { provide: DialogService, useValue: mocks.mockDialog },
       { provide: ConfirmService, useValue: mocks.mockConfirm },
+      { provide: Router, useValue: mocks.mockRouter },
     ],
   });
 
@@ -149,34 +152,28 @@ describe('SettingsComponent', () => {
     });
 
     describe('whole-DB actions', () => {
-      let reloadSpy: ReturnType<typeof vi.spyOn>;
-      beforeEach(() => {
-        reloadSpy = vi.spyOn(window.location, 'reload').mockImplementation(() => {});
-      });
-      afterEach(() => reloadSpy.mockRestore());
-
-      it('restores and reloads after confirmation', () => {
-        const { fixture, mockElectron, mockConfirm } = setup();
+      it('restores and reloads the view after confirmation', () => {
+        const { fixture, mockElectron, mockConfirm, mockRouter } = setup();
         mockConfirm.confirm.mockReturnValue(of(true));
         mockElectron.restoreDatabase.mockReturnValue(of(true));
         fixture.componentInstance.onRestore();
         expect(mockElectron.restoreDatabase).toHaveBeenCalled();
-        expect(reloadSpy).toHaveBeenCalled();
+        expect(mockRouter.navigateByUrl).toHaveBeenCalledWith('/movements');
       });
 
       it('does not restore when the confirmation is declined', () => {
-        const { fixture, mockElectron, mockConfirm } = setup();
+        const { fixture, mockElectron, mockConfirm, mockRouter } = setup();
         mockConfirm.confirm.mockReturnValue(of(false));
         fixture.componentInstance.onRestore();
         expect(mockElectron.restoreDatabase).not.toHaveBeenCalled();
-        expect(reloadSpy).not.toHaveBeenCalled();
+        expect(mockRouter.navigateByUrl).not.toHaveBeenCalled();
       });
 
-      it('seeds example data and reloads', () => {
-        const { fixture, mockElectron } = setup();
+      it('seeds example data and reloads the view', () => {
+        const { fixture, mockElectron, mockRouter } = setup();
         fixture.componentInstance.onSeedData();
         expect(mockElectron.seedExampleData).toHaveBeenCalled();
-        expect(reloadSpy).toHaveBeenCalled();
+        expect(mockRouter.navigateByUrl).toHaveBeenCalledWith('/movements');
       });
     });
   });

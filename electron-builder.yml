@@ -1,5 +1,5 @@
-appId: com.example.fromscratch
-productName: from-scratch-electron-angular
+appId: com.financely.app
+productName: Financely
 
 asar: true
 

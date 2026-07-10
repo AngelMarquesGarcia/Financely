@@ -1,6 +1,7 @@
 import { Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Router } from '@angular/router';
 import { SortEvent } from '../../shared/directives/sortable.directive';
 import { IconPickerComponent } from '../../shared/components/icon-picker/icon-picker.component';
 import { ColorSwatchesComponent } from '../../shared/components/color-swatches/color-swatches.component';
@@ -37,6 +38,7 @@ export class SettingsComponent implements OnInit {
   private errors = inject(ErrorReporter);
   private dialog = inject(DialogService);
   private refresh = inject(DataRefreshService);
+  private router = inject(Router);
 
   useDefaultDate = false;
   defaultDate = '';
@@ -231,9 +233,16 @@ export class SettingsComponent implements OnInit {
       });
   }
 
-  /** Whole-DB operations (restore/wipe/seed) touch every entity, so reload all views. */
+  /**
+   * Whole-DB operations (restore / wipe / seed) replace every entity, so the current view must reload
+   * from scratch. A hard `window.location.reload()` can't be used: the packaged app runs from a
+   * `file://…/index.html` with a relative `<base href>`, so reloading the current route path 404s to a
+   * blank page. Navigate client-side to the movements view instead — this re-creates the component,
+   * which re-fetches the now-fresh database. Closes the settings dialog first when open.
+   */
   private reloadApp() {
-    window.location.reload();
+    this.dialogRef?.close();
+    this.router.navigateByUrl('/movements');
   }
 
   private saveDateSettings() {
