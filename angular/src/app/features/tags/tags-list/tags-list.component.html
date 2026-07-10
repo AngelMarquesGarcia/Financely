@@ -1,0 +1,57 @@
+<div class="card">
+  <div class="card__header">
+    <h2 class="card__title">Tags</h2>
+    <div class="add-wrap">
+      <button class="add-btn" type="button" (click)="openCreate()"><fa-icon [icon]="faPlus" /></button>
+      @if (showForm) {
+        <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+        <div class="popover-backdrop" (click)="closeForm()"></div>
+        <div class="popover">
+          <app-tag-form
+            [editingTag]="editingTag"
+            [existingTypes]="existingTypes"
+            (saved)="onSaved()"
+            (cancelled)="closeForm()"
+          />
+        </div>
+      }
+    </div>
+  </div>
+
+  @if (tags.length === 0) {
+    <app-empty-state icon="🔖" message="No tags yet. Click the + button to create one." />
+  } @else {
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (t of tags; track t.id) {
+            <tr>
+              <td>{{ t.id }}</td>
+              <td class="type-cell">{{ t.type }}</td>
+              <td>
+                <div class="tag-name">
+                  <span class="color-dot" [style.background]="t.color"></span>
+                  {{ t.name }}
+                </div>
+              </td>
+              <td>
+                <div class="actions">
+                  <button class="btn btn--edit" (click)="openEdit(t)">Edit</button>
+                  <button class="btn btn--delete" (click)="deleteTag(t.id)">Delete</button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

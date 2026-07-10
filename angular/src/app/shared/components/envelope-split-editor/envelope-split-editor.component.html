@@ -1,0 +1,33 @@
+<div class="split">
+  @for (row of rows; track row.key) {
+    <div class="split__row">
+      <select class="form__input split__envelope" [(ngModel)]="row.envelopeId" (ngModelChange)="onChange()">
+        <option [ngValue]="null" disabled>Select envelope…</option>
+        @for (e of envelopes; track e.id) {
+          <option [ngValue]="e.id">{{ e.name }}</option>
+        }
+      </select>
+      <app-amount-input
+        inputClass="form__input split__amount"
+        [amountCents]="row.amountCents"
+        (amountCentsChange)="row.amountCents = $event; onChange()"
+      />
+      <button
+        type="button"
+        class="btn btn--ghost split__remove"
+        (click)="removeRow(row.key)"
+        [disabled]="rows.length <= 1"
+        title="Remove envelope"
+      >
+        ✕
+      </button>
+    </div>
+  }
+
+  <div class="split__footer">
+    <button type="button" class="btn btn--ghost" (click)="addRow()">+ Add envelope</button>
+    <span class="split__remaining" [class.split__remaining--bad]="remainingCents !== 0">
+      Remaining: {{ remainingCents | money }}
+    </span>
+  </div>
+</div>

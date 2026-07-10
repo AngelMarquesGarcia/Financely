@@ -1,0 +1,240 @@
+.select-col {
+  width: 2.25rem;
+  text-align: center;
+
+  input[type='checkbox'] {
+    cursor: pointer;
+    accent-color: var(--c-primary);
+  }
+}
+
+tr.month-separator td {
+  padding: 1rem 0.75rem 0.3rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--c-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: var(--c-surface-alt);
+  border-bottom: 2px solid var(--c-border);
+  pointer-events: none;
+  user-select: none;
+}
+
+tr.month-separator:first-child td {
+  padding-top: 0.4rem;
+}
+
+tr.row--income td {
+  background: var(--c-income-bg);
+}
+tr.row--expense td {
+  background: var(--c-expense-bg);
+}
+tr.row--income:hover td {
+  background: var(--c-income-bg-hover);
+}
+tr.row--expense:hover td {
+  background: var(--c-expense-bg-hover);
+}
+tr.row--selected td {
+  box-shadow: inset 3px 0 0 var(--c-primary);
+}
+
+/* Tentative (auto-generated, awaiting review) rows are tinted amber. */
+tr.row--tentative td {
+  background: #fef9c3;
+}
+tr.row--tentative:hover td {
+  background: #fef08a;
+}
+tr.row--tentative td:first-child {
+  box-shadow: inset 3px 0 0 #f59e0b;
+}
+
+.badge--tentative {
+  margin-left: 0.5rem;
+  background: #fde68a;
+  color: #92400e;
+  font-size: 0.6875rem;
+  white-space: nowrap;
+}
+
+/* Anomalous (excluded from statistics) rows carry a violet left-edge accent — the income/expense
+   tint is preserved (unlike tentative), since an anomalous movement is still real money. */
+tr.row--anomalous td:first-child {
+  box-shadow: inset 3px 0 0 #8b5cf6;
+}
+
+.badge--anomalous {
+  margin-left: 0.5rem;
+  background: #ede9fe;
+  color: #5b21b6;
+  font-size: 0.6875rem;
+  white-space: nowrap;
+}
+
+.badge--split {
+  margin-left: 0.5rem;
+  background: #e0e7ff;
+  color: #3730a3;
+  font-size: 0.6875rem;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.btn--confirm {
+  background: var(--c-income-text, #16a34a);
+  color: #fff;
+}
+
+.amount {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+tr.row--income .amount {
+  color: var(--c-income-text);
+}
+tr.row--expense .amount {
+  color: var(--c-expense-text);
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+
+  &--none {
+    background: var(--c-border-soft);
+    color: var(--c-text-faint);
+  }
+}
+
+.tags-cell {
+  position: relative;
+}
+
+.tag-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  position: relative;
+  cursor: default;
+
+  &__name {
+    font-size: 0.8125rem;
+    color: var(--c-text-mid);
+  }
+
+  &:hover .tag-popup {
+    display: block;
+  }
+}
+
+.tag-more {
+  font-size: 0.75rem;
+  color: var(--c-text-faint);
+  font-weight: 500;
+}
+
+.tag-popup {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  padding: 0.5rem 0.625rem;
+  z-index: var(--z-popover);
+  min-width: 10rem;
+  white-space: nowrap;
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0;
+    font-size: 0.8125rem;
+    color: var(--c-text-mid);
+
+    & + & {
+      border-top: 1px solid var(--c-border-soft);
+    }
+  }
+}
+
+/* ── Compound movements ─────────────────────────────────────────────────────── */
+
+/* Owner-month collapsed pseudo-row. */
+tr.row--compound-group td {
+  background: var(--c-surface-alt);
+}
+tr.row--compound-group td:first-child {
+  box-shadow: inset 3px 0 0 var(--c-primary);
+}
+
+/* Members shown in a non-owner month: present (they hit the balance) but greyed and uncounted. */
+tr.row--compound-inactive td {
+  background: var(--c-surface-alt);
+  color: var(--c-text-faint);
+  opacity: 0.72;
+  font-style: italic;
+}
+tr.row--compound-inactive .amount {
+  color: var(--c-text-faint);
+}
+
+/* Members revealed under an expanded owner-month group: indented, subtle left edge. */
+tr.row--compound-child td:first-child {
+  box-shadow: inset 3px 0 0 var(--c-border);
+}
+tr.row--compound-child td:nth-child(2) {
+  padding-left: 1.5rem;
+}
+
+.badge--compound {
+  margin-left: 0.5rem;
+  background: #e0e7ff;
+  color: #3730a3;
+  font-size: 0.6875rem;
+  white-space: nowrap;
+}
+
+.group-toggle,
+.group-name {
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+  color: var(--c-text-mid);
+}
+.group-toggle {
+  font-size: 0.9rem;
+  line-height: 1;
+  width: 1.25rem;
+}
+.group-name {
+  font: inherit;
+  font-weight: 600;
+  color: var(--c-text);
+}
+
+.group-count {
+  margin-left: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--c-text-faint);
+}
+
+.group-meta {
+  font-size: 0.75rem;
+  color: var(--c-text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}

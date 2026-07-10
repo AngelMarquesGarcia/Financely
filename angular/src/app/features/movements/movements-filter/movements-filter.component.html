@@ -1,0 +1,143 @@
+<app-popover [open]="showPanel" [showArrow]="false" align="right" [width]="340" (backdropClick)="showPanel = false">
+  <button
+    popoverTrigger
+    class="btn btn--filter"
+    [class.btn--filter-active]="hasActiveFilter"
+    type="button"
+    (click)="showPanel = !showPanel"
+  >
+    <fa-icon [icon]="faFilter" /> Filter
+    @if (hasActiveFilter) {
+      <span class="filter-dot"></span>
+    }
+  </button>
+
+  <div class="filter-panel">
+    <div class="filter-panel__header">
+      <span class="filter-panel__title">Filter by</span>
+      @if (hasActiveFilter) {
+        <button class="filter-panel__clear" type="button" (click)="clearFilter()">Clear all</button>
+      }
+    </div>
+
+    <div class="filter-section">
+      <div class="filter-section__label">Type</div>
+      <div class="filter-radio-group">
+        <label class="filter-radio">
+          <input type="radio" [(ngModel)]="filterType" value="all" (ngModelChange)="emitChange()" />
+          All
+        </label>
+        <label class="filter-radio">
+          <input type="radio" [(ngModel)]="filterType" value="income" (ngModelChange)="emitChange()" />
+          Income
+        </label>
+        <label class="filter-radio">
+          <input type="radio" [(ngModel)]="filterType" value="expense" (ngModelChange)="emitChange()" />
+          Expense
+        </label>
+      </div>
+    </div>
+
+    <div class="filter-section">
+      <div class="filter-section__label">Date</div>
+      <div class="filter-row">
+        <label class="filter-field-label" for="f-date-from">From</label>
+        <input
+          id="f-date-from"
+          class="filter-input"
+          type="date"
+          [(ngModel)]="filterFrom"
+          (ngModelChange)="emitChange()"
+        />
+        <label class="filter-field-label" for="f-date-to">To</label>
+        <input id="f-date-to" class="filter-input" type="date" [(ngModel)]="filterTo" (ngModelChange)="emitChange()" />
+      </div>
+    </div>
+
+    <div class="filter-section">
+      <div class="filter-section__label">Amount</div>
+      <div class="filter-row">
+        <label class="filter-field-label" for="f-amt-min">From</label>
+        <app-amount-input
+          inputId="f-amt-min"
+          inputClass="filter-input filter-input--number"
+          placeholder="—"
+          [amountCents]="filterMinCents"
+          (amountCentsChange)="onMinChange($event)"
+        />
+        <label class="filter-field-label" for="f-amt-max">To</label>
+        <app-amount-input
+          inputId="f-amt-max"
+          inputClass="filter-input filter-input--number"
+          placeholder="—"
+          [amountCents]="filterMaxCents"
+          (amountCentsChange)="onMaxChange($event)"
+        />
+      </div>
+    </div>
+
+    <div class="filter-section">
+      <div class="filter-section__label">Category</div>
+      <select class="filter-input filter-input--full" [(ngModel)]="filterCategoryId" (ngModelChange)="emitChange()">
+        <option [ngValue]="null">All categories</option>
+        @for (cat of categories; track cat.id) {
+          <option [ngValue]="cat.id">{{ cat.name }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="filter-section">
+      <div class="filter-section__label">Envelope</div>
+      <select class="filter-input filter-input--full" [(ngModel)]="filterEnvelopeId" (ngModelChange)="emitChange()">
+        <option [ngValue]="null">All envelopes</option>
+        @for (e of envelopes; track e.id) {
+          <option [ngValue]="e.id">{{ e.name }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="filter-section">
+      <div class="filter-section__label">Tags</div>
+      <app-tag-picker
+        [tags]="tags"
+        [(selectedTagIds)]="filterTagIds"
+        [allowCreate]="false"
+        (selectedTagIdsChange)="emitChange()"
+      />
+      @if (filterTagIds.length > 1) {
+        <label class="filter-checkbox">
+          <input type="checkbox" [(ngModel)]="filterTagMatchAll" (ngModelChange)="emitChange()" />
+          Match all selected tags
+        </label>
+      }
+    </div>
+
+    <div class="filter-section">
+      <div class="filter-section__label">Text</div>
+      <input
+        class="filter-input filter-input--full"
+        type="text"
+        [(ngModel)]="filterText"
+        (ngModelChange)="emitChange()"
+        placeholder="Search text…"
+      />
+      <div class="filter-subrow">
+        <label class="filter-field-label" for="filter-select">Look in</label>
+        <select class="filter-input" [(ngModel)]="filterTextIn" name="filter-select" (ngModelChange)="emitChange()">
+          <option value="all">All fields</option>
+          <option value="name">Name</option>
+          <option value="concept">Concept</option>
+          <option value="notes">Notes</option>
+        </select>
+      </div>
+      <div class="filter-radio-group">
+        @for (mode of textModes; track mode.value) {
+          <label class="filter-radio">
+            <input type="radio" [(ngModel)]="filterTextMode" [value]="mode.value" (ngModelChange)="emitChange()" />
+            {{ mode.label }}
+          </label>
+        }
+      </div>
+    </div>
+  </div>
+</app-popover>

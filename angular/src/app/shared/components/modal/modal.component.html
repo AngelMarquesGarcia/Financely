@@ -1,0 +1,21 @@
+@if (open) {
+  <div class="modal-overlay" (click)="onBackdropClick()" role="presentation"></div>
+  <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events -->
+  <div
+    class="modal-panel"
+    role="dialog"
+    aria-modal="true"
+    (click)="$event.stopPropagation()"
+    cdkTrapFocus
+    cdkTrapFocusAutoCapture
+  >
+    @if (title) {
+      <div class="modal-header">
+        <span class="modal-title">{{ title }}</span>
+        <button type="button" class="modal-close btn btn--ghost" (click)="closed.emit()" aria-label="Close">✕</button>
+      </div>
+    }
+    <ng-content />
+    <ng-content select="[modalFooter]" />
+  </div>
+}

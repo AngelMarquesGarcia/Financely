@@ -1,0 +1,49 @@
+<div class="card">
+  <h2 class="card__title">Categories</h2>
+
+  @if (categories.length === 0) {
+    <app-empty-state icon="🏷️" message="No categories yet. Use the form above to add your first one." />
+  } @else {
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Movements</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of categories; track c.id) {
+            <tr>
+              <td>{{ c.id }}</td>
+              <td>
+                <div class="cat-name">
+                  <span class="color-dot" [style.background]="c.color ?? '#64748b'"></span>
+                  @if (c.emoji) {
+                    <span>{{ c.emoji }}</span>
+                  }
+                  {{ c.name }}
+                  @if (c.isDefault) {
+                    <span class="default-badge">default</span>
+                  }
+                </div>
+              </td>
+              <td>{{ c.movementCount ?? 0 }}</td>
+              <td>
+                <div class="actions">
+                  <button class="btn btn--edit" (click)="editRequested.emit(c)">Edit</button>
+                  @if (!c.isDefault) {
+                    <button class="btn btn--ghost" (click)="setDefaultRequested.emit(c.id)">Set default</button>
+                    <button class="btn btn--delete" (click)="deleteRequested.emit(c.id)">Delete</button>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

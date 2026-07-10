@@ -1,0 +1,16 @@
+export const tables = {
+  accounts: 'accounts',
+  envelopes: 'envelopes',
+  categories: 'categories',
+  movements: 'movements',
+  movementEnvelopes: 'movement_envelopes',
+  compoundMovements: 'compound_movements',
+  transfers: 'transfers',
+  tags: 'tags',
+  movementTags: 'movement_tags',
+  periodicMovements: 'periodic_movements',
+  periodicMovementEnvelopes: 'periodic_movement_envelopes',
+  periodicMovementTags: 'periodic_movement_tags',
+  periodSummaries: 'period_summaries',
+  metadata: 'meta',
+} as const;

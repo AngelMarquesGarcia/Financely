@@ -1,0 +1,113 @@
+<div class="card">
+  <h2 class="card__title">
+    {{ isEditing ? 'Edit Envelope #' + editingEnvelope!.id : 'New Envelope' }}
+  </h2>
+
+  <div class="form">
+    <div class="form__group">
+      <label class="form__label" for="name">Name</label>
+      <input
+        id="name"
+        class="form__input"
+        [class.form__input--error]="showErrors && !name.trim()"
+        [(ngModel)]="name"
+        placeholder="e.g. Groceries"
+      />
+      @if (showErrors && !name.trim()) {
+        <span class="form__error">Name is required.</span>
+      }
+    </div>
+
+    <div class="form__group">
+      <label class="form__label" for="account">Account</label>
+      <select
+        id="account"
+        class="form__input"
+        [class.form__input--error]="showErrors && !accountId"
+        [(ngModel)]="accountId"
+      >
+        <option [ngValue]="null" disabled>Select account…</option>
+        @for (a of accounts; track a.id) {
+          <option [ngValue]="a.id">{{ a.name }}</option>
+        }
+      </select>
+      @if (showErrors && !accountId) {
+        <span class="form__error">An account must be selected.</span>
+      }
+    </div>
+
+    <div class="form__group">
+      <span class="form__label">Categories</span>
+      <app-entity-select
+        [items]="categories"
+        [selectedIds]="selectedCategoryIds"
+        (selectedIdsChange)="selectedCategoryIds = $event"
+        [labelFn]="categoryLabel"
+        [colorFn]="categoryColor"
+        [emojiFn]="categoryEmoji"
+        [availableFilter]="categoryAvailable"
+        addLabel="Add category"
+        emptyMessage="All categories assigned"
+      />
+    </div>
+
+    <div class="form__group">
+      <label class="form__label" for="startingBalance">Starting balance</label>
+      <app-amount-input
+        inputId="startingBalance"
+        [amountCents]="startingBalance"
+        (amountCentsChange)="startingBalance = $event ?? 0"
+      />
+    </div>
+
+    <div class="form__group">
+      <label class="form__label" for="budget">Monthly budget</label>
+      <app-amount-input inputId="budget" [amountCents]="budgetCents" (amountCentsChange)="onBudgetChange($event)" />
+      <span class="form__hint">Leave empty for no budget.</span>
+    </div>
+
+    <div class="form__group">
+      <label class="form__label" for="maxSavingsMode">Max savings</label>
+      <select
+        id="maxSavingsMode"
+        class="form__input"
+        [(ngModel)]="maxSavingsMode"
+        (ngModelChange)="onMaxSavingsModeChange()"
+      >
+        <option value="none">No cap</option>
+        <option value="1x" [disabled]="budgetCents === null">1× budget</option>
+        <option value="2x" [disabled]="budgetCents === null">2× budget</option>
+        <option value="3x" [disabled]="budgetCents === null">3× budget</option>
+        <option value="custom">Custom…</option>
+      </select>
+      @if (maxSavingsMode === 'custom') {
+        <app-amount-input
+          inputId="maxSavings"
+          [amountCents]="maxSavingsCents"
+          (amountCentsChange)="maxSavingsCents = $event"
+        />
+      }
+      <span class="form__hint">Caps accumulated savings for this envelope.</span>
+    </div>
+
+    <div class="form__group">
+      <label class="form__label" for="overflowsTo">Overflow target</label>
+      <select id="overflowsTo" class="form__input" [(ngModel)]="overflowsTo" [disabled]="accountId === null">
+        <option [ngValue]="null">Account default</option>
+        @for (e of overflowTargets; track e.id) {
+          <option [ngValue]="e.id">{{ e.name }}</option>
+        }
+      </select>
+      <span class="form__hint">Where savings above the cap are sent.</span>
+    </div>
+
+    <div class="form__actions">
+      <button class="btn btn--primary" (click)="save()">
+        {{ isEditing ? 'Update' : 'Create' }}
+      </button>
+      @if (isEditing) {
+        <button class="btn btn--ghost" (click)="cancel()">Cancel</button>
+      }
+    </div>
+  </div>
+</div>

@@ -1,0 +1,12 @@
+.account-cell {
+  color: #64748b;
+}
+
+.amount {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+
+  &--negative {
+    color: var(--c-expense-text, #dc2626);
+  }
+}

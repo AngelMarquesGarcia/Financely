@@ -1,137 +1,87 @@
-import { describe, it, expect, jest, beforeEach } from '@jest/globals';
-import Database from 'better-sqlite3';
-import { DatabaseService } from '../../services/database.service';
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+
+jest.unmock('better-sqlite3');
+
+const tmpDir = path.join(os.tmpdir(), 'financely-test-database');
+if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
+const dbPath = path.join(tmpDir, 'electron_database.db');
+if (fs.existsSync(dbPath)) fs.unlinkSync(dbPath);
 
 jest.mock('electron', () => ({
-  app: { getPath: jest.fn().mockReturnValue('/mock/path') },
+  app: { getPath: jest.fn().mockReturnValue(tmpDir) },
 }));
 
-describe('DatabaseService', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let mockDb: any;
-  let service: DatabaseService;
+import { DatabaseService } from '../../repository/database.service';
+import { AppErrorCode } from '@shared/error-codes';
 
+const svc = () => DatabaseService.getInstance();
+const count = (table: string) =>
+  (svc().db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get() as { n: number }).n;
+
+describe('DatabaseService — lifecycle', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    service = new DatabaseService();
-    mockDb = jest.mocked(Database).mock.results[0].value;
+    // Start each test from a clean, empty (non-demo) schema.
+    svc().dropAllTables();
+    svc().migrate();
   });
 
-  describe('migrate', () => {
-    it('applies v1 migration on a fresh database', () => {
-      mockDb.get.mockReturnValue(undefined);
-      service.migrate();
-      expect(mockDb.run).toHaveBeenCalledTimes(4); // 3 CREATE TABLE + 1 INSERT schema_version
-    });
-
-    it('skips v1 migration when schema is already up to date', () => {
-      mockDb.get.mockReturnValue({ value: '1' });
-      service.migrate();
-      expect(mockDb.run).toHaveBeenCalledTimes(3); // 3 CREATE TABLE only
-    });
+  it('migrate() is idempotent and seeds Uncategorized as the default category', () => {
+    svc().migrate();
+    svc().migrate();
+    const defaults = svc().db.prepare(`SELECT name FROM categories WHERE is_default = 1`).all() as {
+      name: string;
+    }[];
+    expect(defaults).toEqual([{ name: 'Uncategorized' }]);
+    expect(count('movements')).toBe(0); // migrate does NOT seed demo data
   });
 
-  describe('insertOperation', () => {
-    it('returns lastInsertRowid', () => {
-      mockDb.run.mockReturnValue({ lastInsertRowid: 42, changes: 1 });
-      const result = service.insertOperation({ number1: 2, number2: 3, operator: '+', result: 5 });
-      expect(result).toBe(42);
-    });
+  it('createExampleData() seeds the demo dataset on an empty DB', () => {
+    expect(count('movements')).toBe(0);
+    svc().createExampleData();
+    expect(count('movements')).toBeGreaterThan(0);
+    expect(count('categories')).toBeGreaterThan(1);
   });
 
-  describe('insertSentence', () => {
-    it('returns lastInsertRowid', () => {
-      mockDb.run.mockReturnValue({ lastInsertRowid: 7, changes: 1 });
-      const result = service.insertSentence({ sentence: 'hello world', words: 2, chars: 11 });
-      expect(result).toBe(7);
-    });
+  it('dropAllTables() wipes data', () => {
+    svc().createExampleData();
+    expect(count('movements')).toBeGreaterThan(0);
+    svc().dropAllTables();
+    svc().migrate();
+    expect(count('movements')).toBe(0);
+  });
+});
+
+describe('DatabaseService — backup & restore', () => {
+  beforeEach(() => {
+    svc().dropAllTables();
+    svc().migrate();
   });
 
-  describe('getOperationByOperator', () => {
-    it('returns matching operations', () => {
-      const ops = [{ number1: 2, number2: 3, operator: '+', result: 5 }];
-      mockDb.all.mockReturnValue(ops);
-      expect(service.getOperationByOperator('+')).toEqual(ops);
-    });
+  it('backs up to a file and restores it, replacing current data', async () => {
+    svc().createExampleData();
+    const seeded = count('movements');
+    expect(seeded).toBeGreaterThan(0);
+
+    const backupPath = path.join(tmpDir, 'backup.db');
+    if (fs.existsSync(backupPath)) fs.unlinkSync(backupPath);
+    await svc().backup(backupPath);
+    expect(fs.existsSync(backupPath)).toBe(true);
+
+    // Wipe to empty, then restore.
+    svc().dropAllTables();
+    svc().migrate();
+    expect(count('movements')).toBe(0);
+
+    svc().restore(backupPath);
+    expect(count('movements')).toBe(seeded);
   });
 
-  describe('getSentenceByWords', () => {
-    it('returns matching sentences', () => {
-      const sents = [{ sentence: 'hello world', words: 2, chars: 11 }];
-      mockDb.all.mockReturnValue(sents);
-      expect(service.getSentenceByWords(2)).toEqual(sents);
-    });
-  });
-
-  describe('getAllOperations', () => {
-    it('returns all operations', () => {
-      const ops = [{ number1: 1, number2: 2, operator: '*', result: 2 }];
-      mockDb.all.mockReturnValue(ops);
-      expect(service.getAllOperations()).toEqual(ops);
-    });
-  });
-
-  describe('getAllSentences', () => {
-    it('returns all sentences', () => {
-      const sents = [{ sentence: 'foo', words: 1, chars: 3 }];
-      mockDb.all.mockReturnValue(sents);
-      expect(service.getAllSentences()).toEqual(sents);
-    });
-  });
-
-  describe('patchOperation', () => {
-    const op = { number1: 2, number2: 3, operator: '+', result: 5 };
-
-    it('returns true when a row was updated', () => {
-      mockDb.run.mockReturnValue({ changes: 1 });
-      expect(service.patchOperation(op)).toBe(true);
-    });
-
-    it('returns false when no row matched', () => {
-      mockDb.run.mockReturnValue({ changes: 0 });
-      expect(service.patchOperation(op)).toBe(false);
-    });
-  });
-
-  describe('patchSentence', () => {
-    const sent = { sentence: 'hello world', words: 2, chars: 11 };
-
-    it('returns true when a row was updated', () => {
-      mockDb.run.mockReturnValue({ changes: 1 });
-      expect(service.patchSentence(sent)).toBe(true);
-    });
-
-    it('returns false when no row matched', () => {
-      mockDb.run.mockReturnValue({ changes: 0 });
-      expect(service.patchSentence(sent)).toBe(false);
-    });
-  });
-
-  describe('deleteOperation', () => {
-    const op = { number1: 2, number2: 3, operator: '+', result: 5 };
-
-    it('returns true when a row was deleted', () => {
-      mockDb.run.mockReturnValue({ changes: 1 });
-      expect(service.deleteOperation(op)).toBe(true);
-    });
-
-    it('returns false when no row matched', () => {
-      mockDb.run.mockReturnValue({ changes: 0 });
-      expect(service.deleteOperation(op)).toBe(false);
-    });
-  });
-
-  describe('deleteSentence', () => {
-    const sent = { sentence: 'hello world', words: 2, chars: 11 };
-
-    it('returns true when a row was deleted', () => {
-      mockDb.run.mockReturnValue({ changes: 1 });
-      expect(service.deleteSentence(sent)).toBe(true);
-    });
-
-    it('returns false when no row matched', () => {
-      mockDb.run.mockReturnValue({ changes: 0 });
-      expect(service.deleteSentence(sent)).toBe(false);
-    });
+  it('rejects a file that is not one of our databases', () => {
+    const badPath = path.join(tmpDir, 'not-a-db.txt');
+    fs.writeFileSync(badPath, 'definitely not sqlite');
+    expect(() => svc().restore(badPath)).toThrow(AppErrorCode.RESTORE_INVALID_FILE);
   });
 });

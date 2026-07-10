@@ -1,6 +1,10 @@
 {
   "compilerOptions": {
     "noEmit": true,
+    "skipLibCheck": true,
+    "paths": {
+      "@shared/*": ["../shared/*"]
+    },
     "moduleResolution": "node16",
     "esModuleInterop": true,
     "module": "node16",
@@ -12,7 +16,8 @@
     "main.ts",
     "preload.ts",
     "ipc/**/*.ts",
-    "services/**/*.ts"
+    "services/**/*.ts",
+    "repository/**/*.ts"
   ],
   "exclude": [
     "node_modules",

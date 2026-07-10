@@ -50,3 +50,11 @@ Thumbs.db
 **/target
 **/node_modules
 dist/
+
+# Test results
+playwright-report/
+test-results/
+.claude/settings.local.json
+
+# Personal exported data — keep out of version control (the `resources/` samples stay tracked)
+resources/personal/

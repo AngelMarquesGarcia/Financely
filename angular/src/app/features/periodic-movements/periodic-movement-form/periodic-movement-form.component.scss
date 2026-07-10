@@ -1,0 +1,145 @@
+.card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.card__title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+}
+
+.form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+
+  &__group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+
+    &--full {
+      grid-column: 1 / -1;
+    }
+  }
+
+  &__label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  &__label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  &__check {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #64748b;
+    text-transform: none;
+    letter-spacing: normal;
+    cursor: pointer;
+  }
+
+  &__input {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    background: #f8fafc;
+    color: #0f172a;
+    transition:
+      border-color 0.15s,
+      box-shadow 0.15s;
+
+    &:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+      background: #fff;
+    }
+
+    &--error {
+      border-color: #f87171;
+      background: #fff5f5;
+    }
+  }
+
+  &__textarea {
+    resize: vertical;
+    font-family: inherit;
+    font-size: inherit;
+    min-height: 4.5rem;
+  }
+
+  &__error {
+    font-size: 0.75rem;
+    color: #dc2626;
+    margin-top: -0.125rem;
+  }
+
+  &__hint {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin-top: -0.125rem;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 0.5rem;
+    padding-top: 0.25rem;
+  }
+}
+
+.extras {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 0 0.875rem;
+
+  &[open] {
+    padding-bottom: 0.875rem;
+  }
+
+  &__toggle {
+    padding: 0.625rem 0;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    &::after {
+      content: ' ▸';
+    }
+  }
+
+  &[open] &__toggle::after {
+    content: ' ▾';
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+    padding-top: 0.75rem;
+  }
+}

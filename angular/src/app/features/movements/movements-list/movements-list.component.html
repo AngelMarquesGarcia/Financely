@@ -1,0 +1,205 @@
+<div class="card">
+  <div class="card__header">
+    <h2 class="card__title">Movements</h2>
+    <div class="card__actions">
+      @if (selected.size > 0) {
+        <button class="btn btn--delete" type="button" (click)="emitBulkDelete()">
+          Delete selected ({{ selected.size }})
+        </button>
+      }
+      <app-movements-filter
+        [categories]="categories"
+        [envelopes]="envelopes"
+        [tags]="tags"
+        (filterChanged)="onFilterChanged($event)"
+      />
+    </div>
+  </div>
+
+  @if (movements.length === 0) {
+    @if (filterActive) {
+      <app-empty-state icon="🔍" message="No movements match the current filters." />
+    } @else {
+      <app-empty-state icon="💸" message="No movements recorded yet.">
+        <app-quick-create-movement-button label="Create your first movement" (created)="filterChanged.emit({})" />
+      </app-empty-state>
+    }
+  } @else {
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th class="select-col">
+              <input
+                type="checkbox"
+                [checked]="allSelected"
+                [indeterminate]="someSelected"
+                (change)="toggleAll($any($event.target).checked)"
+                aria-label="Select all"
+              />
+            </th>
+            <th>Name</th>
+            <th>Amount</th>
+            <th>Category</th>
+            <th>Envelope</th>
+            <th>Date</th>
+            <th>Tags</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of groupedRows; track row.key) {
+            @if (row.kind === 'header') {
+              <tr class="month-separator">
+                <td colspan="8">{{ row.label }}</td>
+              </tr>
+            } @else if (row.kind === 'compound') {
+              <tr class="row--compound-group">
+                <td class="select-col">
+                  <button
+                    class="group-toggle"
+                    type="button"
+                    (click)="toggleGroup(row.compound.id)"
+                    [attr.aria-label]="(row.expanded ? 'Collapse ' : 'Expand ') + row.compound.name"
+                  >
+                    {{ row.expanded ? '▾' : '▸' }}
+                  </button>
+                </td>
+                <td>
+                  <button class="group-name" type="button" (click)="toggleGroup(row.compound.id)">
+                    {{ row.compound.name }}
+                  </button>
+                  <span
+                    class="badge badge--compound"
+                    [title]="
+                      row.compound.isCancelable
+                        ? 'Cancelable — the net is the true movement'
+                        : 'A grouping of movements'
+                    "
+                  >
+                    {{ row.compound.isCancelable ? 'cancelable' : 'group' }}
+                  </span>
+                  @if (row.compound.isAnomalous) {
+                    <span class="badge badge--anomalous" title="Anomalous — excluded from average/aggregate statistics"
+                      >✷ anomalous</span
+                    >
+                  }
+                  <span class="group-count"
+                    >{{ row.monthChildren.length }} item{{ row.monthChildren.length === 1 ? '' : 's' }}</span
+                  >
+                </td>
+                <td class="amount">{{ groupSubtotalCents(row.monthChildren) | money }}</td>
+                <td colspan="3" class="group-meta">compound movement</td>
+                <td></td>
+                <td>
+                  <div class="actions">
+                    <button class="btn btn--edit" type="button" (click)="compoundDetailRequested.emit(row.compound)">
+                      Detail
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            } @else {
+              @let m = row.movement;
+              @let cat = getCategory(m.categoryId);
+              <tr
+                [class.row--income]="m.isPositive"
+                [class.row--expense]="!m.isPositive"
+                [class.row--selected]="isRowSelected(m.id)"
+                [class.row--tentative]="m.isTentative"
+                [class.row--anomalous]="m.isAnomalous"
+                [class.row--compound-inactive]="row.inactive"
+                [class.row--compound-child]="row.childOf !== undefined"
+                [title]="row.inactive ? inactiveTitle(m) : null"
+              >
+                <td class="select-col">
+                  <input
+                    type="checkbox"
+                    [checked]="isRowSelected(m.id)"
+                    (change)="toggleRow(m.id, $any($event.target).checked)"
+                    [attr.aria-label]="'Select movement ' + m.name"
+                  />
+                </td>
+                <td>
+                  {{ m.name }}
+                  @if (m.isTentative) {
+                    <span class="badge badge--tentative" title="Auto-generated — awaiting your review">⚠ Review</span>
+                  }
+                  @if (m.isAnomalous) {
+                    <span class="badge badge--anomalous" title="Anomalous — excluded from average/aggregate statistics"
+                      >✷ anomalous</span
+                    >
+                  }
+                  @if (row.inactive && compoundFor(m); as c) {
+                    <span class="badge badge--compound" [title]="inactiveTitle(m)">⛓ {{ c.name }}</span>
+                  }
+                </td>
+                <td class="amount">
+                  {{ displayAmountCents(m) | money }}
+                  @if (isPartial(m)) {
+                    <span class="badge badge--split" title="Part of a split movement">partial</span>
+                  } @else if (isSplit(m)) {
+                    <span class="badge badge--split" title="Split across envelopes">split</span>
+                  }
+                </td>
+                <td>
+                  @if (cat) {
+                    <span
+                      class="badge"
+                      [style.background]="cat.color ?? '#64748b'"
+                      [style.color]="contrastColor(cat.color ?? '#64748b')"
+                    >
+                      @if (cat.emoji) {
+                        {{ cat.emoji }}
+                      }
+                      {{ cat.name }}</span
+                    >
+                  } @else {
+                    <span class="badge badge--none">—</span>
+                  }
+                </td>
+                <td>{{ envelopeLabel(m) }}</td>
+                <td>{{ formatDate(m.date) }}</td>
+                <td class="tags-cell">
+                  @let tags = getMovementTags(m.id);
+                  @if (tags.length > 0) {
+                    <div class="tag-summary">
+                      <span class="color-dot" [style.background]="tags[0].color"></span>
+                      <span class="tag-summary__name">{{ tags[0].name }}</span>
+                      @if (tags.length > 1) {
+                        <span class="tag-more">+{{ tags.length - 1 }}</span>
+                      }
+                      @if (tags.length > 1) {
+                        <div class="tag-popup">
+                          @for (t of tags; track t.id) {
+                            <div class="tag-popup__item">
+                              <span class="color-dot" [style.background]="t.color"></span>
+                              {{ t.name }}
+                            </div>
+                          }
+                        </div>
+                      }
+                    </div>
+                  } @else {
+                    <span class="badge badge--none">—</span>
+                  }
+                </td>
+                <td>
+                  <div class="actions">
+                    @if (m.isTentative) {
+                      <button class="btn btn--confirm" (click)="confirmRequested.emit(m.id)">Confirm</button>
+                    }
+                    <button class="btn btn--edit" (click)="editRequested.emit(m)">Edit</button>
+                    <button class="btn btn--delete" (click)="deleteRequested.emit(m.id)">
+                      {{ m.isTentative ? 'Cancel' : 'Delete' }}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

@@ -1,0 +1,50 @@
+<div class="movements-page">
+  <app-modal [open]="editingMovement !== null" (closed)="onCancelled()">
+    @if (editingMovement) {
+      <app-movement-form [editingMovement]="editingMovement" (saved)="onSaved()" (cancelled)="onCancelled()" />
+    }
+  </app-modal>
+
+  <app-movement-form (saved)="onSaved()" />
+
+  <div class="card compact-card">
+    <div class="card__header">
+      <h2 class="card__title">Compact view</h2>
+    </div>
+    <app-movement-list-compact
+      [movements]="movements"
+      [categories]="categories"
+      [envelopes]="envelopes"
+      [movementTags]="movementTags"
+      (editRequested)="onEditRequested($event)"
+      (deleteRequested)="onDeleteRequested($event)"
+    />
+  </div>
+
+  <app-movements-list
+    [movements]="movements"
+    [categories]="categories"
+    [envelopes]="envelopes"
+    [tags]="tags"
+    [movementTags]="movementTags"
+    [compounds]="compounds"
+    [scopedEnvelopeId]="scopedEnvelopeId"
+    (filterChanged)="onFilterChanged($event)"
+    (editRequested)="onEditRequested($event)"
+    (deleteRequested)="onDeleteRequested($event)"
+    (confirmRequested)="onConfirmRequested($event)"
+    (bulkDeleteRequested)="onBulkDeleteRequested($event)"
+    (compoundDetailRequested)="onCompoundDetail($event)"
+  />
+
+  @if (filterSummary) {
+    <div class="movements-summary">
+      <label class="movements-summary__toggle">
+        <input type="checkbox" [(ngModel)]="showSummaryAnomalies" />
+        Include anomalous movements
+      </label>
+      <button type="button" class="btn" (click)="exportCurrentView()">Export current view…</button>
+      <app-filter-summary [summary]="filterSummary" [showAnomalies]="showSummaryAnomalies" />
+    </div>
+  }
+</div>

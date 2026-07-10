@@ -1,0 +1,54 @@
+<form class="compound-form form card" (ngSubmit)="save()">
+  <h3 class="compound-form__title">{{ editingCompound ? 'Edit compound' : 'New compound' }}</h3>
+
+  <app-form-field label="Name" [full]="true">
+    <input class="form__input" type="text" name="name" [(ngModel)]="name" placeholder="e.g. Trip to Asturias" />
+  </app-form-field>
+
+  <app-form-field label="Movements" [full]="true">
+    <app-entity-select
+      [items]="movements"
+      [selectedIds]="selectedMemberIds"
+      (selectedIdsChange)="onMembersChange($event)"
+      [labelFn]="memberLabel"
+      [availableFilter]="eligibilityFilter"
+      addLabel="Add movement"
+      emptyMessage="No eligible movements"
+    />
+    <div class="compound-form__member-actions">
+      <p class="compound-form__hint">Pick at least two movements on the same account.</p>
+      <button class="btn btn--secondary" type="button" (click)="addNewMovement()">+ New movement</button>
+    </div>
+  </app-form-field>
+
+  <div class="compound-form__checks">
+    <label class="compound-form__check">
+      <input type="checkbox" name="cancelable" [(ngModel)]="isCancelable" />
+      Cancelable — the members cancel out and the net is the true movement (one envelope only)
+    </label>
+    <label class="compound-form__check">
+      <input type="checkbox" name="anomalous" [(ngModel)]="isAnomalous" />
+      Anomalous — exclude the members from average/aggregate statistics
+    </label>
+  </div>
+
+  <app-form-field label="Owner month" [full]="true">
+    <select class="form__input" name="owner" [(ngModel)]="ownerKey">
+      @for (o of ownerOptions; track o.key) {
+        <option [value]="o.key">{{ o.label }}</option>
+      }
+      <option [value]="NO_OWNER">Yearly (no owner)</option>
+    </select>
+  </app-form-field>
+
+  <app-form-field label="Notes" [optional]="true" [full]="true">
+    <textarea class="form__input" name="notes" rows="2" [(ngModel)]="notes"></textarea>
+  </app-form-field>
+
+  <div class="actions">
+    <button class="btn" type="button" (click)="cancel()">Cancel</button>
+    <button class="btn btn--primary" type="submit" [disabled]="!canSave">
+      {{ editingCompound ? 'Save' : 'Create' }}
+    </button>
+  </div>
+</form>

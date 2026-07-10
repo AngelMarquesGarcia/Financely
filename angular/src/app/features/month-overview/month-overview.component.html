@@ -1,0 +1,43 @@
+<div class="month-overview">
+  <header class="month-overview__header">
+    <div class="month-overview__nav">
+      <button
+        class="btn btn--ghost"
+        type="button"
+        (click)="prevMonth()"
+        [disabled]="!hasPrev"
+        aria-label="Previous month"
+      >
+        ‹
+      </button>
+      <h1 class="month-overview__title">{{ monthLabel }}</h1>
+      <button class="btn btn--ghost" type="button" (click)="nextMonth()" [disabled]="!hasNext" aria-label="Next month">
+        ›
+      </button>
+    </div>
+    <label class="month-overview__toggle">
+      <input type="checkbox" [(ngModel)]="showAnomalies" />
+      Include anomalous movements
+    </label>
+  </header>
+
+  @if (accountSummaries.length > 0) {
+    <section class="month-overview__section">
+      <h2 class="month-overview__section-title">Account total</h2>
+      @for (s of accountSummaries; track s.accountId) {
+        <app-period-summary-card [summary]="s" [showAnomalies]="showAnomalies" />
+      }
+    </section>
+  }
+
+  <section class="month-overview__section">
+    <h2 class="month-overview__section-title">Envelopes</h2>
+    @if (envelopeSummaries.length === 0) {
+      <p class="month-overview__empty">No period summaries yet.</p>
+    } @else {
+      @for (s of envelopeSummaries; track s.envelopeId) {
+        <app-period-summary-card [summary]="s" [showAnomalies]="showAnomalies" />
+      }
+    }
+  </section>
+</div>

@@ -1,0 +1,68 @@
+<div class="card">
+  <h2 class="card__title">
+    {{ isEditing ? 'Edit Category #' + editingCategory!.id : 'New Category' }}
+  </h2>
+
+  <div class="form">
+    <div class="form__group">
+      <label class="form__label" for="cat-name">Name</label>
+      <input
+        id="cat-name"
+        class="form__input"
+        [class.form__input--error]="showErrors && !name.trim()"
+        [(ngModel)]="name"
+        placeholder="e.g. Food"
+      />
+      @if (showErrors && !name.trim()) {
+        <span class="form__error">Name is required.</span>
+      }
+    </div>
+
+    <div class="form__group form__group--full">
+      <label class="form__label" for="cat-color">Color</label>
+      <app-color-swatches
+        [colors]="presetColors"
+        [value]="color"
+        (valueChange)="color = $event"
+        (reordered)="onColorReorder($event)"
+        (colorAdded)="onColorAdded($event)"
+      >
+        <label for="cat-color" class="swatch swatch--rainbow" aria-label="Custom color"></label>
+        <label for="cat-color" class="abs" aria-label="Custom color"></label>
+      </app-color-swatches>
+      <input id="cat-color" class="color-native" type="color" [(ngModel)]="color" />
+    </div>
+
+    <div class="form__group form__group--full">
+      <span class="form__label">Icon</span>
+      <app-icon-picker
+        [icons]="availableIcons"
+        [value]="emoji"
+        (valueChange)="emoji = $event"
+        (reordered)="onIconReorder($event)"
+        (iconAdded)="onIconAdded($event)"
+      />
+    </div>
+
+    <div class="form__group form__group--full">
+      <div class="form__label">Preview</div>
+      <div class="preview">
+        <span class="preview__badge" [style.background]="color" [style.color]="previewTextColor">
+          @if (emoji) {
+            {{ emoji }}
+          }
+          {{ name || 'Category name' }}
+        </span>
+      </div>
+    </div>
+
+    <div class="form__actions">
+      <button class="btn btn--primary" (click)="save()">
+        {{ isEditing ? 'Update' : 'Create' }}
+      </button>
+      @if (isEditing) {
+        <button class="btn btn--ghost" (click)="cancel()">Cancel</button>
+      }
+    </div>
+  </div>
+</div>

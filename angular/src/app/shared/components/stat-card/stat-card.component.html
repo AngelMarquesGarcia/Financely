@@ -1,0 +1,16 @@
+<div
+  class="stat-card"
+  [class.stat-card--positive]="tone === 'positive'"
+  [class.stat-card--negative]="tone === 'negative'"
+>
+  <div class="stat-card__head">
+    @if (icon) {
+      <fa-icon class="stat-card__icon" [icon]="icon" />
+    }
+    <span class="stat-card__title">{{ title }}</span>
+  </div>
+  <div class="stat-card__value">{{ value }}</div>
+  @if (sublabel) {
+    <div class="stat-card__sublabel">{{ sublabel }}</div>
+  }
+</div>

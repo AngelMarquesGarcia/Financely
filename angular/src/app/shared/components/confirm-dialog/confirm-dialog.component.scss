@@ -1,0 +1,39 @@
+.confirm-dialog {
+  background: var(--c-surface);
+  border-radius: var(--r-lg);
+  padding: var(--sp-6);
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.2),
+    0 4px 12px rgba(0, 0, 0, 0.08);
+  animation: dialog-in 0.18s ease-out;
+
+  &__title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--c-text);
+    margin-bottom: var(--sp-2);
+  }
+
+  &__message {
+    color: var(--c-text-muted);
+    line-height: 1.5;
+    margin-bottom: var(--sp-5);
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--sp-2);
+  }
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -1,0 +1,17 @@
+<div class="cdd">
+  <h3 class="cdd__title">Delete compound</h3>
+  <p class="cdd__message">
+    Delete the compound "{{ data.name }}"? Its {{ data.childCount }} member movement{{
+      data.childCount === 1 ? '' : 's'
+    }}
+    will be un-grouped.
+  </p>
+  <label class="cdd__checkbox">
+    <input type="checkbox" [(ngModel)]="deleteChildren" />
+    Also delete the member movements (they will be removed from the account)
+  </label>
+  <div class="cdd__actions">
+    <button class="btn" type="button" (click)="cancel()">Cancel</button>
+    <button class="btn btn--delete" type="button" (click)="confirm()">Delete</button>
+  </div>
+</div>

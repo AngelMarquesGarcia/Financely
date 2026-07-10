@@ -1,0 +1,138 @@
+.detail-split {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: stretch;
+  width: 100%;
+
+  &__row {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  &__name {
+    color: #475569;
+  }
+
+  &__amount {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+  }
+}
+
+.detail {
+  background: #fff;
+  border-radius: 0.75rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  width: min(26rem, 92vw);
+  overflow: hidden;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem 0.75rem;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  &__title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+  }
+
+  &__close {
+    padding: var(--sp-1) var(--sp-2);
+    line-height: 1;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  &__body {
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  &__footer {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    padding: 0.75rem 1.5rem 1.25rem;
+    border-top: 1px solid #f1f5f9;
+  }
+}
+
+.detail-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.detail-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  min-width: 5rem;
+  padding-top: 0.2rem;
+  flex-shrink: 0;
+}
+
+.detail-value {
+  font-size: 0.875rem;
+  color: #1e293b;
+
+  &--notes {
+    white-space: pre-wrap;
+    color: #475569;
+    font-size: 0.8125rem;
+  }
+}
+
+.amount {
+  font-size: 1.125rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+
+  &--income {
+    color: #16a34a;
+  }
+  &--expense {
+    color: #dc2626;
+  }
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+
+  &--none {
+    background: #f1f5f9;
+    color: #94a3b8;
+  }
+}
+
+.detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.175rem 0.5rem;
+  border: 1.5px solid;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  color: #1e293b;
+}

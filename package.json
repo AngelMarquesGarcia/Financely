@@ -1,9 +1,9 @@
 {
-  "name": "from-scratch-angular-electron",
-  "version": "0.0.0",
+  "name": "financely_orchestrator_projectd",
+  "version": "0.0.34",
   "main": "dist/main/main.js",
   "scripts": {
-    "start": "npm run compile:electron && run-p start:angular start:electron-serve",
+    "start": "npm run compile:electron && run-p --race start:angular start:electron-serve",
     "start:local": "npm run compile && npm --prefix electron run start:local",
     "compile": "npm run compile:angular && npm run compile:electron",
     "compile:angular": "npm --prefix angular run build:dev",
@@ -28,11 +28,13 @@
     "lint:electron": "eslint electron",
     "rebuild": "npx @electron/rebuild --force",
     "install:all": "npm install && npm --prefix angular install && npm --prefix electron install",
+    "audit-fix:all": "npm audit fix && npm --prefix angular audit fix && npm --prefix electron audit fix",
     "prepare": "husky"
   },
   "private": true,
   "dependencies": {
-    "better-sqlite3": "^12.6.2"
+    "better-sqlite3": "^12.6.2",
+    "electron-store": "^8.2.0"
   },
   "devDependencies": {
     "@electron/rebuild": "^4.0.4",

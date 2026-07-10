@@ -1,0 +1,55 @@
+:host {
+  display: block;
+  flex: 1 1 12rem;
+  min-width: 10rem;
+}
+
+.stat-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  padding: var(--sp-3) var(--sp-4);
+  box-shadow: var(--sh-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  &__icon {
+    color: var(--c-text-faint);
+    font-size: 0.875rem;
+  }
+
+  &__title {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--c-text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  &__value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--c-text);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+  }
+
+  &__sublabel {
+    font-size: 0.75rem;
+    color: var(--c-text-muted);
+  }
+
+  &--positive .stat-card__value {
+    color: var(--c-income-text);
+  }
+  &--negative .stat-card__value {
+    color: var(--c-expense-text);
+  }
+}

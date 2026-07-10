@@ -1,0 +1,43 @@
+<div class="card">
+  <h2 class="card__title">Accounts</h2>
+
+  @if (accounts.length === 0) {
+    <app-empty-state icon="🏦" message="No accounts yet. Use the form above to add your first one." />
+  } @else {
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (a of accounts; track a.id) {
+            <tr>
+              <td>{{ a.id }}</td>
+              <td>
+                {{ a.name }}
+                @if (a.isDefault) {
+                  <span class="default-badge">default</span>
+                }
+              </td>
+              <td>{{ a.description ?? '—' }}</td>
+              <td>
+                <div class="actions">
+                  <button class="btn btn--edit" (click)="editRequested.emit(a)">Edit</button>
+                  @if (!a.isDefault) {
+                    <button class="btn btn--ghost" (click)="setDefaultRequested.emit(a.id)">Set default</button>
+                    <button class="btn btn--delete" (click)="deleteRequested.emit(a.id)">Delete</button>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

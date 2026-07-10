@@ -1,0 +1,103 @@
+<div class="detail">
+  <div class="detail__header">
+    <h2 class="detail__title">{{ movement.name }}</h2>
+    <button type="button" class="btn btn--ghost detail__close" (click)="dialogRef.close()" aria-label="Close">✕</button>
+  </div>
+
+  <div class="detail__body">
+    <div class="detail-row">
+      <span class="detail-label">Amount</span>
+      <span
+        class="detail-value amount"
+        [class.amount--income]="movement.isPositive"
+        [class.amount--expense]="!movement.isPositive"
+      >
+        {{ signedCents() | money }}
+      </span>
+    </div>
+
+    <div class="detail-row">
+      <span class="detail-label">Date</span>
+      <span class="detail-value">{{ formatDate(movement.date) }}</span>
+    </div>
+
+    @if (movement.isAnomalous) {
+      <div class="detail-row">
+        <span class="detail-label">Anomalous</span>
+        <span class="detail-value">✷ Excluded from average/aggregate statistics</span>
+      </div>
+    }
+
+    <div class="detail-row">
+      <span class="detail-label">Category</span>
+      <span class="detail-value">
+        @if (category) {
+          <span
+            class="badge"
+            [style.background]="category.color ?? '#64748b'"
+            [style.color]="contrastColor(category.color ?? '#64748b')"
+          >
+            @if (category.emoji) {
+              {{ category.emoji }}
+            }
+            {{ category.name }}</span
+          >
+        } @else {
+          <span class="badge badge--none">—</span>
+        }
+      </span>
+    </div>
+
+    @if (!isSplit) {
+      <div class="detail-row">
+        <span class="detail-label">Envelope</span>
+        <span class="detail-value">{{ envelope?.name ?? '—' }}</span>
+      </div>
+    } @else {
+      <div class="detail-row detail-row--split">
+        <span class="detail-label">Split across</span>
+        <div class="detail-value detail-split">
+          @for (row of splitRows; track row.name) {
+            <div class="detail-split__row">
+              <span class="detail-split__name">{{ row.name }}</span>
+              <span class="detail-split__amount">{{ row.amountCents | money }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    @if (movement.concept) {
+      <div class="detail-row">
+        <span class="detail-label">Concept</span>
+        <span class="detail-value">{{ movement.concept }}</span>
+      </div>
+    }
+
+    @if (movement.additionalNotes) {
+      <div class="detail-row">
+        <span class="detail-label">Notes</span>
+        <span class="detail-value detail-value--notes">{{ movement.additionalNotes }}</span>
+      </div>
+    }
+
+    @if (tags.length > 0) {
+      <div class="detail-row">
+        <span class="detail-label">Tags</span>
+        <div class="detail-value detail-tags">
+          @for (t of tags; track t.id) {
+            <span class="tag-chip" [style.border-color]="t.color">
+              <span class="color-dot" [style.background]="t.color"></span>
+              {{ t.name }}
+            </span>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <div class="detail__footer">
+    <button type="button" class="btn btn--delete" (click)="delete()">Delete</button>
+    <button type="button" class="btn btn--primary" (click)="edit()">Edit</button>
+  </div>
+</div>

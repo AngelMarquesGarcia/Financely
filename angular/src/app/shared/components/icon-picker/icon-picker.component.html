@@ -1,0 +1,59 @@
+<div class="icon-picker">
+  <div class="icon-picker__grid-wrap">
+    <div class="icon-grid" appSortable (sorted)="onSorted($event)">
+      @for (icon of icons; track icon) {
+        <button
+          type="button"
+          class="icon-slot"
+          [class.icon-slot--selected]="multiSelect ? selected.has(icon) : value === icon"
+          (click)="onIconClick(icon)"
+          [title]="icon"
+        >
+          {{ icon }}
+        </button>
+      }
+      @if (!icons.length) {
+        <span class="icon-grid__empty">No icons yet.</span>
+      }
+    </div>
+
+    <div class="add-anchor">
+      <button
+        type="button"
+        class="icon-slot icon-slot--add"
+        (click)="addPopoverOpen = !addPopoverOpen; addInput = ''; addError = ''"
+        title="Add icon"
+      >
+        ＋
+      </button>
+
+      @if (addPopoverOpen) {
+        <button type="button" class="add-backdrop" (click)="addPopoverOpen = false" aria-label="Close"></button>
+        <div class="add-popover">
+          <input
+            class="add-popover__input"
+            type="text"
+            [(ngModel)]="addInput"
+            (input)="addError = ''"
+            (keydown.enter)="submitAdd()"
+            placeholder="Paste emoji"
+            aria-label="New icon"
+          />
+          <button type="button" class="btn btn--primary" (click)="submitAdd()">Add</button>
+          @if (addError) {
+            <span class="add-popover__error">{{ addError }}</span>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  @if (multiSelect) {
+    <div class="icon-picker__actions">
+      <button type="button" class="btn-link" (click)="resetRequested.emit()">Reset to defaults</button>
+      @if (selectedCount > 0) {
+        <button type="button" class="btn-delete" (click)="onDeleteSelected()">Delete ({{ selectedCount }})</button>
+      }
+    </div>
+  }
+</div>

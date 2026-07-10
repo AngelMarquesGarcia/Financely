@@ -1,0 +1,99 @@
+<div class="psc card">
+  <button class="psc__header" type="button" (click)="toggle()">
+    <span class="psc__label">
+      {{ label }}
+      @if (summary.tentative) {
+        <span class="psc__badge" title="Includes movements awaiting review">⚠ unconfirmed</span>
+      }
+      @if (hasAnomalies) {
+        <span class="psc__badge" title="Includes anomalous movements — excluded when anomalies are hidden"
+          >✷ anomalies</span
+        >
+      }
+      @if (hasCompound) {
+        <span class="psc__badge" title="A compound movement re-attributes its statistics into this month"
+          >⛓ compound</span
+        >
+      }
+    </span>
+    <span
+      class="psc__cashflow"
+      [class.psc__cashflow--positive]="effective.cashFlowCents >= 0"
+      [class.psc__cashflow--negative]="effective.cashFlowCents < 0"
+      >{{ effective.cashFlowCents >= 0 ? '+' : '' }}{{ effective.cashFlowCents | money }}</span
+    >
+    <fa-icon class="psc__chevron" [icon]="expanded() ? faChevronDown : faChevronRight" />
+  </button>
+
+  @if (expanded()) {
+    <div class="psc__body">
+      <div class="psc__row">
+        <span class="psc__row-label">Income</span>
+        <span class="psc__row-value psc__row-value--positive">{{ effective.totalIncomeCents | money }}</span>
+      </div>
+      <div class="psc__row">
+        <span class="psc__row-label">Expenses</span>
+        <span class="psc__row-value psc__row-value--negative">{{ effective.totalExpenseCents | money }}</span>
+      </div>
+      <div class="psc__row">
+        <span class="psc__row-label">Avg expense</span>
+        <span class="psc__row-value">{{ effective.avgExpenseCents | money }}</span>
+      </div>
+      <div class="psc__row">
+        <span class="psc__row-label">Avg income</span>
+        <span class="psc__row-value">{{ effective.avgIncomeCents | money }}</span>
+      </div>
+      <div class="psc__row">
+        <span class="psc__row-label">Ending balance</span>
+        <span
+          class="psc__row-value"
+          [class.psc__row-value--positive]="summary.endingBalanceCents >= 0"
+          [class.psc__row-value--negative]="summary.endingBalanceCents < 0"
+          >{{ summary.endingBalanceCents | money }}</span
+        >
+      </div>
+      <div class="psc__row">
+        <span class="psc__row-label">Movements</span>
+        <span class="psc__row-value">{{ effective.movementCount }}</span>
+      </div>
+      @if (summary.budgetCents !== undefined) {
+        <div class="psc__row">
+          <span class="psc__row-label">Budget</span>
+          <span class="psc__row-value">{{ summary.budgetCents | money }}</span>
+        </div>
+        <div class="psc__row">
+          <span class="psc__row-label">
+            Available budget
+            @if (underfunded) {
+              <span class="psc__badge" title="Income to this envelope fell short of the budget">underfunded</span>
+            }
+          </span>
+          <span
+            class="psc__row-value"
+            [class.psc__row-value--positive]="(availableBudgetCents ?? 0) >= 0"
+            [class.psc__row-value--negative]="(availableBudgetCents ?? 0) < 0"
+            >{{ availableBudgetCents | money }}</span
+          >
+        </div>
+      }
+      @if (summary.maxSavingsCents !== undefined) {
+        <div class="psc__row">
+          <span class="psc__row-label">Savings cap</span>
+          <span class="psc__row-value">{{ summary.maxSavingsCents | money }}</span>
+        </div>
+        <div class="psc__row">
+          <span class="psc__row-label">Overflow</span>
+          <span class="psc__row-value" [class.psc__row-value--negative]="(savingsOverflowCents ?? 0) > 0">{{
+            savingsOverflowCents | money
+          }}</span>
+        </div>
+      }
+      @if (summary.notes) {
+        <div class="psc__row psc__row--notes">
+          <span class="psc__row-label">Notes</span>
+          <span class="psc__row-value">{{ summary.notes }}</span>
+        </div>
+      }
+    </div>
+  }
+</div>

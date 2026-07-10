@@ -1,0 +1,3 @@
+docs: C:\Users\burak\iCloudDrive\iCloud~md~obsidian\Synced vault\TFG\Finally\current_working_fule.md
+dahsboard: D:\Proyectos\angular\orderable-dashboard\README.md
+claude design frontend: D:\Universidad\TFG\front\fincancely_front\README.md

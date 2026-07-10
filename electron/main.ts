@@ -1,7 +1,17 @@
-import { DatabaseService } from './services/database.service';
-import { registerApiHandlers } from './ipc/api.handler';
-import { registerOperationsHandlers } from './ipc/operations.handler';
-import { registerSentencesHandlers } from './ipc/sentences.handler';
+import { DatabaseService } from './repository/database.service';
+import { registerMovementHandlers } from './ipc/movements.handler';
+import { registerPeriodicMovementHandlers } from './ipc/periodic-movements.handler';
+import { registerTransferHandlers } from './ipc/transfers.handler';
+import { registerCompoundMovementHandlers } from './ipc/compound-movements.handler';
+import { registerCategoryHandlers } from './ipc/categories.handler';
+import { registerAccountHandlers } from './ipc/accounts.handler';
+import { registerEnvelopeHandlers } from './ipc/envelopes.handler';
+import { registerTagHandlers } from './ipc/tags.handler';
+import { registerSettingsHandlers } from './ipc/settings.handler';
+import { registerPeriodSummaryHandlers } from './ipc/period-summaries.handler';
+import { registerImportExportHandlers } from './ipc/import-export.handler';
+import { registerDatabaseHandlers } from './ipc/database.handler';
+import { periodSummaryService } from './services/period-summary.service';
 import { PATHS } from './config/paths';
 import { getStartURL } from './config/environment';
 
@@ -9,10 +19,11 @@ import { app, BrowserWindow } from 'electron';
 
 app.commandLine.appendSwitch('remote-debugging-port', '9223');
 
-const db = new DatabaseService();
-
 const createWindow = () => {
-  db.migrate();
+  DatabaseService.getInstance().migrate();
+  // The seed inserts movements with raw SQL, bypassing the periodTouched hook, so build their period
+  // summaries here (top layer — keeps the repository/database layer free of a service dependency).
+  periodSummaryService.backfillPeriodSummaries();
 
   const win = new BrowserWindow({
     width: 800,
@@ -26,8 +37,17 @@ const createWindow = () => {
 };
 
 app.whenReady().then(() => {
-  registerApiHandlers();
-  registerOperationsHandlers();
-  registerSentencesHandlers();
+  registerMovementHandlers();
+  registerPeriodicMovementHandlers();
+  registerTransferHandlers();
+  registerCompoundMovementHandlers();
+  registerCategoryHandlers();
+  registerAccountHandlers();
+  registerEnvelopeHandlers();
+  registerTagHandlers();
+  registerSettingsHandlers();
+  registerPeriodSummaryHandlers();
+  registerImportExportHandlers();
+  registerDatabaseHandlers();
   createWindow();
 });

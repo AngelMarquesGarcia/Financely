@@ -1,0 +1,102 @@
+<div class="card">
+  <div class="card__header">
+    <h2 class="card__title">Periodic movements</h2>
+    <div class="header-actions">
+      <button class="btn btn--ghost" type="button" (click)="sync()">
+        <fa-icon [icon]="faRotate" /> Sync with current date
+      </button>
+      <div class="add-wrap">
+        <button class="add-btn" type="button" (click)="openCreate()"><fa-icon [icon]="faPlus" /></button>
+        @if (showForm) {
+          <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+          <div class="popover-backdrop" (click)="closeForm()"></div>
+          <div class="popover popover--wide">
+            <app-periodic-movement-form
+              [editingTemplate]="editingTemplate"
+              (saved)="onSaved()"
+              (cancelled)="closeForm()"
+            />
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  @if (templates.length === 0) {
+    <app-empty-state icon="🔁" message="No periodic movements yet. Click the + button to create one." />
+  } @else {
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Amount</th>
+            <th>Day</th>
+            <th>Account</th>
+            <th>Envelope</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (t of templates; track t.id) {
+            <tr [class.row--inactive]="!t.active">
+              <td>{{ t.name }}</td>
+              <td>{{ t.isPositive ? 'Income' : 'Expense' }}</td>
+              <td class="amount">{{ t.quantityCents | money }}</td>
+              <td>{{ t.dayOfMonth }}</td>
+              <td>{{ accountName(t.accountId) }}</td>
+              <td>{{ templateEnvelopeLabel(t) }}</td>
+              <td>
+                <span class="badge" [class.badge--active]="t.active" [class.badge--inactive]="!t.active">
+                  {{ t.active ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+              <td>
+                <div class="actions">
+                  <button class="btn btn--edit" (click)="openEdit(t)">Edit</button>
+                  @if (t.active) {
+                    <button class="btn btn--ghost" (click)="openInstance(t, 'current')">This month</button>
+                    <button class="btn btn--ghost" (click)="openInstance(t, 'additional')">Add</button>
+                  }
+                  <button class="btn btn--ghost" (click)="toggleActive(t)">
+                    {{ t.active ? 'Deactivate' : 'Reactivate' }}
+                  </button>
+                  <button class="btn btn--delete" (click)="deleteTemplate(t)">Delete</button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  @if (instanceTarget) {
+    <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
+    <div class="popover-backdrop" (click)="closeInstance()"></div>
+    <div class="instance-dialog card">
+      <h3 class="instance-dialog__title">
+        {{ instanceMode === 'current' ? 'Instantiate this month' : 'Add an instance' }} —
+        {{ instanceTarget.name }}
+      </h3>
+      <div class="form__group">
+        <label class="form__label" for="inst-date">Date</label>
+        <input id="inst-date" class="form__input" type="date" [(ngModel)]="instanceDate" />
+      </div>
+      <div class="form__group">
+        <label class="form__label" for="inst-amount">Amount</label>
+        <app-amount-input
+          inputId="inst-amount"
+          [amountCents]="instanceAmountCents"
+          (amountCentsChange)="instanceAmountCents = $event"
+        />
+      </div>
+      <div class="instance-dialog__actions">
+        <button class="btn btn--primary" (click)="submitInstance()">Create</button>
+        <button class="btn btn--ghost" (click)="closeInstance()">Cancel</button>
+      </div>
+    </div>
+  }
+</div>

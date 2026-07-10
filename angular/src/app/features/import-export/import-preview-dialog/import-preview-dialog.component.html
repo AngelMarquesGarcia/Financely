@@ -1,0 +1,55 @@
+<div class="ipd">
+  <h3 class="ipd__title">
+    Import {{ drafts.length }} movement{{ drafts.length === 1 ? '' : 's' }} into {{ data.accountName }}
+  </h3>
+
+  @if (issueSummary.length) {
+    <ul class="ipd__issues">
+      @for (issue of issueSummary; track issue.code) {
+        <li class="ipd__issue" [class.ipd__issue--blocking]="issue.blocking">{{ issue.count }} {{ issue.label }}</li>
+      }
+    </ul>
+  }
+
+  @if (drafts.length) {
+    <div class="ipd__tablewrap">
+      <table class="ipd__table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Concept</th>
+            <th class="ipd__num">Amount</th>
+            <th>Date</th>
+            <th>Category</th>
+            <th>Envelope</th>
+            <th>Tags</th>
+            <th>Anom.</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (d of drafts; track $index) {
+            <tr>
+              <td>{{ d.name }}</td>
+              <td>{{ d.concept || '—' }}</td>
+              <td class="ipd__num" [class.ipd__neg]="!d.isPositive">{{ signedCents(d) | money }}</td>
+              <td>{{ d.date | date: 'yyyy-MM-dd' }}</td>
+              <td>{{ d.categoryName || '—' }}</td>
+              <td>{{ envelopeLabel(d) }}</td>
+              <td>{{ tagsLabel(d) || '—' }}</td>
+              <td class="ipd__num">{{ d.isAnomalous ? '✓' : '' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <p class="ipd__empty">No importable rows were found in this file.</p>
+  }
+
+  <div class="ipd__actions">
+    <button class="btn" type="button" (click)="cancel()">Cancel</button>
+    <button class="btn btn--primary" type="button" [disabled]="drafts.length === 0" (click)="create()">
+      Create {{ drafts.length }} movement{{ drafts.length === 1 ? '' : 's' }}
+    </button>
+  </div>
+</div>

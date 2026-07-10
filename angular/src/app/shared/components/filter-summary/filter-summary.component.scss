@@ -1,0 +1,125 @@
+:host {
+  display: block;
+}
+
+.fs {
+  padding: 0;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    width: 100%;
+    padding: var(--sp-3) var(--sp-4);
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    border-radius: var(--r-lg);
+
+    &:hover {
+      background: var(--c-surface-alt);
+    }
+  }
+
+  &__label {
+    flex: 1;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--c-text);
+  }
+
+  &__cashflow {
+    font-size: 0.9375rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+
+    &--positive {
+      color: var(--c-income-text);
+    }
+
+    &--negative {
+      color: var(--c-expense-text);
+    }
+  }
+
+  &__chevron {
+    font-size: 0.75rem;
+    color: var(--c-text-faint);
+    flex-shrink: 0;
+  }
+
+  &__body {
+    border-top: 1px solid var(--c-border);
+    padding: var(--sp-3) var(--sp-4) var(--sp-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+  }
+
+  &__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 0.875rem;
+  }
+
+  &__row-label {
+    color: var(--c-text-muted);
+  }
+
+  &__row-value {
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+    color: var(--c-text);
+
+    &--positive {
+      color: var(--c-income-text);
+    }
+
+    &--negative {
+      color: var(--c-expense-text);
+    }
+  }
+
+  &__badge {
+    margin-left: var(--sp-2);
+    padding: 0 var(--sp-2);
+    border-radius: var(--r-sm);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--c-expense-text);
+    background: var(--c-expense-bg, var(--c-surface-alt));
+  }
+
+  &__months {
+    margin-top: var(--sp-2);
+    padding-top: var(--sp-3);
+    border-top: 1px solid var(--c-border);
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+  }
+
+  &__months-title {
+    margin: 0 0 var(--sp-1);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--c-text-muted);
+  }
+
+  &__month-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 0.875rem;
+  }
+
+  &__month-label {
+    color: var(--c-text);
+  }
+}

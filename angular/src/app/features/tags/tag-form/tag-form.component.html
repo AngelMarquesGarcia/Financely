@@ -1,0 +1,54 @@
+<div class="form">
+  <div class="form__group">
+    <label class="form__label" for="tag-type">Type</label>
+    <input
+      id="tag-type"
+      class="form__input"
+      [(ngModel)]="type"
+      list="tag-types-list"
+      placeholder="e.g. label"
+      autocomplete="off"
+    />
+    <datalist id="tag-types-list">
+      @for (t of existingTypes; track t) {
+        <option [value]="t"></option>
+      }
+    </datalist>
+  </div>
+
+  <div class="form__group">
+    <label class="form__label" for="tag-name">Name</label>
+    <input id="tag-name" class="form__input" [(ngModel)]="name" placeholder="e.g. Urgent" />
+  </div>
+
+  <div class="form__group">
+    <label class="form__label" for="color-picker">Color</label>
+    <div class="color-select">
+      <button type="button" class="color-trigger" name="color-picker" (click)="toggleColorDropdown($event)">
+        <span class="color-trigger__dot" [style.background]="color"></span>
+        <span class="color-trigger__chevron"></span>
+      </button>
+      @if (colorOpen) {
+        <div class="color-dropdown">
+          @for (c of colorOptions; track c.value) {
+            <button
+              type="button"
+              class="color-option"
+              [class.color-option--selected]="color === c.value"
+              [style.background]="c.value"
+              [title]="c.label"
+              (click)="selectColor(c.value)"
+            ></button>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="form__actions">
+    <button class="btn btn--primary" (click)="save()">
+      {{ isEditing ? 'Update' : 'Create' }}
+    </button>
+    <button class="btn btn--ghost" (click)="cancel()">Cancel</button>
+  </div>
+</div>

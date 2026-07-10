@@ -1,6 +1,6 @@
 {
   "name": "electron_test_project",
-  "version": "0.0.0",
+  "version": "0.0.34",
   "description": "Test angular-electron project to see how it all works",
   "license": "ISC",
   "author": "Ángel Marqués",
@@ -22,6 +22,7 @@
     "@types/better-sqlite3": "^7.6.13",
     "@types/jest": "^29.5.8",
     "@types/node": "^20.10.0",
+    "@types/papaparse": "^5.5.2",
     "electron": "^40.2.1",
     "esbuild": "^0.25.0",
     "jest": "^30.3.0",
@@ -30,6 +31,7 @@
   },
   "dependencies": {
     "better-sqlite3": "^12.6.2",
-    "from-scratch-angular-electron": "file:.."
+    "electron-store": "^8.2.0",
+    "papaparse": "^5.5.4"
   }
 }
