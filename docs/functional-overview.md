@@ -168,6 +168,9 @@ templates, marking anomalies, importing/exporting — is **manual**.
   with an empty/confirmed month after it doesn't block later confirmed entry.
 - **Account-level summaries aren't auto-maintained:** only envelope-level periods are created from
   activity (account-level rollups exist in the model but nothing triggers them).
+- **Packaged build — hard reload blanks the page:** a manual browser reload (Ctrl+R / DevTools) in the
+  packaged app loads a blank screen (`file://` + relative `<base href>` drops `index.html`). The app's
+  own refreshes navigate client-side to avoid it; a user-forced reload isn't covered.
 - **Minor:** envelope snapshot re-stamp touches only the current month (not future existing months);
   `getAvailableBudget` returns 0 for an unbudgeted envelope; the movement create path (movement +
   summary + overflow) isn't a single transaction; the import file picker opens before the tentative

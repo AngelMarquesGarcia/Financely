@@ -661,6 +661,24 @@ Funcionalidad completa para **importar movimientos en masa** desde CSV, **export
 
 ---
 
+## 10/07/2026
+
+### Correcciones pre-release, documentación y decisión de pivote a frontend
+
+Sesión de cierre de la fase backend antes de una primera **pre-release** (alpha) y del giro a la fase de frontend. Tras revisar el estado frente a la spec del vault se decide que el backend queda **funcionalmente completo** salvo el motor de reglas (v0.4, diferido) y las extensiones de import de CSV bancario (mapeo de columnas / detección de duplicados / reconciliación, diferidas); el resto del plan (v0.5+) es esencialmente frontend.
+
+**Correcciones:**
+
+- **`CompoundMovement.delete`** ([electron/services/compound-movement.service.ts](electron/services/compound-movement.service.ts)): al borrar un compuesto ahora refresca el espejo compound-adjusted del mes owner (`touchCompoundOwnerPeriods`) y, si los hijos sobreviven (`deleteChildren=false`), también sus propios periodos — antes el espejo del owner quedaba obsoleto hasta el siguiente toque de ese periodo. Único camino de mutación que no lo hacía.
+- **electron-builder** ([electron-builder.yml](electron-builder.yml)): `appId`/`productName` del template (`com.example.fromscratch` / `from-scratch-electron-angular`) actualizados a `com.financely.app` / `Financely`. Fijar el `appId` antes de la primera release evita fragmentar identidad/userData/updates después.
+- **Pantalla en blanco tras operaciones de BD completa en el build empaquetado** ([settings.component.ts](angular/src/app/features/settings/settings.component.ts)): wipe/seed/restore hacían `window.location.reload()`. En el build la app se sirve desde `file://…/browser/index.html` con `<base href="./">` (reescrito por el builder); al recargar, la URL de la ruta actual resuelve contra el directorio y pierde `index.html` → `ERR_FILE_NOT_FOUND` / pantalla en blanco. Sustituido por navegación **client-side** (`router.navigateByUrl('/movements')`, cierra el diálogo si está abierto), que re-crea la vista y re-lee la BD sin cargar ningún fichero. Supersede la nota de "hacen `window.location.reload()`" de la entrada 09/07. Test de settings actualizado (mock `Router`). Se revirtió un intento previo con `withHashLocation()` — no resolvía el problema por el mismo `base href`.
+
+**Documentación nueva:** [docs/functional-overview.md](docs/functional-overview.md) (mapa de alto nivel: funcionalidades, reglas, automático vs. manual, known issues, diferidos) y [docs/technical-reference.md](docs/technical-reference.md) (arquitectura, schema, y los algoritmos no obvios: máquina dirty de PeriodSummary, re-atribución de compuestos, redirección de overflow, generación de periódicos, formato CSV). La *Especificación unificada* del vault quedó desactualizada (~2 meses, última sync 26/05); estos dos ficheros pasan a ser la referencia de estado del backend.
+
+**Verificación:** Jest 214/214, Vitest 107/107, `build:dev` limpio. Sin smoke-test del build empaquetado en esta sesión (pendiente del usuario antes de la pre-release).
+
+---
+
 ## Pasos siguientes
 
 ### Pendientes arrastrados de auditorías previas
@@ -697,6 +715,8 @@ Generados directamente por el trabajo de esta iteración.
   - No se puede confirmar un movimiento en un mes si los meses anteriores tienen movimientos tentativos. Esto se comprueba mirando sólo el mes anterior, que por defecto no es problema, porque entras 5 meses tarde, y te genera tentativos para esos 5 meses, y no te deja confirmarlos hasta que confirmes los anteriores. Sin embargo, sí los puedes borrar. Si entras 5 meses tarde, y borras los movimientos que se creen, hay un hueco de 5 meses sin tentativos. Cuando la guarda compruebe si el mes anterior tiene tentativos, verá que no, y fallará.
 - Los `PeriodSummary` a nivel de cuenta y el equivalente para tags/categorías (antes aquí como pendientes) se resolvieron el 06/07 — ver la entrada de esa fecha. Los summaries de cuenta se mantienen de verdad; tags/categorías/filtros arbitrarios se sirven al vuelo como `FilterSummary` (`BasicSummary`, no almacenado).
 - Verificar que los movimientos compuestos de tipo isCancelable sólo cuentan como un único movimiento para las estadísticas.
+
+- **Build empaquetado — recarga dura (Ctrl+R / DevTools):** un reload manual del navegador deja la página en blanco (misma causa que el bug de wipe/seed corregido el 10/07: `file://` + `<base href="./">` pierde `index.html`). Las recargas propias de la app ya navegan client-side y están cubiertas; una recarga forzada por el usuario no. Mitigación futura: `loadFile` + `APP_BASE_HREF` fijo, protocolo `app://`, o deshabilitar el atajo de recarga en el build empaquetado.
 
 ### Recomendaciones de mayor alcance (fuera de la iteración actual)
 
