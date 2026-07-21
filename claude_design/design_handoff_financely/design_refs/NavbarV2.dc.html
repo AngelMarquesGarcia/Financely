@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>.fc-sel{transition:border .12s,background .12s,opacity .12s}.fc-sel.on{cursor:pointer}.fc-sel.on:hover{border-color:#c7cdd8}.fc-btn{cursor:pointer;transition:filter .12s}.fc-btn:hover{filter:brightness(.96)}</style>
+</helmet>
+<div style="font-family:Nunito,sans-serif;padding:16px;">
+  <div style="width:920px;max-width:100%;background:#fff;border:1px solid #eceef2;border-radius:14px;box-shadow:0 1px 3px rgba(20,30,50,.06);padding:12px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+    <span style="font-size:16px;font-weight:800;color:#1b2430;margin-right:2px;">Financely</span>
+    <!-- inline selectors (dimmed when Other Filters active) -->
+    <sc-for list="{{ selectors }}" as="sel" hint-placeholder-count="3">
+      <div class="fc-sel {{ inlineClass }}" onClick="{{ sel.onClick }}" style="display:flex;align-items:center;gap:7px;height:36px;padding:0 11px;border:1px solid #e3e6ec;border-radius:10px;background:{{ inlineBg }};opacity:{{ inlineOpacity }};cursor:{{ inlineCursor }};">
+        <span style="font-size:11px;font-weight:700;color:#b0b7c2;">{{ sel.label }}</span>
+        <span style="font-size:13px;font-weight:700;color:#1b2430;">{{ sel.value }}</span>
+        <span style="color:#c3cad4;font-size:12px;">⌄</span>
+      </div>
+    </sc-for>
+    <!-- other filters button (always clickable) -->
+    <button class="fc-btn" onClick="{{ onOtherFilters }}" style="display:flex;align-items:center;gap:7px;height:36px;padding:0 13px;border-radius:10px;border:1px solid {{ ofBorder }};background:{{ ofBg }};color:{{ ofFg }};font-family:Nunito;font-size:13px;font-weight:700;cursor:pointer;">⚙ Other filters<span style="display:{{ ofCountDisplay }};font-size:11px;font-weight:800;background:{{ ofFg }};color:{{ ofBg }};border-radius:999px;padding:0 6px;line-height:16px;">{{ ofCount }}</span></button>
+    <!-- clear (only when active) -->
+    <button class="fc-btn" onClick="{{ onClear }}" style="display:{{ clearDisplay }};height:36px;padding:0 12px;border-radius:10px;border:1px solid #e6e8ee;background:#fff;color:#d23b2b;font-family:Nunito;font-size:13px;font-weight:700;cursor:pointer;">Clear</button>
+    <div style="flex:1;"></div>
+    <div class="fc-sel {{ inlineClass }}" style="display:flex;align-items:center;gap:7px;height:36px;padding:0 11px;border:1px solid #e3e6ec;border-radius:10px;background:{{ inlineBg }};opacity:{{ inlineOpacity }};">
+      <span style="font-size:11px;font-weight:700;color:#b0b7c2;">View</span><span style="font-size:13px;font-weight:700;color:#1b2430;">Monthly</span><span style="color:#c3cad4;font-size:12px;">⌄</span>
+    </div>
+    <div class="fc-sel on fc-btn" onClick="{{ onToggleAnom }}" style="display:flex;align-items:center;gap:7px;height:36px;padding:0 11px;border:1px solid #e3e6ec;border-radius:10px;background:#fff;cursor:pointer;">
+      <span style="font-size:11px;font-weight:700;color:#b0b7c2;">Anomalies</span>
+      <span style="font-size:13px;font-weight:700;color:{{ anomFg }};">{{ anomLabel }}</span>
+      <span style="color:#c3cad4;font-size:12px;">⌄</span>
+    </div>
+  </div>
+  <div style="width:920px;max-width:100%;font-size:11.5px;font-weight:600;color:#b0b7c2;padding:8px 4px 0;">V2 · {{ hint }}</div>
+
+  <!-- Other Filters popup -->
+  <sc-if value="{{ showFilters }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ onClosePopup }}" style="position:fixed;inset:0;z-index:60;background:rgba(20,26,38,.34);backdrop-filter:blur(2px);display:flex;align-items:flex-start;justify-content:center;padding:60px 24px;overflow:auto;">
+      <div onClick="{{ stop }}"><dc-import name="FiltersModal" hint-size="660px,600px"></dc-import></div>
+    </div>
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:960,&quot;height&quot;:130}}">
+class Component extends DCLogic {
+  state = { anom:false, otherActive:false, showFilters:false };
+  renderVals(){
+    const active = this.state.otherActive;
+    const selectors = [
+      { label:'Account', value:'Main' }, { label:'Envelope', value:'All' }, { label:'Month', value:"August '26" },
+    ].map(s=>({ ...s, onClick:()=>{ if(!active){} } }));
+    return {
+      selectors,
+      inlineClass: active?'':'on',
+      inlineBg: active?'#f6f7f9':'#fff', inlineOpacity: active?'.5':'1', inlineCursor: active?'not-allowed':'pointer',
+      onOtherFilters:()=>this.setState({showFilters:true}),
+      ofBg: active?'#2f6bf6':'#eef3fe', ofFg: active?'#fff':'#2f6bf6', ofBorder: active?'#2f6bf6':'#d7e3fb',
+      ofCount: 3, ofCountDisplay: active?'inline-block':'none',
+      clearDisplay: active?'inline-flex':'none',
+      onClear:()=>this.setState({otherActive:false}),
+      anomLabel:this.state.anom?'Show':'Hide', anomFg:this.state.anom?'#1c8a4d':'#1b2430',
+      onToggleAnom:()=>this.setState({anom:!this.state.anom}),
+      hint: active ? 'Other filters active — inline filters are disabled until cleared.' : 'Inline filters active. "Other filters" opens the full modal.',
+      showFilters:this.state.showFilters,
+      onClosePopup:()=>this.setState({showFilters:false, otherActive:true}),
+      stop:(e)=>e.stopPropagation(),
+    };
+  }
+}
+</script>
+</body>
+</html>

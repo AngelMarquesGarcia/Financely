@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</helmet>
+<div style="font-family:Nunito,sans-serif;padding:16px;">
+  <div style="width:100%;box-sizing:border-box;background:#fff;border:1px solid #eceef2;border-radius:16px;box-shadow:0 1px 3px rgba(20,30,50,.06);overflow:hidden;">
+    <!-- header -->
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:16px 18px 14px;border-bottom:1px solid #f2f4f7;">
+      <div style="display:flex;align-items:center;gap:9px;min-width:0;">
+        <span style="width:30px;height:30px;border-radius:9px;flex:none;display:flex;align-items:center;justify-content:center;font-size:14px;background:{{ s.iconBg }};color:{{ s.iconFg }};">≡</span>
+        <div style="font-size:15.5px;font-weight:800;color:#1b2430;line-height:1.25;">{{ s.title }}</div>
+      </div>
+      <div style="text-align:right;flex:none;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:#98a1b0;">Cash flow</div>
+        <div style="font-size:22px;font-weight:800;color:{{ s.cashFlowColor }};">{{ s.cashFlow }}</div>
+      </div>
+    </div>
+    <!-- income / expense split -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#f2f4f7;">
+      <div style="background:#fff;padding:13px 18px;">
+        <div style="display:flex;align-items:center;gap:6px;"><span style="color:#1c8a4d;font-weight:800;font-size:13px;">↑</span><span style="font-size:11px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:#98a1b0;">Income</span></div>
+        <div style="font-size:17px;font-weight:800;color:#1c8a4d;margin-top:3px;">{{ s.income }}</div>
+      </div>
+      <div style="background:#fff;padding:13px 18px;">
+        <div style="display:flex;align-items:center;gap:6px;"><span style="color:#d23b2b;font-weight:800;font-size:13px;">↓</span><span style="font-size:11px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:#98a1b0;">Expense</span></div>
+        <div style="font-size:17px;font-weight:800;color:#d23b2b;margin-top:3px;">{{ s.expense }}</div>
+      </div>
+    </div>
+    <!-- averages -->
+    <div style="padding:6px 18px 4px;border-top:1px solid #f2f4f7;">
+      <div style="font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#b0b7c2;padding:9px 0 5px;">Averages</div>
+      <sc-for list="{{ s.averages }}" as="av" hint-placeholder-count="3">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;padding:6px 0;border-top:{{ av.border }};">
+          <span style="font-size:13px;font-weight:600;color:#5b6472;">{{ av.label }}</span>
+          <span style="font-size:14px;font-weight:800;color:{{ av.color }};">{{ av.value }}</span>
+        </div>
+      </sc-for>
+    </div>
+    <!-- movement count footer -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-top:1px solid #f2f4f7;background:#fbfcfe;">
+      <span style="font-size:12px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:#98a1b0;">Movements</span>
+      <span style="font-size:16px;font-weight:800;color:#1b2430;">{{ s.count }}</span>
+    </div>
+    <!-- tentative note -->
+    <div style="display:{{ s.tentDisplay }};padding:10px 18px;background:#fbf4e7;border-top:1px solid #f6ecd6;font-size:12.5px;font-weight:600;color:#a9761f;">⚠ Selection contains tentative movements — figures may change.</div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:420,&quot;height&quot;:420},&quot;variant&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;expense&quot;,&quot;income&quot;],&quot;default&quot;:&quot;expense&quot;,&quot;tsType&quot;:&quot;'expense'|'income'&quot;}}">
+class Component extends DCLogic {
+  async componentDidMount(){ this.lib = await import('./finance-lib.js'); this.forceUpdate(); }
+  renderVals(){
+    const L=this.lib; if(!L) return { s:{} };
+    const money = (c,signed)=> L.fmtMoney(c,{sign:signed});
+    // window.movements.getFilterSummary(filter) -> FilterSummaryT; this renders one aggregate BasicSummary.
+    const src = (this.props.variant === 'income') ? L.BASIC_SUMMARY_SALARY : L.BASIC_SUMMARY_JAPAN;
+    const su = src.summary;
+    // No name — these are computed for programmatic filtered selections. Title is the count only.
+    const title = 'Summary of ' + su.movementCount + ' selected movements';
+    const averages = [
+      { label:'Avg income', cents:su.avgIncomeCents, kind:'pos' },
+      { label:'Avg expense', cents:su.avgExpenseCents, kind:'neg' },
+      { label:'Avg movement', cents:su.avgMovementAmountCents, kind:'neutral' },
+    ].map((a,i)=>({
+      label:a.label,
+      value: money(a.cents, false),
+      color: a.kind==='pos' ? '#1c8a4d' : a.kind==='neg' ? '#d23b2b' : '#1b2430',
+      border: i>0 ? '1px solid #f4f6f9' : '0',
+    }));
+    return { s: {
+      title, iconBg:'#eef3fe', iconFg:'#2f6bf6',
+      cashFlow: money(su.cashFlowCents, true),
+      cashFlowColor: su.cashFlowCents>0 ? '#1c8a4d' : su.cashFlowCents<0 ? '#d23b2b' : '#1b2430',
+      income: money(su.totalIncomeCents, false),
+      expense: money(su.totalExpenseCents, false),
+      averages, count: su.movementCount,
+      tentDisplay: src.tentative ? 'block' : 'none',
+    }};
+  }
+}
+</script>
+</body>
+</html>

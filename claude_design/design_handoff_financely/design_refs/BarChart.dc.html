@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  .fc-dd{cursor:pointer;transition:border .12s,box-shadow .12s}.fc-dd:hover{border-color:#c7cdd8}
+  .fc-opt{cursor:pointer;transition:background .1s}.fc-opt:hover{background:#f3f6fb}
+  .fc-seg{transition:height .3s cubic-bezier(.2,.8,.3,1),filter .12s}.fc-seg:hover{filter:brightness(1.06)}
+</style>
+</helmet>
+<div style="font-family:Nunito,sans-serif;padding:16px;">
+  <div style="width:620px;max-width:100%;background:#fff;border:1px solid #eceef2;border-radius:16px;box-shadow:0 1px 3px rgba(20,30,50,.06);overflow:hidden;">
+    <!-- selector: VAR per DIVIDER over TIMEFRAME -->
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:14px 16px;border-bottom:1px solid #f2f4f7;background:#fbfcfe;">
+      <span style="font-size:12.5px;font-weight:700;color:#5b6472;">Currently showing:</span>
+      <div style="position:relative;">
+        <div class="fc-dd" onClick="{{ varToggle }}" style="display:flex;align-items:center;gap:7px;height:32px;padding:0 10px;border:1px solid {{ varBorder }};border-radius:9px;background:#fff;font-size:13px;font-weight:700;color:#2f6bf6;box-shadow:{{ varShadow }};">{{ varLabel }}<span style="color:#8bb0f7;">▾</span></div>
+        <div style="display:{{ varMenu }};position:absolute;top:38px;left:0;z-index:30;min-width:170px;background:#fff;border:1px solid #e6e8ee;border-radius:11px;box-shadow:0 12px 30px rgba(20,30,50,.16);overflow:hidden;">
+          <sc-for list="{{ varOptions }}" as="o" hint-placeholder-count="9"><div class="fc-opt" onClick="{{ o.onPick }}" style="padding:9px 12px;font-size:13px;font-weight:{{ o.weight }};color:{{ o.fg }};border-top:{{ o.border }};">{{ o.label }}</div></sc-for>
+        </div>
+      </div>
+      <span style="font-size:12.5px;font-weight:600;color:#98a1b0;">per</span>
+      <div style="position:relative;">
+        <div class="fc-dd" onClick="{{ divToggle }}" style="display:flex;align-items:center;gap:7px;height:32px;padding:0 10px;border:1px solid {{ divBorder }};border-radius:9px;background:#fff;font-size:13px;font-weight:700;color:#6b5cf5;box-shadow:{{ divShadow }};">{{ divLabel }}<span style="color:#b3a7f5;">▾</span></div>
+        <div style="display:{{ divMenu }};position:absolute;top:38px;left:0;z-index:30;min-width:150px;background:#fff;border:1px solid #e6e8ee;border-radius:11px;box-shadow:0 12px 30px rgba(20,30,50,.16);overflow:hidden;">
+          <sc-for list="{{ divOptions }}" as="o" hint-placeholder-count="8"><div class="fc-opt" onClick="{{ o.onPick }}" style="padding:9px 12px;font-size:13px;font-weight:{{ o.weight }};color:{{ o.fg }};border-top:{{ o.border }};">{{ o.label }}</div></sc-for>
+        </div>
+      </div>
+      <span style="font-size:12.5px;font-weight:600;color:#98a1b0;">over</span>
+      <div style="position:relative;">
+        <div class="fc-dd" onClick="{{ tfToggle }}" style="display:flex;align-items:center;gap:7px;height:32px;padding:0 10px;border:1px solid {{ tfBorder }};border-radius:9px;background:{{ tfBg }};font-size:13px;font-weight:700;color:{{ tfFg }};box-shadow:{{ tfShadow }};">{{ tfLabel }}<span style="color:#b6bdc9;">▾</span></div>
+        <div style="display:{{ tfMenu }};position:absolute;top:38px;right:0;z-index:30;min-width:120px;background:#fff;border:1px solid #e6e8ee;border-radius:11px;box-shadow:0 12px 30px rgba(20,30,50,.16);overflow:hidden;">
+          <sc-for list="{{ tfOptions }}" as="o" hint-placeholder-count="2"><div class="fc-opt" onClick="{{ o.onPick }}" style="padding:9px 12px;font-size:13px;font-weight:{{ o.weight }};color:{{ o.fg }};border-top:{{ o.border }};">{{ o.label }}</div></sc-for>
+        </div>
+      </div>
+      <div style="flex:1;"></div>
+      <div style="display:{{ ownChipDisplay }};align-items:center;gap:6px;height:28px;padding:0 6px 0 10px;border-radius:999px;background:#eef3fe;border:1px solid #d7e3fb;">
+        <span style="font-size:11.5px;font-weight:700;color:#2f6bf6;">{{ ownLabel }}</span>
+        <span class="fc-opt" onClick="{{ clearFilters }}" title="Clear filters" style="width:18px;height:18px;border-radius:50%;background:rgba(47,107,246,.15);color:#2f6bf6;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;cursor:pointer;">×</span>
+      </div>
+      <span class="fc-dd" onClick="{{ openFilters }}" title="Filter this chart" style="display:{{ filterBtnDisplay }};align-items:center;justify-content:center;width:32px;height:32px;border-radius:9px;border:1px solid {{ filterBtnBorder }};background:{{ filterBtnBg }};cursor:pointer;flex:none;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="{{ filterBtnStroke }}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+      </span>
+    </div>
+    <!-- chart -->
+    <div style="padding:18px 18px 8px;">
+      <div style="display:flex;align-items:stretch;gap:14px;height:210px;">
+        <!-- y axis -->
+        <div style="display:flex;flex-direction:column;justify-content:space-between;align-items:flex-end;padding-bottom:22px;flex:none;">
+          <sc-for list="{{ yTicks }}" as="t" hint-placeholder-count="4"><span style="font-size:10.5px;font-weight:700;color:#b0b7c2;">{{ t }}</span></sc-for>
+        </div>
+        <!-- plot -->
+        <div style="flex:1;min-width:0;display:flex;align-items:flex-end;justify-content:space-around;gap:10px;border-left:1px solid #eef0f4;border-bottom:1px solid #eef0f4;padding:0 6px;">
+          <sc-for list="{{ bars }}" as="bar" hint-placeholder-count="6">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end;">
+              <div style="display:flex;flex-direction:column-reverse;width:60%;max-width:44px;border-radius:5px 5px 0 0;overflow:hidden;">
+                <sc-for list="{{ bar.segments }}" as="seg" hint-placeholder-count="1"><div class="fc-seg" title="{{ seg.title }}" style="height:{{ seg.h }}px;background:{{ seg.color }};"></div></sc-for>
+              </div>
+              <span style="margin-top:6px;font-size:10.5px;font-weight:700;color:#98a1b0;white-space:nowrap;">{{ bar.label }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+    <!-- legend + note -->
+    <div style="display:flex;flex-wrap:wrap;gap:10px 16px;padding:6px 18px 12px;">
+      <sc-for list="{{ legend }}" as="l" hint-placeholder-count="3"><span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#5b6472;"><span style="width:10px;height:10px;border-radius:3px;background:{{ l.color }};"></span>{{ l.label }}</span></sc-for>
+    </div>
+    <div style="display:{{ noteDisplay }};padding:10px 18px;background:#fbf4e7;border-top:1px solid #f6ecd6;font-size:12px;font-weight:600;color:#a9761f;">{{ noteText }}</div>
+    <sc-if value="{{ showFilters }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ closeFilters }}" style="position:fixed;inset:0;z-index:70;background:rgba(20,26,38,.34);backdrop-filter:blur(2px);display:flex;align-items:flex-start;justify-content:center;padding:56px 24px;overflow:auto;">
+        <div onClick="{{ stop }}"><dc-import name="FiltersModal" hint-size="760px,640px"></dc-import></div>
+      </div>
+    </sc-if>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:652,&quot;height&quot;:380},&quot;useFilters&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  state = { varKey:'expense', divKey:'envelope', timeframe:'months', open:null, showFilters:false, ownFilters:false };
+  async componentDidMount(){ this.lib = await import('./finance-lib.js'); this.forceUpdate(); }
+  menu(items, current, setKey){
+    return items.map(([val,label],i)=>({ label, weight: val===current?'800':'600', fg: val===current?'#2f6bf6':'#1b2430',
+      border: i>0?'1px solid #f4f6f9':'0', onPick:()=>this.setState({[setKey]:val, open:null}) }));
+  }
+  renderVals(){
+    const L=this.lib; if(!L) return { bars:[], legend:[], yTicks:[], varOptions:[], divOptions:[], tfOptions:[] };
+    // window.movements.getFilterSummary(filter) over ≥2 periods -> L.barData()
+    const VARS=[['count','Movement count'],['expense','Expenses'],['income','Income'],['cashflow','Cash flow'],['moved','Total money moved'],['avgExpense','Avg expense'],['avgIncome','Avg income'],['avgMovement','Avg movement'],['anomCount','Anomalous count']];
+    const DIVS=[['envelope','Envelope'],['category','Category'],['tag','Tag'],['month','Month'],['year','Year'],['status','Status'],['direction','Direction'],['null','Null']];
+    const TFS=[['months','Months'],['years','Years']];
+    const vk=this.state.varKey, dk=this.state.divKey, tf=this.state.timeframe;
+    const useFilters = this.props.useFilters === true || this.props.useFilters === 'true';
+    const src = this.state.ownFilters ? L.chartMovementsFiltered() : undefined;
+    const data=L.barData(vk,dk,tf,src);
+    const H=188; // px plot height
+    const bars=data.periods.map((p,pi)=>{
+      const segments=data.groups.map(g=>({ color:g.color, h:Math.round(g.values[pi]/data.max*H), title:g.label+': '+L.fmtChartValue(vk,g.values[pi]) })).filter(s=>s.h>0);
+      return { label:p.label, segments };
+    });
+    const legend=(dk==='null')?[]:data.groups.map(g=>({ color:g.color, label:g.label }));
+    const yTicks=[3,2,1,0].map(i=>L.fmtChartValue(vk, Math.round(data.max*i/3)));
+    const dd=(id)=>({ toggle:()=>this.setState({open:this.state.open===id?null:id}), open:this.state.open===id });
+    return {
+      varLabel:(L.CHART_VARS[vk]||{}).label, ...(()=>{const d=dd('var');return{varToggle:d.toggle,varMenu:d.open?'block':'none',varBorder:d.open?'#2f6bf6':'#cfe0fd',varShadow:d.open?'0 0 0 3px rgba(47,107,246,.14)':'none'};})(),
+      varOptions:this.menu(VARS,vk,'varKey'),
+      divLabel:(DIVS.find(d=>d[0]===dk)||[])[1], ...(()=>{const d=dd('div');return{divToggle:d.toggle,divMenu:d.open?'block':'none',divBorder:d.open?'#6b5cf5':'#ddd6fb',divShadow:d.open?'0 0 0 3px rgba(107,92,245,.14)':'none'};})(),
+      divOptions:this.menu(DIVS,dk,'divKey'),
+      tfLabel:(TFS.find(t=>t[0]===tf)||[])[1], ...(()=>{const d=dd('tf');return{tfToggle:d.toggle,tfMenu:d.open?'block':'none',tfBorder:d.open?'#2f6bf6':'#e3e6ec',tfBg:'#fff',tfFg:'#1b2430',tfShadow:d.open?'0 0 0 3px rgba(47,107,246,.14)':'none'};})(),
+      tfOptions:this.menu(TFS,tf,'timeframe'),
+      bars, legend, yTicks,
+      noteDisplay: bars.length<2?'block':'none',
+      noteText:'Bar charts plot over time — at least two periods must be in the selection to render.',
+      filterBtnDisplay: useFilters ? 'inline-flex' : 'none',
+      filterBtnBg: this.state.ownFilters ? '#2f6bf6' : '#fff',
+      filterBtnBorder: this.state.ownFilters ? '#2f6bf6' : '#e3e6ec',
+      filterBtnStroke: this.state.ownFilters ? '#fff' : '#6b7482',
+      ownChipDisplay: (useFilters && this.state.ownFilters) ? 'inline-flex' : 'none',
+      ownLabel: L.OWN_FILTER_LABEL,
+      openFilters:()=>this.setState({showFilters:true}),
+      closeFilters:()=>this.setState({showFilters:false, ownFilters:true}),
+      clearFilters:()=>this.setState({ownFilters:false}),
+      showFilters:this.state.showFilters,
+      stop:(e)=>e.stopPropagation(),
+    };
+  }
+}
+</script>
+</body>
+</html>

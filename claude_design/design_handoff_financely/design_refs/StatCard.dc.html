@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap" rel="stylesheet">
+<style>
+  @keyframes fcFade { from { opacity: 0 } to { opacity: 1 } }
+  @keyframes fcPop { from { opacity: 0; transform: translateY(8px) scale(.98) } to { opacity: 1; transform: none } }
+  .fc-sc-card { transition: box-shadow .16s ease, transform .16s ease, background .16s ease; }
+  .fc-sc-card.click { cursor: pointer; }
+  .fc-sc-card.click:hover { box-shadow: 0 4px 16px rgba(20,30,50,.10); transform: translateY(-1px); }
+  .fc-sc-chev { transition: transform .18s ease; }
+</style>
+</helmet>
+<div style="font-family:Nunito,sans-serif;padding:14px;background:transparent;">
+  <!-- ══ card ══ -->
+  <div class="fc-sc-card {{ clickClass }}" onClick="{{ onCardClick }}" style="position:relative;background:{{ tint }};border:1px solid {{ borderCol }};border-left:4px solid {{ accent }};border-radius:13px;padding:14px 16px;min-width:250px;box-shadow:0 1px 2px rgba(20,30,50,.05);">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div style="min-width:0;flex:1;display:flex;align-items:center;gap:8px;">
+        <span style="display:{{ iconDisplay }};font-size:15px;line-height:1;">{{ icon }}</span>
+        <div style="min-width:0;">
+          <div style="font-size:14px;font-weight:700;color:#1b2430;letter-spacing:.1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ title }}</div>
+          <div style="display:{{ subDisplay }};font-size:12px;font-weight:500;color:#98a1b0;margin-top:2px;">{{ sublabel }}</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex:none;">
+        <div style="font-size:18px;font-weight:800;color:{{ valueColor }};letter-spacing:.2px;white-space:nowrap;">{{ valueText }}</div>
+        <span class="fc-sc-chev" style="display:{{ chevDisplay }};color:#b6bdc9;font-size:16px;font-weight:800;transform:{{ chevRot }};">{{ chevGlyph }}</span>
+      </div>
+    </div>
+    <!-- inline expand (collapsible) -->
+    <div style="display:{{ expandDisplay }};margin-top:12px;padding-top:12px;border-top:1px solid {{ borderCol }};animation:fcFade .2s ease;">
+      <sc-for list="{{ inlineRows }}" as="row" hint-placeholder-count="2">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;padding:3px 0;">
+          <span style="font-size:13px;font-weight:{{ row.weight }};color:{{ row.labelColor }};font-style:{{ row.italic }};">{{ row.label }}</span>
+          <span style="font-size:13px;font-weight:{{ row.valWeight }};color:{{ row.valueColor }};">{{ row.valueText }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- ══ calculation modal ══ -->
+  <sc-if value="{{ modalOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ onBackdrop }}" style="position:fixed;inset:0;z-index:60;background:rgba(20,26,38,.34);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;padding:24px;animation:fcFade .16s ease;">
+      <div onClick="{{ stop }}" style="width:420px;max-width:100%;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 24px 70px rgba(15,22,38,.32);animation:fcPop .2s cubic-bezier(.2,.9,.3,1);">
+        <!-- tinted header band -->
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;background:{{ tint }};border-bottom:1px solid {{ borderCol }};">
+          <div style="display:flex;align-items:center;gap:9px;min-width:0;">
+            <span style="width:9px;height:26px;border-radius:6px;background:{{ accent }};flex:none;"></span>
+            <div style="font-size:16px;font-weight:800;color:#1b2430;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ modalTitle }}</div>
+          </div>
+          <button onClick="{{ closeModal }}" style="flex:none;width:32px;height:32px;border-radius:9px;border:1px solid {{ borderCol }};background:#fff;color:#6b7482;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
+        </div>
+        <!-- body -->
+        <div style="padding:20px;">
+          <div style="font-size:34px;font-weight:800;letter-spacing:.3px;color:{{ valueColor }};margin-bottom:16px;">{{ valueText }}</div>
+          <sc-for list="{{ modalRows }}" as="row" hint-placeholder-count="3">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-top:{{ row.topBorder }};">
+              <span style="font-size:14px;font-weight:{{ row.weight }};font-style:{{ row.italic }};color:{{ row.labelColor }};">{{ row.label }}</span>
+              <span style="font-size:14px;font-weight:700;color:{{ row.valueColor }};">{{ row.valueText }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <!-- tinted footer band -->
+        <div style="display:{{ footDisplay }};padding:14px 20px;background:{{ tint }};border-top:1px solid {{ borderCol }};font-size:12.5px;line-height:1.5;color:#6b7482;">{{ footnote }}</div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:320,&quot;height&quot;:110},&quot;type&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;simple&quot;,&quot;calculated&quot;,&quot;collapsible&quot;],&quot;default&quot;:&quot;calculated&quot;,&quot;tsType&quot;:&quot;'simple'|'calculated'|'collapsible'&quot;},&quot;title&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Global cash flow · Jan&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;modalTitle&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Global cash flow · Jan&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#2f6bf6&quot;,&quot;options&quot;:[&quot;#2f6bf6&quot;,&quot;#6b5cf5&quot;,&quot;#1c8a4d&quot;,&quot;#e8a33d&quot;,&quot;#d23b2b&quot;],&quot;tsType&quot;:&quot;string&quot;},&quot;icon&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;sublabel&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;valueCents&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:88000,&quot;unit&quot;:&quot;cents&quot;,&quot;tsType&quot;:&quot;number&quot;},&quot;signed&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;neutralValue&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;footnote&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;rows&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{label:string;cents:number;signed?:boolean;italic?:boolean;bold?:boolean;divider?:boolean}[]&quot;}}">
+class Component extends DCLogic {
+  state = { modalOpen: false, expanded: false };
+  async componentDidMount(){ this.lib = await import('./finance-lib.js'); this.forceUpdate(); }
+  hexRgb(h){ const m=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(h||'#2f6bf6'); return m?[parseInt(m[1],16),parseInt(m[2],16),parseInt(m[3],16)]:[47,107,246]; }
+  money(c,signed){ if(!this.lib) return ''; return this.lib.fmtMoney(c,{sign:signed}); }
+  mcolor(c){ return c>0?'#1c8a4d':c<0?'#d23b2b':'#1b2430'; }
+  renderVals(){
+    const type = this.props.type || 'calculated';
+    const accent = this.props.accent || '#2f6bf6';
+    const [r,g,b] = this.hexRgb(accent);
+    const tint = `rgba(${r},${g},${b},.07)`;
+    const borderCol = `rgba(${r},${g},${b},.16)`;
+    const signed = this.props.signed !== false;
+    const valueCents = this.props.valueCents ?? 88000;
+    const valueColor = this.props.neutralValue ? '#1b2430' : this.mcolor(signed ? valueCents : 1);
+    // breakdown rows (used inline for collapsible, in modal for calculated)
+    const raw = this.props.rows || [
+      { label:'Periodic', cents:136500, signed:true },
+      { label:'Irregular', cents:-67500, signed:true },
+      { label:'Avg cash flow / month', cents:29000, signed:true, italic:true, divider:true },
+    ];
+    const mkRow = (row, i, forModal) => {
+      const c = row.cents;
+      return {
+        label: row.label,
+        valueText: this.money(c, row.signed !== false),
+        valueColor: row.bold ? '#1b2430' : this.mcolor(c),
+        weight: row.bold ? '700' : '500',
+        valWeight: row.bold ? '800' : '700',
+        italic: row.italic ? 'italic' : 'normal',
+        labelColor: row.bold ? '#1b2430' : '#5b6472',
+        topBorder: (row.divider && i>0) ? '1px solid #eceef2' : '0',
+      };
+    };
+    const modalRows = raw.map((row,i)=>mkRow(row,i,true));
+    const inlineRows = raw.map((row,i)=>mkRow(row,i,false));
+    return {
+      title: this.props.title ?? 'Global cash flow · Jan',
+      modalTitle: this.props.modalTitle ?? this.props.title ?? 'Global cash flow · Jan',
+      icon: this.props.icon || '', iconDisplay: this.props.icon ? 'inline' : 'none',
+      sublabel: this.props.sublabel || '', subDisplay: this.props.sublabel ? 'block' : 'none',
+      valueText: this.money(valueCents, signed && !this.props.neutralValue),
+      valueColor, accent, tint, borderCol,
+      footnote: this.props.footnote ?? 'Income minus expenses for the period. Periodic covers recurring movements (salary, rent…); irregular is everything else.',
+      footDisplay: this.props.footnote === '' ? 'none' : 'block',
+      // interactions
+      clickClass: type==='calculated' ? 'click' : (type==='collapsible' ? 'click' : ''),
+      chevDisplay: type==='simple' ? 'none' : 'inline',
+      chevGlyph: type==='collapsible' ? '⌄' : '›',
+      chevRot: (type==='collapsible' && this.state.expanded) ? 'rotate(180deg) translateY(-2px)' : 'none',
+      expandDisplay: (type==='collapsible' && this.state.expanded) ? 'block' : 'none',
+      modalOpen: this.state.modalOpen,
+      inlineRows, modalRows,
+      onCardClick: () => {
+        if (type==='calculated') this.setState({modalOpen:true});   // opens calc modal
+        else if (type==='collapsible') this.setState({expanded:!this.state.expanded});
+      },
+      closeModal: () => this.setState({modalOpen:false}),
+      onBackdrop: () => this.setState({modalOpen:false}),
+      stop: (e)=> e.stopPropagation(),
+    };
+  }
+}
+</script>
+</body>
+</html>

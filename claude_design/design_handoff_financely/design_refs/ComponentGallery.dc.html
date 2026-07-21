@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  body{margin:0;background:#eef0f3;}
+  .spec{background:#fff;border:1px solid #e3e6ec;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(20,30,50,.05);}
+  .spec-h{padding:11px 14px 9px;border-bottom:1px solid #f2f4f7;}
+  .spec-t{font-size:13.5px;font-weight:800;color:#1b2430;}
+  .spec-d{font-size:11.5px;font-weight:600;color:#98a1b0;}
+  .spec-b{background:#fff;background-image:radial-gradient(#e6e8ee 1px,transparent 1px);background-size:16px 16px;padding:6px;display:flex;justify-content:center;}
+  .spec-api{padding:8px 14px;background:#f7f9fc;border-top:1px solid #f2f4f7;font-family:ui-monospace,Menlo,monospace;font-size:10.5px;color:#2f6bf6;}
+  .sec{max-width:1180px;margin:38px auto 0;}
+  .sec-h{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+  .sec-n{font-size:11px;font-weight:900;color:#fff;background:#1b2430;border-radius:6px;padding:3px 8px;}
+  .sec-t{font-size:16px;font-weight:800;color:#1b2430;}
+  .row{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start;}
+  .mono{font-family:ui-monospace,Menlo,monospace;}
+</style>
+</helmet>
+<div style="font-family:Nunito,sans-serif;background:#eef0f3;padding:40px 44px 80px;min-width:1220px;">
+  <!-- title -->
+  <div style="max-width:1180px;margin:0 auto 8px;">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span style="width:44px;height:44px;border-radius:13px;background:#1b2430;color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;">₣</span>
+      <div>
+        <div style="font-size:26px;font-weight:900;color:#1b2430;letter-spacing:-.3px;">Financely · Component Library</div>
+        <div style="font-size:13.5px;font-weight:600;color:#7c8494;">18 standalone components + 2 composed pages · interactive · mock data wired to the real <span class="mono" style="color:#2f6bf6;">window.*</span> IPC surface</div>
+      </div>
+    </div>
+    <div style="margin-top:14px;padding:12px 16px;background:#fff;border:1px solid #e3e6ec;border-radius:12px;font-size:12.5px;font-weight:600;color:#5b6472;line-height:1.6;">
+      Each specimen is an independent <span class="mono" style="color:#1b2430;">.dc.html</span> component (props in / callbacks out). Try them: open the calc-modal stat card, toggle anomalous on a movement, add/remove compound members, confirm tentative months, pick entities in the selectors, open “Other filters”. The grey strip names the <span class="mono" style="color:#2f6bf6;">window.*</span> method each would call against the Electron backend.
+    </div>
+  </div>
+
+  <!-- ═══ 01 · STAT CARDS ═══ -->
+  <div class="sec">
+    <div class="sec-h"><span class="sec-n">01</span><span class="sec-t">Stat cards & period summaries</span></div>
+    <div class="row">
+      <div class="spec" style="width:320px;"><div class="spec-h"><div class="spec-t">StatCard · simple</div><div class="spec-d">title + value, no interaction</div></div><div class="spec-b"><dc-import name="StatCard" type="simple" title="Free budget" icon="⭐" accent="#6b5cf5" value-cents="1537" hint-size="320px,130px"></dc-import></div><div class="spec-api">window.periodSummaries.getByPeriod(…)</div></div>
+      <div class="spec" style="width:320px;"><div class="spec-h"><div class="spec-t">StatCard · calculated</div><div class="spec-d">click → tinted calc modal</div></div><div class="spec-b"><dc-import name="StatCard" type="calculated" title="Global cash flow · Jan" accent="#2f6bf6" value-cents="88000" hint-size="320px,130px"></dc-import></div><div class="spec-api">click → modal with breakdown rows</div></div>
+      <div class="spec" style="width:320px;"><div class="spec-h"><div class="spec-t">StatCard · collapsible</div><div class="spec-d">click to expand breakdown</div></div><div class="spec-b"><dc-import name="StatCard" type="collapsible" title="Total movements" accent="#1c8a4d" value-cents="4250" hint-size="320px,180px"></dc-import></div><div class="spec-api">inline Income / Expenses / Total</div></div>
+      <div class="spec" style="width:420px;"><div class="spec-h"><div class="spec-t">PeriodSummaryCard · single</div><div class="spec-d">one envelope, one month</div></div><div class="spec-b"><dc-import name="PeriodSummaryCard" view="single" hint-size="420px,430px"></dc-import></div><div class="spec-api">window.periodSummaries.getByPeriod(1, envId, y, m)</div></div>
+      <div class="spec" style="width:560px;"><div class="spec-h"><div class="spec-t">PeriodSummaryCard · multi</div><div class="spec-d">all envelopes for a month · click a row</div></div><div class="spec-b"><dc-import name="PeriodSummaryCard" view="multi" hint-size="560px,430px"></dc-import></div><div class="spec-api">window.periodSummaries.getAll()</div></div>
+      <div class="spec" style="width:420px;"><div class="spec-h"><div class="spec-t">BasicSummaryCard · expense</div><div class="spec-d">on-the-fly selection · no budget/transfers/balance</div></div><div class="spec-b"><dc-import name="BasicSummaryCard" variant="expense" hint-size="420px,400px"></dc-import></div><div class="spec-api">window.movements.getFilterSummary(filter)</div></div>
+      <div class="spec" style="width:420px;"><div class="spec-h"><div class="spec-t">BasicSummaryCard · income</div><div class="spec-d">same component, income-heavy slice</div></div><div class="spec-b"><dc-import name="BasicSummaryCard" variant="income" hint-size="420px,400px"></dc-import></div><div class="spec-api">FilterSummaryT.aggregate → BasicSummary</div></div>
+    </div>
+  </div>
+
+  <!-- ═══ 02 · MOVEMENTS ═══ -->
+  <div class="sec">
+    <div class="sec-h"><span class="sec-n">02</span><span class="sec-t">Movements & compound movements</span></div>
+    <div class="row">
+      <div class="spec" style="width:360px;"><div class="spec-h"><div class="spec-t">MovementListV1</div><div class="spec-d">compact · name + amount</div></div><div class="spec-b"><dc-import name="MovementListV1" hint-size="360px,360px"></dc-import></div><div class="spec-api">window.movements.getAll(filter?)</div></div>
+      <div class="spec" style="width:440px;"><div class="spec-h"><div class="spec-t">MovementListV2</div><div class="spec-d">rich · category · date · tags</div></div><div class="spec-b"><dc-import name="MovementListV2" hint-size="440px,470px"></dc-import></div><div class="spec-api">window.movements.getAll() + tags.getForMovements()</div></div>
+      <div class="spec" style="width:460px;"><div class="spec-h"><div class="spec-t">MovementDetail · split + periodic</div><div class="spec-d">split envelopes, context sections</div></div><div class="spec-b"><dc-import name="MovementDetail" movement-id="102" hint-size="460px,650px"></dc-import></div><div class="spec-api">window.movements.getById(id)</div></div>
+      <div class="spec" style="width:460px;"><div class="spec-h"><div class="spec-t">MovementDetail · anomalous</div><div class="spec-d">one-off flagged movement</div></div><div class="spec-b"><dc-import name="MovementDetail" movement-id="107" hint-size="460px,560px"></dc-import></div><div class="spec-api">window.movements.update({…isAnomalous})</div></div>
+      <div class="spec" style="width:460px;"><div class="spec-h"><div class="spec-t">MovementDetail · tentative</div><div class="spec-d">awaiting review, confirmable</div></div><div class="spec-b"><dc-import name="MovementDetail" movement-id="111" hint-size="460px,640px"></dc-import></div><div class="spec-api">window.movements.confirm(id)</div></div>
+      <div class="spec" style="width:540px;"><div class="spec-h"><div class="spec-t">CompoundDetail</div><div class="spec-d">group of movements</div></div><div class="spec-b"><dc-import name="CompoundDetail" compound-id="501" hint-size="540px,420px"></dc-import></div><div class="spec-api">window.compoundMovements.getChildren(id)</div></div>
+      <div class="spec" style="width:560px;"><div class="spec-h"><div class="spec-t">CompoundForm</div><div class="spec-d">create / edit · add-remove members</div></div><div class="spec-b"><dc-import name="CompoundForm" hint-size="560px,590px"></dc-import></div><div class="spec-api">window.compoundMovements.create(fields, existing, new)</div></div>
+    </div>
+  </div>
+
+  <!-- ═══ 03 · PERIODIC ═══ -->
+  <div class="sec">
+    <div class="sec-h"><span class="sec-n">03</span><span class="sec-t">Periodic movements</span></div>
+    <div class="row">
+      <div class="spec" style="width:400px;"><div class="spec-h"><div class="spec-t">PeriodicList</div><div class="spec-d">tentative + upcoming instances</div></div><div class="spec-b"><dc-import name="PeriodicList" periodic-id="10" hint-size="400px,450px"></dc-import></div><div class="spec-api">window.periodicMovements.getById(id)</div></div>
+      <div class="spec" style="width:480px;"><div class="spec-h"><div class="spec-t">PeriodicDetail</div><div class="spec-d">12-month confirmation calendar</div></div><div class="spec-b"><dc-import name="PeriodicDetail" periodic-id="9" hint-size="480px,510px"></dc-import></div><div class="spec-api">window.periodicMovements.getById(id) · movements.confirm</div></div>
+      <div class="spec" style="width:520px;"><div class="spec-h"><div class="spec-t">PeriodicForm · create</div><div class="spec-d">incl. month-generation range</div></div><div class="spec-b"><dc-import name="PeriodicForm" mode="create" hint-size="520px,480px"></dc-import></div><div class="spec-api">window.periodicMovements.create(template, tagIds)</div></div>
+      <div class="spec" style="width:520px;"><div class="spec-h"><div class="spec-t">PeriodicForm · edit</div><div class="spec-d">no generation section</div></div><div class="spec-b"><dc-import name="PeriodicForm" mode="edit" hint-size="520px,400px"></dc-import></div><div class="spec-api">window.periodicMovements.update(template, tagIds)</div></div>
+    </div>
+  </div>
+
+  <!-- ═══ 04 · NAVBAR & FILTERS ═══ -->
+  <div class="sec">
+    <div class="sec-h"><span class="sec-n">04</span><span class="sec-t">Navbar, selectors & filters</span></div>
+    <div style="display:flex;flex-direction:column;gap:20px;">
+      <div class="spec"><div class="spec-h"><div class="spec-t">NavbarV1</div><div class="spec-d">inline selectors + anomalies toggle</div></div><div class="spec-b" style="justify-content:flex-start;"><dc-import name="NavbarV1" hint-size="100%,130px"></dc-import></div><div class="spec-api">window.accounts.getAll() · window.envelopes.getAll()</div></div>
+      <div class="spec"><div class="spec-h"><div class="spec-t">NavbarV2</div><div class="spec-d">inline + “Other filters” (opens modal) + clear</div></div><div class="spec-b" style="justify-content:flex-start;"><dc-import name="NavbarV2" hint-size="100%,150px"></dc-import></div><div class="spec-api">toggles between inline and complex filters</div></div>
+    </div>
+    <div class="row" style="margin-top:20px;">
+      <div class="spec" style="width:390px;"><div class="spec-h"><div class="spec-t">MultiEntitySelector · envelope</div><div class="spec-d">dropdown → chips · “All”</div></div><div class="spec-b"><dc-import name="MultiEntitySelector" entity="envelope" hint-size="390px,240px"></dc-import></div><div class="spec-api">returns EntryList[] | true</div></div>
+      <div class="spec" style="width:390px;"><div class="spec-h"><div class="spec-t">MultiEntitySelector · tag</div><div class="spec-d">same component, tag data</div></div><div class="spec-b"><dc-import name="MultiEntitySelector" entity="tag" hint-size="390px,240px"></dc-import></div><div class="spec-api">window.tags.getAll()</div></div>
+      <div class="spec" style="width:832px;"><div class="spec-h"><div class="spec-t">FiltersModal</div><div class="spec-d">the “Other filters” full form</div></div><div class="spec-b"><dc-import name="FiltersModal" hint-size="792px,680px"></dc-import></div><div class="spec-api">window.movements.getAll(filter) · getFilterSummary(filter)</div></div>
+      <div class="spec" style="width:300px;"><div class="spec-h"><div class="spec-t">TagChip</div><div class="spec-d">removable color pill (used everywhere)</div></div><div class="spec-b" style="flex-wrap:wrap;gap:8px;padding:16px;"><dc-import name="TagChip" label="Japan trip" color="#2f6bf6" removable="{{ yes }}" hint-size="150px,40px"></dc-import><dc-import name="TagChip" label="Work" color="#6b5cf5" removable="{{ yes }}" hint-size="110px,40px"></dc-import><dc-import name="TagChip" label="Essential" color="#e8a33d" emoji="⭐" removable="{{ no }}" hint-size="130px,40px"></dc-import></div><div class="spec-api">props: label, color, emoji, removable, onRemove</div></div>
+    </div>
+  </div>
+
+  <!-- ═══ 05 · CHARTS ═══ -->
+  <div class="sec">
+    <div class="sec-h"><span class="sec-n">05</span><span class="sec-t">Charts</span></div>
+    <div style="margin-bottom:16px;padding:12px 16px;background:#fff;border:1px solid #e3e6ec;border-radius:12px;font-size:12.5px;font-weight:600;color:#5b6472;line-height:1.6;max-width:1180px;">Each chart is self-contained — just the chart and its data/view selector. All three aggregate the same on-the-fly selection (<span class="mono" style="color:#1b2430;">getFilterSummary(filter).children</span>). Change the dropdowns to re-categorize live.</div>
+    <div class="row">
+      <div class="spec" style="width:432px;"><div class="spec-h"><div class="spec-t">PieChart</div><div class="spec-d">a VAR split by a GROUP (envelope, category, tag, month, year, status)</div></div><div class="spec-b"><dc-import name="PieChart" hint-size="432px,330px"></dc-import></div><div class="spec-api">VAR per GROUP · categorizes selected movements</div></div>
+      <div class="spec" style="width:652px;"><div class="spec-h"><div class="spec-t">BarChart</div><div class="spec-d">VAR per DIVIDER over TIMEFRAME · stacked, plots over time</div></div><div class="spec-b"><dc-import name="BarChart" hint-size="652px,390px"></dc-import></div><div class="spec-api">stacked by divider · ≥2 periods required</div></div>
+      <div class="spec" style="width:652px;"><div class="spec-h"><div class="spec-t">LineChart</div><div class="spec-d">VAR over TIMEFRAME · same as bar, no dividers</div></div><div class="spec-b"><dc-import name="LineChart" hint-size="652px,370px"></dc-import></div><div class="spec-api">single series over time</div></div>
+    </div>
+  </div>
+
+  <!-- ═══ PAGES ═══ -->
+  <div class="sec">
+    <div class="sec-h"><span class="sec-n" style="background:#2f6bf6;">PAGE</span><span class="sec-t">Dashboard</span></div>
+    <div style="margin-bottom:16px;padding:12px 16px;background:#fff;border:1px solid #e3e6ec;border-radius:12px;font-size:12.5px;font-weight:600;color:#5b6472;line-height:1.6;max-width:1180px;">The main dashboard — account-level stat cards (click any to open its per-envelope breakdown modal; Budget shows the default envelope and lists the rest), the current-month PeriodSummary, a pie chart, tentative/upcoming periodic movements, latest movements, and a bar chart.</div>
+    <div class="spec" style="overflow:hidden;">
+      <div class="spec-h"><div class="spec-t">DashboardPage</div><div class="spec-d">StatCards ×5 + PeriodSummaryCard + PieChart + PeriodicList + MovementListV1 + BarChart</div></div>
+      <div style="height:900px;overflow:auto;border-radius:0 0 14px 14px;"><dc-import name="DashboardPage" hint-size="1440px,1200px"></dc-import></div>
+      <div class="spec-api">window.periodSummaries.getAll(accountId, year, month)</div>
+    </div>
+  </div>
+
+  <!-- ═══ PAGES ═══ -->
+  <div class="sec">
+    <div class="sec-h"><span class="sec-n" style="background:#2f6bf6;">PAGE</span><span class="sec-t">Search results</span></div>
+    <div style="margin-bottom:16px;padding:12px 16px;background:#fff;border:1px solid #e3e6ec;border-radius:12px;font-size:12.5px;font-weight:600;color:#5b6472;line-height:1.6;max-width:1180px;">The first real composed page — a movement list, the BasicSummaryCard, a pie chart and a bar chart, all driven by one filtered selection. Everything below is live and interactive.</div>
+    <div class="spec" style="overflow:hidden;">
+      <div class="spec-h"><div class="spec-t">SearchResultsPage</div><div class="spec-d">MovementListV2 + BasicSummaryCard + PieChart + BarChart</div></div>
+      <div style="height:900px;overflow:auto;border-radius:0 0 14px 14px;"><dc-import name="SearchResultsPage" hint-size="1240px,1400px"></dc-import></div>
+      <div class="spec-api">window.movements.getAll(filter) · window.movements.getFilterSummary(filter)</div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals(){ return { yes: true, no: false }; }
+}
+</script>
+</body>
+</html>

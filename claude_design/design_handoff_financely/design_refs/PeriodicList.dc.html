@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>.fc-btn{cursor:pointer;transition:filter .12s}.fc-btn:hover{filter:brightness(.96)}.fc-prow:hover{background:#f7f9fc}</style>
+</helmet>
+<div style="font-family:Nunito,sans-serif;padding:16px;">
+  <div style="width:360px;max-width:100%;background:#fff;border:1px solid #eceef2;border-radius:16px;box-shadow:0 1px 3px rgba(20,30,50,.06);overflow:hidden;">
+    <div style="padding:14px 16px 10px;">
+      <div style="font-size:15px;font-weight:800;color:#1b2430;">{{ title }}</div>
+      <div style="font-size:12px;font-weight:600;color:#98a1b0;">{{ subtitle }}</div>
+    </div>
+    <!-- Tentative -->
+    <div style="padding:2px 16px 4px;font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#a9761f;">Tentative · review</div>
+    <sc-for list="{{ tentative }}" as="row" hint-placeholder-count="2">
+      <div class="fc-prow" style="display:flex;align-items:center;gap:11px;padding:10px 16px;border-top:1px solid #e3e7ee;transition:background .12s;">
+        <span style="width:9px;height:9px;border-radius:50%;flex:none;background:#e8a33d;"></span>
+        <div style="flex:1;min-width:0;"><div style="font-size:13.5px;font-weight:700;color:#1b2430;">{{ row.name }}</div><div style="font-size:11.5px;font-weight:600;color:#98a1b0;">{{ row.date }}</div></div>
+        <span style="font-size:13.5px;font-weight:800;color:{{ row.color }};">{{ row.amount }}</span>
+        <button class="fc-btn" onClick="{{ row.onConfirm }}" style="flex:none;height:28px;padding:0 11px;border-radius:7px;border:0;background:{{ row.btnBg }};color:{{ row.btnFg }};font-family:Nunito;font-size:12px;font-weight:700;">{{ row.btnLabel }}</button>
+      </div>
+    </sc-for>
+    <!-- Upcoming -->
+    <div style="padding:12px 16px 4px;font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#2f6bf6;border-top:1px solid #f2f4f7;margin-top:4px;">Upcoming</div>
+    <sc-for list="{{ upcoming }}" as="row" hint-placeholder-count="3">
+      <div class="fc-prow" style="display:flex;align-items:center;gap:11px;padding:10px 16px;border-top:1px solid #e3e7ee;transition:background .12s;">
+        <span style="width:9px;height:9px;border-radius:50%;flex:none;background:#c3cad4;"></span>
+        <div style="flex:1;min-width:0;"><div style="font-size:13.5px;font-weight:700;color:#5b6472;">{{ row.name }}</div><div style="font-size:11.5px;font-weight:600;color:#b0b7c2;">{{ row.date }}</div></div>
+        <span style="display:{{ row.earlyDisplay }};font-size:10.5px;font-weight:700;color:#1c8a4d;background:#eef7f1;border-radius:999px;padding:2px 8px;">Received early</span>
+        <span style="font-size:13.5px;font-weight:700;color:#98a1b0;">{{ row.amount }}</span>
+      </div>
+    </sc-for>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:400,&quot;height&quot;:440},&quot;periodicId&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:10,&quot;tsType&quot;:&quot;number&quot;}}">
+class Component extends DCLogic {
+  state = { confirmed: {} };
+  async componentDidMount(){ this.lib = await import('./finance-lib.js'); this.forceUpdate(); }
+  renderVals(){
+    const L=this.lib; if(!L) return { tentative:[], upcoming:[] };
+    // window.periodicMovements.getById(id) + generated instances; confirm -> window.movements.confirm(mid)
+    const p = L.byId(L.PERIODIC, this.props.periodicId ?? 10) || L.PERIODIC[2];
+    const signed = p.isPositive?p.quantityCents:-p.quantityCents;
+    const amt = L.fmtMoney(signed,{sign:true});
+    // tentative generated instances awaiting review (mock: this + next month)
+    const tentative = [
+      { key:'t1', name:p.name, date:"Due "+p.dayOfMonth+" Jan '26" },
+      { key:'t2', name:p.name, date:"Due "+p.dayOfMonth+" Feb '26" },
+    ].map(r=>{
+      const done = !!this.state.confirmed[r.key];
+      return { ...r, amount:amt, color: signed>0?'#1c8a4d':'#d23b2b',
+        btnLabel: done?'Confirmed':'Confirm', btnBg: done?'#eef7f1':'#1c8a4d', btnFg: done?'#1c8a4d':'#fff',
+        onConfirm:()=>this.setState({confirmed:{...this.state.confirmed,[r.key]:true}}) };
+    });
+    // Received-early instances are already reconciled, so they drop off the upcoming list.
+    const upcoming = [
+      { name:p.name, date:"Mar "+p.dayOfMonth },
+      { name:p.name, date:"Apr "+p.dayOfMonth },
+      { name:p.name, date:"May "+p.dayOfMonth },
+    ].map(r=>({ ...r, amount:L.fmtMoney(Math.abs(signed),{sign:false}), earlyDisplay:'none' }));
+    return { title:p.name, subtitle:'Periodic · day '+p.dayOfMonth+' each month', tentative, upcoming };
+  }
+}
+</script>
+</body>
+</html>

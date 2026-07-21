@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>.fc-sel{cursor:pointer;transition:border .12s,background .12s}.fc-sel:hover{border-color:#c7cdd8}.fc-btn{cursor:pointer;transition:filter .12s}.fc-btn:hover{filter:brightness(.96)}</style>
+</helmet>
+<div style="font-family:Nunito,sans-serif;padding:16px;">
+  <div style="width:900px;max-width:100%;background:#fff;border:1px solid #eceef2;border-radius:14px;box-shadow:0 1px 3px rgba(20,30,50,.06);padding:12px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+    <span style="font-size:16px;font-weight:800;color:#1b2430;margin-right:6px;">Financely</span>
+    <sc-for list="{{ selectors }}" as="sel" hint-placeholder-count="5">
+      <div class="fc-sel" onClick="{{ sel.onClick }}" style="display:flex;align-items:center;gap:7px;height:36px;padding:0 11px;border:1px solid #e3e6ec;border-radius:10px;background:#fff;cursor:pointer;">
+        <span style="font-size:11px;font-weight:700;color:#b0b7c2;">{{ sel.label }}</span>
+        <span style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:#1b2430;"><span style="display:{{ sel.dotDisplay }};width:8px;height:8px;border-radius:50%;background:{{ sel.dot }};"></span>{{ sel.value }}</span>
+        <span style="color:#c3cad4;font-size:12px;">⌄</span>
+      </div>
+    </sc-for>
+    <div style="flex:1;"></div>
+    <!-- show anomalies toggle -->
+    <div style="display:flex;align-items:center;gap:9px;">
+      <span style="font-size:12px;font-weight:700;color:#5b6472;">Show anomalies</span>
+      <div class="fc-btn" onClick="{{ onToggleAnom }}" style="width:44px;height:24px;border-radius:999px;position:relative;background:{{ anomBg }};cursor:pointer;transition:background .16s;">
+        <span style="position:absolute;top:2px;left:{{ anomKnob }};width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left .16s;"></span>
+      </div>
+    </div>
+  </div>
+  <div style="width:900px;max-width:100%;font-size:11.5px;font-weight:600;color:#b0b7c2;padding:8px 4px 0;">V1 · Inline selectors change per selected view/page.</div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:940,&quot;height&quot;:110}}">
+class Component extends DCLogic {
+  state = { anom:true };
+  async componentDidMount(){ this.lib = await import('./finance-lib.js'); this.forceUpdate(); }
+  renderVals(){
+    const L=this.lib;
+    // window.accounts.getAll(), window.envelopes.getAll() feed these selectors
+    const selectors = [
+      { label:'Account', value:'Main', dot:null },
+      { label:'Envelope', value:'All', dot:null },
+      { label:'View', value:'Monthly', dot:null },
+      { label:'Month', value:"August '26", dot:null },
+    ].map(s=>({ ...s, dotDisplay: s.dot?'inline-block':'none', dot:s.dot||'#000', onClick:()=>{} }));
+    return { selectors, anomBg:this.state.anom?'#2f6bf6':'#d7dbe2', anomKnob:this.state.anom?'22px':'2px',
+      onToggleAnom:()=>this.setState({anom:!this.state.anom}) };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  .fc-btn{cursor:pointer;transition:filter .12s,background .12s}.fc-btn:hover{filter:brightness(.96)}
+  .fc-in{font-family:Nunito;font-size:13.5px;font-weight:600;color:#1b2430;border:1px solid #e3e6ec;border-radius:10px;padding:9px 11px;outline:none;transition:border .14s,box-shadow .14s;width:100%;box-sizing:border-box;background:#fff}
+  .fc-in:focus{border-color:#2f6bf6;box-shadow:0 0 0 3px rgba(47,107,246,.14)}
+  .fc-seg{cursor:pointer;transition:background .12s,color .12s}
+</style>
+</helmet>
+<div style="font-family:Nunito,sans-serif;padding:16px;">
+  <div style="width:760px;max-width:100%;background:#fff;border:1px solid #eceef2;border-radius:18px;box-shadow:0 18px 50px rgba(20,30,50,.18);overflow:hidden;">
+    <!-- header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:15px 20px;background:#eef3fe;border-bottom:1px solid #d7e3fb;">
+      <div style="display:flex;align-items:center;gap:9px;"><span style="width:9px;height:24px;border-radius:6px;background:#2f6bf6;"></span><div style="font-size:16px;font-weight:800;color:#1b2430;">Filters</div></div>
+      <button class="fc-btn" style="width:32px;height:32px;border-radius:9px;border:1px solid #d7e3fb;background:#fff;color:#6b7482;font-size:16px;">×</button>
+    </div>
+    <div style="padding:18px 20px;">
+      <!-- first row: account / from / to / type -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1.1fr;gap:12px;margin-bottom:18px;">
+        <div><label style="display:block;font-size:11px;font-weight:700;color:#5b6472;margin-bottom:5px;">Account</label><div class="fc-in" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">Main<span style="color:#b6bdc9;">⌄</span></div></div>
+        <div><label style="display:block;font-size:11px;font-weight:700;color:#5b6472;margin-bottom:5px;">From</label><input class="fc-in" value="2026-01-01" placeholder="YYYY-MM-DD"></div>
+        <div><label style="display:block;font-size:11px;font-weight:700;color:#5b6472;margin-bottom:5px;">To</label><input class="fc-in" value="2026-01-31" placeholder="YYYY-MM-DD"></div>
+        <div><label style="display:block;font-size:11px;font-weight:700;color:#5b6472;margin-bottom:5px;">Type</label>
+          <div style="display:flex;background:#f2f2f7;border-radius:10px;padding:3px;">
+            <sc-for list="{{ typeSegs }}" as="seg" hint-placeholder-count="3">
+              <button class="fc-btn fc-seg" onClick="{{ seg.onPick }}" style="flex:1;height:30px;border:0;border-radius:8px;font-family:Nunito;font-size:12px;font-weight:700;cursor:pointer;background:{{ seg.bg }};color:{{ seg.fg }};">{{ seg.label }}</button>
+            </sc-for>
+          </div></div>
+      </div>
+      <!-- two-column entity selectors -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;margin-bottom:6px;">
+        <dc-import name="MultiEntitySelector" entity="envelope" hint-size="100%,150px"></dc-import>
+        <dc-import name="MultiEntitySelector" entity="category" hint-size="100%,150px"></dc-import>
+      </div>
+      <div style="margin-bottom:10px;">
+        <dc-import name="MultiEntitySelector" entity="tag" hint-size="100%,150px"></dc-import>
+      </div>
+      <!-- text filters -->
+      <div style="border-top:1px solid #f2f4f7;padding-top:16px;margin-top:6px;">
+        <div style="font-size:12px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#2f6bf6;margin-bottom:11px;">Text filters</div>
+        <input class="fc-in" value="{{ textVal }}" onInput="{{ onText }}" placeholder="Text to search…" style="margin-bottom:12px;">
+        <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:16px;">
+          <div><label style="display:block;font-size:11px;font-weight:700;color:#5b6472;margin-bottom:6px;">Look in</label>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;">
+              <sc-for list="{{ fields }}" as="f" hint-placeholder-count="4">
+                <button class="fc-btn fc-seg" onClick="{{ f.onPick }}" style="height:30px;padding:0 11px;border-radius:8px;border:1px solid {{ f.border }};background:{{ f.bg }};color:{{ f.fg }};font-family:Nunito;font-size:12px;font-weight:700;cursor:pointer;">{{ f.label }}</button>
+              </sc-for>
+            </div></div>
+          <div><label style="display:block;font-size:11px;font-weight:700;color:#5b6472;margin-bottom:6px;">The text must</label>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;">
+              <sc-for list="{{ conditions }}" as="c" hint-placeholder-count="4">
+                <button class="fc-btn fc-seg" onClick="{{ c.onPick }}" style="height:30px;padding:0 11px;border-radius:8px;border:1px solid {{ c.border }};background:{{ c.bg }};color:{{ c.fg }};font-family:Nunito;font-size:12px;font-weight:700;cursor:pointer;">{{ c.label }}</button>
+              </sc-for>
+            </div></div>
+        </div>
+      </div>
+    </div>
+    <!-- footer -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 20px;background:#fafbfd;border-top:1px solid #f2f4f7;">
+      <button class="fc-btn" style="height:36px;padding:0 15px;border-radius:10px;border:1px solid #e6e8ee;background:#fff;color:#d23b2b;font-family:Nunito;font-size:13px;font-weight:700;">Clear filters</button>
+      <div style="display:flex;gap:9px;">
+        <button class="fc-btn" style="height:36px;padding:0 16px;border-radius:10px;border:1px solid #e6e8ee;background:#fff;color:#5b6472;font-family:Nunito;font-size:13.5px;font-weight:700;">Cancel</button>
+        <button class="fc-btn" onClick="{{ onApply }}" style="height:36px;padding:0 22px;border-radius:10px;border:0;background:#2f6bf6;color:#fff;font-family:Nunito;font-size:13.5px;font-weight:700;">Apply</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:660,&quot;height&quot;:620}}">
+class Component extends DCLogic {
+  state = { type:'all', field:'all', condition:'contains', text:'' };
+  renderVals(){
+    // Apply -> window.movements.getAll(filter) & window.movements.getFilterSummary(filter)
+    // filter: { accountId, date:{from,to}, isPositive, envelopeId, categoryId, tags:{ids,matchAll},
+    //           text:{ query, field:'name'|'concept'|'notes'|'all', condition:'contains'|'startsWith'|'endsWith'|'exact' } }
+    const seg = (val, cur, set) => ({ active: val===cur, onPick:()=>this.setState(set) });
+    const mkSeg = (list, cur, key) => list.map(([val,label])=>{
+      const a = val===cur;
+      return { label, bg:a?'#fff':'transparent', fg:a?'#2f6bf6':'#98a1b0', border:'transparent', onPick:()=>this.setState({[key]:val}) };
+    });
+    const mkBtn = (list, cur, key) => list.map(([val,label])=>{
+      const a = val===cur;
+      return { label, bg:a?'#eef3fe':'#fff', fg:a?'#2f6bf6':'#5b6472', border:a?'#bcd3fb':'#e3e6ec', onPick:()=>this.setState({[key]:val}) };
+    });
+    return {
+      typeSegs: mkSeg([['all','All'],['income','Income'],['expense','Expense']], this.state.type, 'type'),
+      textVal:this.state.text, onText:(e)=>this.setState({text:e.target.value}),
+      fields: mkBtn([['all','All fields'],['name','Name'],['concept','Concept'],['notes','Notes']], this.state.field, 'field'),
+      conditions: mkBtn([['contains','Contain'],['startsWith','Start with'],['endsWith','End with'],['exact','Match exactly']], this.state.condition, 'condition'),
+      onApply:()=>{},
+    };
+  }
+}
+</script>
+</body>
+</html>

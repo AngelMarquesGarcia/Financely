@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#eef0f3;}.fc-btn{cursor:pointer;transition:filter .12s}.fc-btn:hover{filter:brightness(.97)}</style>
+</helmet>
+<div style="font-family:Nunito,sans-serif;background:#eef0f3;min-height:100%;padding:26px 30px 60px;min-width:1180px;">
+  <div style="max-width:1240px;margin:0 auto;">
+    <!-- page header -->
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:8px;">
+      <div>
+        <div style="font-size:23px;font-weight:900;color:#1b2430;letter-spacing:-.2px;">Search results</div>
+        <div style="font-size:13px;font-weight:600;color:#7c8494;margin-top:2px;">{{ count }} movements match the current filters</div>
+      </div>
+      <button class="fc-btn" style="height:36px;padding:0 15px;border-radius:10px;border:1px solid #d7e3fb;background:#eef3fe;color:#2f6bf6;font-family:Nunito;font-size:13px;font-weight:700;">⚙ Edit filters</button>
+    </div>
+    <!-- active filter chips -->
+    <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:20px;">
+      <sc-for list="{{ filters }}" as="f" hint-placeholder-count="4">
+        <span style="display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;font-size:12.5px;font-weight:700;background:#fff;border:1px solid #e3e6ec;color:#5b6472;"><span style="font-size:11px;font-weight:800;color:#98a1b0;">{{ f.k }}</span>{{ f.v }}</span>
+      </sc-for>
+    </div>
+    <!-- body grid -->
+    <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;">
+      <!-- left column: movement list -->
+      <div style="flex:none;align-self:flex-start;"><dc-import name="MovementListV2" hint-size="412px,470px"></dc-import></div>
+      <!-- right area: summary+pie row, then bar chart -->
+      <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:660px;">
+        <div style="display:flex;gap:4px;align-items:stretch;flex-wrap:wrap;">
+          <div style="flex:1 1 340px;min-width:340px;display:flex;"><dc-import name="BasicSummaryCard" variant="expense" style="width:100%;height:100%;" hint-size="100%,420px"></dc-import></div>
+          <div style="flex:none;width:322px;display:flex;"><dc-import name="PieChart" style="width:100%;height:100%;" hint-size="100%,420px"></dc-import></div>
+        </div>
+        <dc-import name="BarChart" hint-size="100%,380px"></dc-import>
+      </div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  async componentDidMount(){ this.lib = await import('./finance-lib.js'); this.forceUpdate(); }
+  renderVals(){
+    // Page = window.movements.getAll(filter) + getFilterSummary(filter); children fed to the charts.
+    const L=this.lib;
+    return {
+      count: L ? L.CHART_MOVEMENTS.length : 32,
+      filters: [
+        { k:'Account', v:'Main' },
+        { k:'Range', v:"Aug '25 – Jan '26" },
+        { k:'Type', v:'All' },
+        { k:'Tag', v:'Japan trip' },
+        { k:'Text', v:'—' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

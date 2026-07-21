@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  .fc-btn{cursor:pointer;transition:filter .12s,background .12s}.fc-btn:hover{filter:brightness(.96)}
+  .fc-in{font-family:Nunito;font-size:14px;font-weight:600;color:#1b2430;border:1px solid #e3e6ec;border-radius:10px;padding:9px 12px;outline:none;transition:border .14s,box-shadow .14s;width:100%;box-sizing:border-box;background:#fff}
+  .fc-in:focus{border-color:#1c8a4d;box-shadow:0 0 0 3px rgba(28,138,77,.14)}
+</style>
+</helmet>
+<div style="font-family:Nunito,sans-serif;padding:16px;">
+  <div style="width:500px;max-width:100%;background:#fff;border:1px solid #eceef2;border-radius:18px;box-shadow:0 8px 30px rgba(20,30,50,.10);overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:10px;padding:15px 18px;background:#eef7f1;border-bottom:1px solid #d8ecdf;">
+      <span style="width:34px;height:34px;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center;font-size:16px;background:#1c8a4d;color:#fff;">↻</span>
+      <div style="font-size:16px;font-weight:800;color:#1b2430;">{{ formTitle }}</div>
+    </div>
+    <div style="padding:16px 18px;">
+      <!-- name + concept -->
+      <div style="display:flex;gap:12px;margin-bottom:13px;">
+        <div style="flex:1;"><label style="display:block;font-size:12px;font-weight:700;color:#5b6472;margin-bottom:5px;">Name</label><input class="fc-in" value="{{ nameVal }}" onInput="{{ onName }}" placeholder="e.g. Rent"></div>
+        <div style="flex:1;"><label style="display:block;font-size:12px;font-weight:700;color:#5b6472;margin-bottom:5px;">Concept</label><input class="fc-in" value="{{ conceptVal }}" onInput="{{ onConcept }}" placeholder="optional"></div>
+      </div>
+      <!-- amount + day -->
+      <div style="display:flex;gap:12px;margin-bottom:13px;">
+        <div style="flex:1;"><label style="display:block;font-size:12px;font-weight:700;color:#5b6472;margin-bottom:5px;">Amount</label>
+          <div style="display:flex;gap:6px;">
+            <div style="display:flex;background:#f2f2f7;border-radius:10px;padding:3px;">
+              <button class="fc-btn" onClick="{{ onExpense }}" style="width:38px;height:32px;border:0;border-radius:8px;font-family:Nunito;font-size:15px;font-weight:800;cursor:pointer;background:{{ expBg }};color:{{ expFg }};">−</button>
+              <button class="fc-btn" onClick="{{ onIncome }}" style="width:38px;height:32px;border:0;border-radius:8px;font-family:Nunito;font-size:15px;font-weight:800;cursor:pointer;background:{{ incBg }};color:{{ incFg }};">+</button>
+            </div>
+            <input class="fc-in" value="{{ amountVal }}" onInput="{{ onAmount }}" inputmode="decimal" style="flex:1;">
+          </div></div>
+        <div style="width:120px;"><label style="display:block;font-size:12px;font-weight:700;color:#5b6472;margin-bottom:5px;">Happens on day</label><input class="fc-in" value="{{ dayVal }}" onInput="{{ onDay }}" inputmode="numeric"></div>
+      </div>
+      <!-- envelope + category -->
+      <div style="display:flex;gap:12px;margin-bottom:6px;">
+        <div style="flex:1;"><label style="display:block;font-size:12px;font-weight:700;color:#5b6472;margin-bottom:5px;">Envelope</label><div class="fc-in" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;"><span style="display:flex;align-items:center;gap:7px;"><span style="width:9px;height:9px;border-radius:50%;background:{{ envColor }};"></span>{{ envName }}</span><span style="color:#b6bdc9;">⌄</span></div></div>
+        <div style="flex:1;"><label style="display:block;font-size:12px;font-weight:700;color:#5b6472;margin-bottom:5px;">Category</label><div class="fc-in" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;">{{ catName }}<span style="color:#b6bdc9;">⌄</span></div></div>
+      </div>
+      <div style="font-size:11.5px;font-weight:600;color:#98a1b0;margin-bottom:16px;">Can also be split across envelopes, same as a normal movement.</div>
+
+      <!-- tags (MultiEntitySelector, no "All") -->
+      <label style="display:block;font-size:12px;font-weight:700;color:#5b6472;margin-bottom:5px;">Tags</label>
+      <div style="margin-bottom:16px;"><dc-import name="MultiEntitySelector" entity="tag" allow-all="{{ no }}" hide-label="{{ yes }}" hide-note="{{ yes }}" hint-size="100%,150px"></dc-import></div>
+
+      <!-- month-generation range (creation only) -->
+      <div style="display:{{ genDisplay }};padding:13px;background:#eef7f1;border:1px solid #d8ecdf;border-radius:12px;">
+        <div style="font-size:12.5px;font-weight:700;color:#1c8a4d;margin-bottom:9px;">On creation, generate movements for the months:</div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="flex:1;"><label style="display:block;font-size:11px;font-weight:700;color:#6f9a80;margin-bottom:4px;">From</label><div class="fc-in" style="cursor:pointer;background:#fff;">January 2026</div></div>
+          <span style="color:#6f9a80;font-weight:800;margin-top:16px;">→</span>
+          <div style="flex:1;"><label style="display:block;font-size:11px;font-weight:700;color:#6f9a80;margin-bottom:4px;">To</label><div class="fc-in" style="cursor:pointer;background:#fff;">December 2026</div></div>
+        </div>
+        <div style="font-size:11px;font-weight:600;color:#6f9a80;margin-top:8px;">Section not available in edit mode — only during creation.</div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:9px;padding:13px 18px;background:#fafcfb;border-top:1px solid #f2f4f7;">
+      <button class="fc-btn" style="height:36px;padding:0 16px;border-radius:10px;border:1px solid #e6e8ee;background:#fff;color:#5b6472;font-family:Nunito;font-size:13.5px;font-weight:700;">Cancel</button>
+      <button class="fc-btn" onClick="{{ onSave }}" style="height:36px;padding:0 20px;border-radius:10px;border:0;background:{{ saveBg }};color:#fff;font-family:Nunito;font-size:13.5px;font-weight:700;cursor:{{ saveCursor }};">{{ saveLabel }}</button>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:520,&quot;height&quot;:460},&quot;mode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;create&quot;,&quot;edit&quot;],&quot;default&quot;:&quot;create&quot;,&quot;tsType&quot;:&quot;'create'|'edit'&quot;}}">
+class Component extends DCLogic {
+  state = { name:'Rent', concept:'Monthly rent', amount:'900,00', day:'3', positive:false, envId:2, catId:3, saved:false };
+  async componentDidMount(){ this.lib = await import('./finance-lib.js'); this.forceUpdate(); }
+  renderVals(){
+    const L=this.lib; if(!L) return {};
+    // Create -> window.periodicMovements.create(template, tagIds); Edit -> window.periodicMovements.update(template, tagIds)
+    const mode = this.props.mode || 'create';
+    const env = L.envOf(this.state.envId), cat = L.catOf(this.state.catId);
+    const pos = this.state.positive;
+    const valid = this.state.name.trim() && this.state.amount.trim() && +this.state.day>=1 && +this.state.day<=31;
+    return {
+      formTitle: mode==='edit'?'Edit periodic movement':'New periodic movement',
+      nameVal:this.state.name, onName:(e)=>this.setState({name:e.target.value}),
+      conceptVal:this.state.concept, onConcept:(e)=>this.setState({concept:e.target.value}),
+      amountVal:this.state.amount, onAmount:(e)=>this.setState({amount:e.target.value}),
+      dayVal:this.state.day, onDay:(e)=>this.setState({day:e.target.value.replace(/[^0-9]/g,'')}),
+      expBg:!pos?'#fff':'transparent', expFg:!pos?'#d23b2b':'#98a1b0',
+      incBg:pos?'#fff':'transparent', incFg:pos?'#1c8a4d':'#98a1b0',
+      onIncome:()=>this.setState({positive:true}), onExpense:()=>this.setState({positive:false}),
+      envColor:env.color, envName:env.name, catName:cat.emoji+' '+cat.name,
+      genDisplay: mode==='create'?'block':'none',
+      saveLabel: this.state.saved?'Saved ✓':(mode==='edit'?'Save changes':'Create'),
+      saveBg: valid?'#1c8a4d':'#bfe0cc', saveCursor: valid?'pointer':'not-allowed',
+      onSave:()=>{ if(valid) this.setState({saved:true}); },
+      yes: true, no: false,
+    };
+  }
+}
+</script>
+</body>
+</html>

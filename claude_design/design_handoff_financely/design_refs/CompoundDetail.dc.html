@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>.fc-btn{cursor:pointer;transition:filter .12s}.fc-btn:hover{filter:brightness(.96)}.fc-crow:hover{background:#faf9ff}</style>
+</helmet>
+<div style="font-family:Nunito,sans-serif;padding:16px;">
+  <div style="width:520px;max-width:100%;background:#fff;border:1px solid #eceef2;border-radius:18px;box-shadow:0 8px 30px rgba(20,30,50,.10);overflow:hidden;">
+    <!-- header (indigo band = group) -->
+    <div style="display:flex;align-items:center;gap:12px;padding:16px 18px;background:#f3f1fe;border-bottom:1px solid #e2ddf9;">
+      <span style="width:40px;height:40px;border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center;font-size:19px;background:#6b5cf5;color:#fff;">⬡</span>
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:17px;font-weight:800;color:#1b2430;">{{ c.name }}</span>
+          <span style="font-size:10.5px;font-weight:800;color:#6b5cf5;background:#fff;border:1px solid #e2ddf9;border-radius:6px;padding:2px 7px;">{{ c.kindBadge }}</span>
+        </div>
+        <div style="font-size:12px;font-weight:600;color:#8b84b8;">Owner month {{ c.ownerMonth }} · {{ c.count }} movements</div>
+      </div>
+      <button class="fc-btn" onClick="{{ c.onEdit }}" style="flex:none;height:32px;padding:0 13px;border-radius:9px;border:1px solid #e2ddf9;background:#fff;color:#6b5cf5;font-family:Nunito;font-size:13px;font-weight:700;">Edit</button>
+      <button class="fc-btn" style="flex:none;width:32px;height:32px;border-radius:9px;border:1px solid #e2ddf9;background:#fff;color:#6b7482;font-size:16px;">×</button>
+    </div>
+    <!-- total -->
+    <div style="padding:16px 18px 12px;display:flex;align-items:baseline;justify-content:space-between;">
+      <div><div style="font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#b0b7c2;">Group total</div><div style="font-size:30px;font-weight:800;color:{{ c.totalColor }};">{{ c.total }}</div></div>
+      <div style="text-align:right;font-size:12px;font-weight:600;color:#98a1b0;max-width:200px;">{{ c.notes }}</div>
+    </div>
+    <!-- children table -->
+    <div style="padding:0 18px 18px;">
+      <div style="display:grid;grid-template-columns:1.6fr 1fr 1fr;gap:8px;padding:8px 12px;font-size:10.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#b0b7c2;">
+        <span>Movement</span><span>Envelope</span><span style="text-align:right;">Amount</span>
+      </div>
+      <div style="border:1px solid #f2f4f7;border-radius:12px;overflow:hidden;">
+        <sc-for list="{{ c.children }}" as="ch" hint-placeholder-count="3">
+          <div class="fc-crow" style="display:grid;grid-template-columns:1.6fr 1fr 1fr;gap:8px;align-items:center;padding:11px 12px;border-top:{{ ch.border }};transition:background .12s;">
+            <div style="min-width:0;"><div style="font-size:13.5px;font-weight:700;color:#1b2430;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ ch.name }}</div><div style="font-size:11px;font-weight:600;color:#98a1b0;">{{ ch.sub }}</div></div>
+            <div style="display:flex;align-items:center;gap:6px;"><span style="width:8px;height:8px;border-radius:50%;background:{{ ch.envColor }};"></span><span style="font-size:12.5px;font-weight:600;color:#5b6472;">{{ ch.envelope }}</span></div>
+            <div style="text-align:right;font-size:13.5px;font-weight:700;color:{{ ch.amountColor }};">{{ ch.amount }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:540,&quot;height&quot;:420},&quot;compoundId&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:501,&quot;tsType&quot;:&quot;number&quot;}}">
+class Component extends DCLogic {
+  async componentDidMount(){ this.lib = await import('./finance-lib.js'); this.forceUpdate(); }
+  renderVals(){
+    const L=this.lib; if(!L) return { c:{} };
+    // window.compoundMovements.getById(id); window.compoundMovements.getChildren(id)
+    const id = this.props.compoundId ?? 501;
+    const c = L.byId(L.COMPOUNDS, id) || L.COMPOUNDS[0];
+    const children = c.childIds.map((cid,i)=>{
+      const m = L.byId(L.MOVEMENTS, cid); const cat=L.catOf(m.categoryId);
+      const env = L.envOf(m.envelopeIdMap[0][0]);
+      const signed = m.isPositive?m.quantityCents:-m.quantityCents;
+      return { name:m.name, sub:cat.name+' · '+L.fmtDate(m.date), envelope:env.name, envColor:env.color,
+        amount:L.fmtMoney(signed,{sign:true}), amountColor:signed>0?'#1c8a4d':'#d23b2b', border:i>0?'1px solid #f2f4f7':'0' };
+    });
+    const total = L.movementTotalOfCompound(c);
+    return { c: {
+      name:c.name, kindBadge: c.isCancelable?'CANCELABLE':'GROUPING', count:c.childIds.length,
+      ownerMonth: L.fmtMonthYear(c.ownerMonth, c.ownerYear, true),
+      total:L.fmtMoney(total,{sign:true}), totalColor: total>0?'#1c8a4d':'#d23b2b',
+      notes:c.notes, children, onEdit:()=>{},
+    }};
+  }
+}
+</script>
+</body>
+</html>

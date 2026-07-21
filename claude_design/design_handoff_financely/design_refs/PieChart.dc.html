@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  .fc-dd{cursor:pointer;transition:border .12s,box-shadow .12s}.fc-dd:hover{border-color:#c7cdd8}
+  .fc-opt{cursor:pointer;transition:background .1s}.fc-opt:hover{background:#f3f6fb}
+  .fc-sl{transition:opacity .12s}.fc-leg:hover{background:#f7f9fc}
+</style>
+</helmet>
+<div style="font-family:Nunito,sans-serif;padding:16px;height:100%;box-sizing:border-box;">
+  <div style="width:100%;height:100%;box-sizing:border-box;background:#fff;border:1px solid #eceef2;border-radius:16px;box-shadow:0 1px 3px rgba(20,30,50,.06);overflow:hidden;display:flex;flex-direction:column;">
+    <!-- selector: VAR per GROUP -->
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:14px 16px;border-bottom:1px solid #f2f4f7;background:#fbfcfe;">
+      <span style="font-size:12.5px;font-weight:700;color:#5b6472;">Currently showing:</span>
+      <div style="position:relative;">
+        <div class="fc-dd" onClick="{{ varToggle }}" style="display:flex;align-items:center;gap:7px;height:32px;padding:0 10px;border:1px solid {{ varBorder }};border-radius:9px;background:#fff;font-size:13px;font-weight:700;color:#2f6bf6;box-shadow:{{ varShadow }};">{{ varLabel }}<span style="color:#8bb0f7;">▾</span></div>
+        <div style="display:{{ varMenu }};position:absolute;top:38px;left:0;z-index:30;min-width:170px;background:#fff;border:1px solid #e6e8ee;border-radius:11px;box-shadow:0 12px 30px rgba(20,30,50,.16);overflow:hidden;">
+          <sc-for list="{{ varOptions }}" as="o" hint-placeholder-count="6">
+            <div class="fc-opt" onClick="{{ o.onPick }}" style="padding:9px 12px;font-size:13px;font-weight:{{ o.weight }};color:{{ o.fg }};border-top:{{ o.border }};">{{ o.label }}</div>
+          </sc-for>
+        </div>
+      </div>
+      <span style="font-size:12.5px;font-weight:600;color:#98a1b0;">per</span>
+      <div style="position:relative;">
+        <div class="fc-dd" onClick="{{ grpToggle }}" style="display:flex;align-items:center;gap:7px;height:32px;padding:0 10px;border:1px solid {{ grpBorder }};border-radius:9px;background:{{ grpBg }};font-size:13px;font-weight:700;color:{{ grpFg }};box-shadow:{{ grpShadow }};">{{ grpLabel }}<span style="color:#b6bdc9;">▾</span></div>
+        <div style="display:{{ grpMenu }};position:absolute;top:38px;left:0;z-index:30;min-width:150px;background:#fff;border:1px solid #e6e8ee;border-radius:11px;box-shadow:0 12px 30px rgba(20,30,50,.16);overflow:hidden;">
+          <sc-for list="{{ grpOptions }}" as="o" hint-placeholder-count="5">
+            <div class="fc-opt" onClick="{{ o.onPick }}" style="padding:9px 12px;font-size:13px;font-weight:{{ o.weight }};color:{{ o.fg }};border-top:{{ o.border }};">{{ o.label }}</div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="flex:1;"></div>
+      <!-- own-filter chip -->
+      <div style="display:{{ ownChipDisplay }};align-items:center;gap:6px;height:28px;padding:0 6px 0 10px;border-radius:999px;background:#eef3fe;border:1px solid #d7e3fb;">
+        <span style="font-size:11.5px;font-weight:700;color:#2f6bf6;">{{ ownLabel }}</span>
+        <span class="fc-btn" onClick="{{ clearFilters }}" title="Clear filters" style="width:18px;height:18px;border-radius:50%;background:rgba(47,107,246,.15);color:#2f6bf6;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;cursor:pointer;">×</span>
+      </div>
+      <!-- filter button (icon only) — ngIf=useFilters -->
+      <span class="fc-btn" onClick="{{ openFilters }}" title="Filter this chart" style="display:{{ filterBtnDisplay }};align-items:center;justify-content:center;width:32px;height:32px;border-radius:9px;border:1px solid {{ filterBtnBorder }};background:{{ filterBtnBg }};cursor:pointer;flex:none;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="{{ filterBtnStroke }}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+      </span>
+    </div>
+    <!-- donut + legend -->
+    <div style="flex:1;display:flex;align-items:center;gap:8px;padding:16px;">
+      <div style="position:relative;flex:none;width:150px;height:150px;">
+        <svg viewBox="0 0 200 200" width="150" height="150" style="display:block;">
+          <sc-for list="{{ slices }}" as="s" hint-placeholder-count="4">
+            <path d="{{ s.path }}" fill="{{ s.color }}" fill-rule="evenodd" stroke="#fff" stroke-width="1.5"></path>
+          </sc-for>
+        </svg>
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;">
+          <div style="font-size:11px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:#98a1b0;">{{ centerLabel }}</div>
+          <div style="font-size:19px;font-weight:800;color:#1b2430;">{{ centerValue }}</div>
+        </div>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <sc-for list="{{ slices }}" as="s" hint-placeholder-count="4">
+          <div class="fc-leg" title="{{ s.label }}" style="display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:8px;">
+            <span style="width:10px;height:10px;border-radius:3px;flex:none;background:{{ s.color }};"></span>
+            <span style="flex:1;min-width:0;font-size:13px;font-weight:700;color:#1b2430;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ s.label }}</span>
+            <span style="font-size:12.5px;font-weight:700;color:#5b6472;">{{ s.valueText }}</span>
+            <span style="font-size:11px;font-weight:700;color:#98a1b0;width:34px;text-align:right;">{{ s.pctText }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- filters overlay -->
+    <sc-if value="{{ showFilters }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ closeFilters }}" style="position:fixed;inset:0;z-index:70;background:rgba(20,26,38,.34);backdrop-filter:blur(2px);display:flex;align-items:flex-start;justify-content:center;padding:56px 24px;overflow:auto;">
+        <div onClick="{{ stop }}"><dc-import name="FiltersModal" hint-size="760px,640px"></dc-import></div>
+      </div>
+    </sc-if>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:432,&quot;height&quot;:320},&quot;useFilters&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  state = { varKey:'expense', groupKey:'envelope', open:null, showFilters:false, ownFilters:false };
+  async componentDidMount(){ this.lib = await import('./finance-lib.js'); this.forceUpdate(); }
+  menu(id, items, current, setKey){
+    return items.map(([val,label],i)=>({ label, weight: val===current?'800':'600', fg: val===current?'#2f6bf6':'#1b2430',
+      border: i>0?'1px solid #f4f6f9':'0', onPick:()=>this.setState({[setKey]:val, open:null}) }));
+  }
+  renderVals(){
+    const L=this.lib; if(!L) return { slices:[], varOptions:[], grpOptions:[] };
+    // window.movements.getFilterSummary(filter).children -> categorized client-side (L.pieData)
+    const VARS = [['expense','Expenses'],['income','Income'],['moved','Total money moved'],['cashflow','Cash flow'],['count','Movements'],['status','Status']];
+    const GROUPS = [['envelope','Envelope'],['category','Category'],['tag','Tag'],['month','Month'],['year','Year']];
+    const vk=this.state.varKey, gk=this.state.groupKey;
+    const statusMode = vk==='status';
+    // useFilters is an effectively-const @Input: show the filter button only where enabled.
+    const useFilters = this.props.useFilters === true || this.props.useFilters === 'true';
+    // No own filters → use the parent's selection. Own filters set → self-query.
+    const src = this.state.ownFilters ? L.chartMovementsFiltered() : undefined;
+    const raw = L.pieData(vk, gk, src);
+    const total = raw.reduce((a,s)=>a+s.value,0);
+    const slices = L.donutSlices(raw).map(s=>({ ...s, valueText:L.fmtChartValue(vk==='status'?'count':vk, s.value), pctText:s.pct+'%' }));
+    return {
+      varLabel: (L.CHART_VARS[vk]||{}).label || 'Expenses',
+      varToggle:()=>this.setState({open:this.state.open==='var'?null:'var'}),
+      varMenu:this.state.open==='var'?'block':'none', varBorder:this.state.open==='var'?'#2f6bf6':'#cfe0fd', varShadow:this.state.open==='var'?'0 0 0 3px rgba(47,107,246,.14)':'none',
+      varOptions:this.menu('var',VARS,vk,'varKey'),
+      grpLabel: statusMode ? 'by status' : ((GROUPS.find(g=>g[0]===gk)||[])[1] || 'Envelope'),
+      grpToggle:()=> statusMode ? null : this.setState({open:this.state.open==='grp'?null:'grp'}),
+      grpMenu:this.state.open==='grp'?'block':'none', grpBorder:this.state.open==='grp'?'#2f6bf6':'#e3e6ec',
+      grpBg: statusMode?'#f2f4f7':'#fff', grpFg: statusMode?'#98a1b0':'#1b2430', grpShadow:this.state.open==='grp'?'0 0 0 3px rgba(47,107,246,.14)':'none',
+      grpOptions:this.menu('grp',GROUPS,gk,'groupKey'),
+      slices,
+      centerLabel: statusMode ? 'Movements' : (L.CHART_VARS[vk]||{}).label,
+      centerValue: L.fmtChartValue(statusMode?'count':vk, total),
+      // filter button + overlay
+      filterBtnDisplay: useFilters ? 'inline-flex' : 'none',
+      filterBtnBg: this.state.ownFilters ? '#2f6bf6' : '#fff',
+      filterBtnBorder: this.state.ownFilters ? '#2f6bf6' : '#e3e6ec',
+      filterBtnStroke: this.state.ownFilters ? '#fff' : '#6b7482',
+      ownChipDisplay: (useFilters && this.state.ownFilters) ? 'inline-flex' : 'none',
+      ownLabel: L.OWN_FILTER_LABEL,
+      openFilters:()=>this.setState({showFilters:true}),
+      closeFilters:()=>this.setState({showFilters:false, ownFilters:true}),  // Apply/close self-queries
+      clearFilters:()=>this.setState({ownFilters:false}),
+      showFilters:this.state.showFilters,
+      stop:(e)=>e.stopPropagation(),
+    };
+  }
+}
+</script>
+</body>
+</html>

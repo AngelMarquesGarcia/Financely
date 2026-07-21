@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,500;0,600;0,700;0,800&display=swap" rel="stylesheet">
+<style>
+  .fc-chip-x { opacity: 0; transform: scale(.6); transition: opacity .13s ease, transform .13s ease; }
+  .fc-chip.rm:hover .fc-chip-x { opacity: 1; transform: scale(1); }
+  .fc-chip.rm:hover { filter: brightness(.97); }
+</style>
+</helmet>
+<span class="fc-chip {{ rmClass }}" title="{{ title }}" onClick="{{ onClickChip }}" style="display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;font-family:Nunito,sans-serif;font-weight:600;font-size:13px;line-height:1;letter-spacing:.1px;cursor:{{ cursor }};user-select:none;white-space:nowrap;background:{{ bg }};border:1px solid {{ border }};color:{{ fg }};">
+  <span aria-hidden="true" style="width:9px;height:9px;border-radius:50%;flex:none;background:{{ dot }};box-shadow:0 0 0 2px {{ dotHalo }};"></span>
+  <span style="display:{{ emojiDisplay }}">{{ emoji }}</span>
+  <span>{{ label }}</span>
+  <span class="fc-chip-x" style="display:{{ xDisplay }};margin-left:1px;width:15px;height:15px;border-radius:50%;align-items:center;justify-content:center;background:rgba(0,0,0,.08);color:{{ fg }};font-size:11px;font-weight:800;line-height:1;">×</span>
+</span>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:180,&quot;height&quot;:48},&quot;label&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Japan trip&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;color&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#2f6bf6&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;emoji&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;removable&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;onRemove&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;}}">
+class Component extends DCLogic {
+  hexToRgb(h){ const m=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(h||'#2f6bf6'); return m?[parseInt(m[1],16),parseInt(m[2],16),parseInt(m[3],16)]:[47,107,246]; }
+  renderVals(){
+    const color = this.props.color || '#2f6bf6';
+    const [r,g,b] = this.hexToRgb(color);
+    const removable = !!this.props.removable;
+    const emoji = this.props.emoji || '';
+    return {
+      label: this.props.label ?? 'Japan trip',
+      emoji, emojiDisplay: emoji ? 'inline' : 'none',
+      dot: color,
+      dotHalo: `rgba(${r},${g},${b},.18)`,
+      bg: `rgba(${r},${g},${b},.10)`,
+      border: `rgba(${r},${g},${b},.30)`,
+      fg: `rgb(${Math.round(r*.55)},${Math.round(g*.55)},${Math.round(b*.55)})`,
+      rmClass: removable ? 'fc-chip rm' : 'fc-chip',
+      xDisplay: removable ? 'inline-flex' : 'none',
+      cursor: removable ? 'pointer' : 'default',
+      title: removable ? 'Remove' : (this.props.label ?? ''),
+      onClickChip: () => { if (removable && typeof this.props.onRemove === 'function') this.props.onRemove(); },
+    };
+  }
+}
+</script>
+</body>
+</html>

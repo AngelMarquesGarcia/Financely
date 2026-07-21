@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>.fc-mv1-row{transition:background .12s ease;cursor:pointer}.fc-mv1-row:hover{background:#f6f8fb}</style>
+</helmet>
+<div style="font-family:Nunito,sans-serif;padding:16px;">
+  <div style="width:320px;max-width:100%;background:#fff;border:1px solid #eceef2;border-radius:14px;box-shadow:0 1px 3px rgba(20,30,50,.06);overflow:hidden;">
+    <div style="padding:12px 16px 8px;font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:#b0b7c2;">{{ heading }}</div>
+    <sc-for list="{{ rows }}" as="row" hint-placeholder-count="6">
+      <div class="fc-mv1-row" onClick="{{ row.onClick }}" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;border-top:1px solid #e3e7ee;">
+        <span style="font-size:14px;font-weight:700;color:#1b2430;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ row.name }}</span>
+        <span style="font-size:14px;font-weight:800;color:{{ row.color }};flex:none;">{{ row.amount }}</span>
+      </div>
+    </sc-for>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:360,&quot;height&quot;:360}}">
+class Component extends DCLogic {
+  async componentDidMount(){ this.lib = await import('./finance-lib.js'); this.forceUpdate(); }
+  renderVals(){
+    const L = this.lib; if(!L) return { heading:'Recent movements', rows:[] };
+    // window.movements.getAll({ accountId:1 }) -> MovementT[]
+    const rows = L.MOVEMENTS.filter(m=>!m.isTentative).slice(0,7).map(m=>{
+      const signed = m.isPositive ? m.quantityCents : -m.quantityCents;
+      return { name:m.name, amount:L.fmtMoney(signed,{sign:true}), color: signed>0?'#1c8a4d':'#d23b2b', onClick:()=>{} };
+    });
+    return { heading:'Recent movements', rows };
+  }
+}
+</script>
+</body>
+</html>

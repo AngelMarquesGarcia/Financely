@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  .fc-btn{cursor:pointer;transition:filter .12s}.fc-btn:hover{filter:brightness(.96)}
+  .fc-mo{transition:transform .12s ease, box-shadow .12s ease}
+  .fc-mo.click{cursor:pointer}.fc-mo.click:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(20,30,50,.12)}
+</style>
+</helmet>
+<div style="font-family:Nunito,sans-serif;padding:16px;">
+  <div style="width:460px;max-width:100%;background:#fff;border:1px solid #eceef2;border-radius:18px;box-shadow:0 8px 30px rgba(20,30,50,.10);overflow:hidden;">
+    <!-- header -->
+    <div style="display:flex;align-items:center;gap:12px;padding:16px 18px;background:#eef7f1;border-bottom:1px solid #d8ecdf;">
+      <span style="width:40px;height:40px;border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center;font-size:19px;background:#1c8a4d;color:#fff;">↻</span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:17px;font-weight:800;color:#1b2430;">{{ p.name }}</div>
+        <div style="font-size:12px;font-weight:600;color:#6f9a80;">{{ p.sub }}</div>
+      </div>
+      <button class="fc-btn" style="flex:none;height:32px;padding:0 13px;border-radius:9px;border:1px solid #d8ecdf;background:#fff;color:#1c8a4d;font-family:Nunito;font-size:13px;font-weight:700;">Edit</button>
+      <button class="fc-btn" style="flex:none;width:32px;height:32px;border-radius:9px;border:1px solid #d8ecdf;background:#fff;color:#6b7482;font-size:16px;">×</button>
+    </div>
+    <!-- amount + attrs -->
+    <div style="display:flex;gap:16px;padding:14px 18px 6px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:120px;"><div style="font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#b0b7c2;">Amount</div><div style="font-size:26px;font-weight:800;color:{{ p.color }};">{{ p.amount }}</div></div>
+      <div style="flex:1;min-width:120px;"><div style="font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#b0b7c2;">Happens on</div><div style="font-size:15px;font-weight:700;color:#1b2430;margin-top:4px;">Day {{ p.day }} · {{ p.category }}</div></div>
+    </div>
+    <!-- envelope(s) — can be split -->
+    <div style="padding:8px 18px 4px;">
+      <div style="font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#b0b7c2;margin-bottom:8px;">{{ p.envHeading }}</div>
+      <sc-for list="{{ p.envelopes }}" as="ev" hint-placeholder-count="1">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px;">
+          <span style="display:flex;align-items:center;gap:8px;"><span style="width:9px;height:9px;border-radius:50%;background:{{ ev.color }};"></span><span style="font-size:13.5px;font-weight:700;color:#1b2430;">{{ ev.name }}</span></span>
+          <span style="font-size:13.5px;font-weight:700;color:#1b2430;">{{ ev.amount }}</span>
+        </div>
+      </sc-for>
+    </div>
+    <!-- tags -->
+    <div style="padding:6px 18px 4px;">
+      <div style="font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#b0b7c2;margin-bottom:8px;">Tags</div>
+      <div style="display:flex;flex-wrap:wrap;gap:7px;">
+        <sc-for list="{{ p.tags }}" as="tg" hint-placeholder-count="1">
+          <span style="display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;font-weight:600;font-size:13px;line-height:1;background:{{ tg.bg }};border:1px solid {{ tg.border }};color:{{ tg.fg }};"><span style="width:8px;height:8px;border-radius:50%;background:{{ tg.dot }};"></span>{{ tg.name }}</span>
+        </sc-for>
+        <span style="display:{{ p.noTagsDisplay }};font-size:12.5px;font-weight:600;color:#b0b7c2;">No tags.</span>
+      </div>
+    </div>
+    <!-- calendar -->
+    <div style="padding:12px 18px 6px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <button class="fc-btn" onClick="{{ p.prevYear }}" style="width:28px;height:28px;border-radius:8px;border:1px solid #e6e8ee;background:#fff;color:#6b7482;font-size:14px;font-weight:800;">‹</button>
+        <span style="font-size:14px;font-weight:800;color:#1b2430;">{{ p.year }}</span>
+        <button class="fc-btn" onClick="{{ p.nextYear }}" style="width:28px;height:28px;border-radius:8px;border:1px solid #e6e8ee;background:#fff;color:#6b7482;font-size:14px;font-weight:800;">›</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+        <sc-for list="{{ p.months }}" as="mo" hint-placeholder-count="12">
+          <div class="fc-mo {{ mo.clickClass }}" onClick="{{ mo.onClick }}" style="border:1px solid {{ mo.border }};background:{{ mo.bg }};border-radius:11px;padding:9px 8px;text-align:center;">
+            <div style="font-size:12px;font-weight:800;color:{{ mo.labelColor }};text-decoration:{{ mo.strike }};">{{ mo.label }}</div>
+            <div style="font-size:15px;font-weight:800;margin-top:3px;color:{{ mo.markColor }};">{{ mo.mark }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <!-- selected toast -->
+    <div style="display:{{ p.toastDisplay }};margin:8px 18px 0;padding:9px 12px;background:#eef3fe;border:1px solid #d7e3fb;border-radius:10px;font-size:12.5px;font-weight:700;color:#2f6bf6;">Opening {{ p.name }} · {{ p.toastMonth }} detail…</div>
+    <!-- legend -->
+    <div style="display:flex;flex-wrap:wrap;gap:14px;padding:14px 18px 16px;border-top:1px solid #f2f4f7;margin-top:12px;">
+      <span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#5b6472;"><span style="width:10px;height:10px;border-radius:50%;background:#1c8a4d;"></span>Received</span>
+      <span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#5b6472;"><span style="width:10px;height:10px;border-radius:50%;background:#e8a33d;"></span>Tentative</span>
+      <span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#5b6472;"><span style="width:10px;height:10px;border-radius:50%;background:#d23b2b;"></span>Cancelled</span>
+      <span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#5b6472;"><span style="width:10px;height:10px;border-radius:50%;background:#c3cad4;"></span>Pending</span>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:480,&quot;height&quot;:500},&quot;periodicId&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:9,&quot;tsType&quot;:&quot;number&quot;}}">
+class Component extends DCLogic {
+  state = { year: 2026, selected: null };
+  async componentDidMount(){ this.lib = await import('./finance-lib.js'); this.forceUpdate(); }
+  renderVals(){
+    const L=this.lib; if(!L) return { p:{} };
+    // window.periodicMovements.getById(id); statuses from generated instances.
+    // Clicking a received/tentative month -> window.movements.getById(instanceId) -> open MovementDetail
+    const p = L.byId(L.PERIODIC, this.props.periodicId ?? 9) || L.PERIODIC[1];
+    const signed = p.isPositive?p.quantityCents:-p.quantityCents;
+    const hexRgb=(h)=>{ const m=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(h||'#2f6bf6'); return m?[parseInt(m[1],16),parseInt(m[2],16),parseInt(m[3],16)]:[47,107,246]; };
+    const tint=(h,a)=>{ const [r,g,b]=hexRgb(h); return `rgba(${r},${g},${b},${a})`; };
+    const dark=(h)=>{ const [r,g,b]=hexRgb(h); return `rgb(${Math.round(r*.55)},${Math.round(g*.55)},${Math.round(b*.55)})`; };
+    // envelopeIdMap — same split model as a movement
+    const envEntries = L.envMapEntries(p.envelopeIdMap);
+    const isSplit = envEntries.length > 1;
+    const envelopes = envEntries.map(({envelope,cents})=>({ name:envelope.name, color:envelope.color, amount:L.fmtMoney(cents,{sign:false}) }));
+    // window.tags.getForPeriodicMovement(id) -> TagT[]
+    const tags = p.tagIds.map(tid=>{ const t=L.tagOf(tid); return { name:t.name, dot:t.color, bg:tint(t.color,.10), border:tint(t.color,.30), fg:dark(t.color) }; });
+    const statuses = (this.state.year===2026 && L.PERIODIC_YEAR_2026[p.id]) || new Array(12).fill('pending');
+    const STY = {
+      received:{ bg:'#eef7f1', border:'#cfe9d9', label:'#1c8a4d', mark:'✓', markColor:'#1c8a4d', click:true, strike:'none' },
+      tentative:{ bg:'#fbf4e7', border:'#f0e2c4', label:'#a9761f', mark:'~', markColor:'#e8a33d', click:true, strike:'none' },
+      cancelled:{ bg:'#fcefed', border:'#f5d9d5', label:'#d23b2b', mark:'✕', markColor:'#d23b2b', click:false, strike:'line-through' },
+      pending:{ bg:'#fbfcfe', border:'#eef0f4', label:'#b0b7c2', mark:'·', markColor:'#c3cad4', click:false, strike:'none' },
+    };
+    const months = statuses.map((st,i)=>{
+      const s = STY[st]||STY.pending;
+      return { label:L.MONTHS_SHORT[i], bg:s.bg, border:s.border, labelColor:s.label, mark:s.mark, markColor:s.markColor,
+        strike:s.strike, clickClass: s.click?'click':'', clickable:s.click,
+        onClick: s.click ? (()=>this.setState({selected:i})) : (()=>{}) };
+    });
+    return { p: {
+      name:p.name, sub:'Periodic movement · '+L.catOf(p.categoryId).name, amount:L.fmtMoney(signed,{sign:true}),
+      color: signed>0?'#1c8a4d':'#d23b2b', day:p.dayOfMonth, category:L.catOf(p.categoryId).name,
+      envHeading: isSplit ? ('Split across '+envEntries.length+' envelopes') : 'Envelope',
+      envelopes, tags, noTagsDisplay: tags.length?'none':'inline',
+      year:this.state.year, months,
+      prevYear:()=>this.setState({year:this.state.year-1,selected:null}),
+      nextYear:()=>this.setState({year:this.state.year+1,selected:null}),
+      toastDisplay: this.state.selected!==null?'block':'none',
+      toastMonth: this.state.selected!==null?L.MONTHS[this.state.selected]:'',
+    }};
+  }
+}
+</script>
+</body>
+</html>

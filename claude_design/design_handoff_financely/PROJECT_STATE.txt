@@ -1,0 +1,87 @@
+FINANCELY — PROJECT STATE & DOWNLOAD MANIFEST
+Generated: 2026-07-15
+=============================================================================
+
+WHAT THIS PROJECT IS
+--------------------
+A high-fidelity UI component library + page layouts for "Financely", an
+envelope-based personal-finance desktop app. Built as `.dc.html` design
+references (browser-openable HTML mockups, styled inline, with a small logic
+block describing behavior). Being handed off to Claude Code for Angular.
+
+
+WHAT'S IN THE HANDOFF DOWNLOAD (design_handoff_financely/)
+----------------------------------------------------------
+INCLUDED — download these:
+  README.md               Full handoff spec: fidelity, tokens, per-component
+                          notes, data/API contract, interactions.
+  HOW_TO_READ_DC.md       How to read a .dc.html file.
+  PROJECT_STATE.txt       This file.
+  design_refs/
+    finance-lib.js        DATA LAYER — mock data, the window.* API contract,
+                          money/date formatters, chart aggregation. Port first.
+    22 x *.dc.html        The component/page design references (list below).
+
+NOT included on purpose (do NOT download for the Angular work):
+  support.js              Preview runtime only. Irrelevant to Angular; would
+                          mislead. ~1770 lines of generated plumbing.
+  mockups/                Source screenshots/sketches used while designing
+                          (page-1.png, sk-*.png, ref-img*, text-*, etc.).
+                          Optional visual reference; not required by README.
+  uploads/                User-uploaded scratch files.
+
+
+INVENTORY OF DESIGN REFERENCES (root of project = source of truth)
+------------------------------------------------------------------
+PAGES (3):
+  DashboardPage.dc.html         top-level dashboard layout
+  SearchResultsPage.dc.html     search/filter results view
+  ComponentGallery.dc.html      index of all components (visual checklist)
+
+CARDS & SUMMARIES (3):
+  StatCard.dc.html              metric card (simple/calculated/collapsible)
+  BasicSummaryCard.dc.html      summary of an arbitrary selection (not a pool)
+  PeriodSummaryCard.dc.html     envelope/account period rollup (single/multi)
+
+MOVEMENTS (3):
+  MovementListV1.dc.html        compact list
+  MovementListV2.dc.html        richer list
+  MovementDetail.dc.html        single movement detail
+
+PERIODIC (3):
+  PeriodicList.dc.html          recurring movements list
+  PeriodicDetail.dc.html        one periodic + 12-month status calendar
+  PeriodicForm.dc.html          create/edit form
+
+COMPOUND (2):
+  CompoundDetail.dc.html        grouped movements (e.g. "Japan trip")
+  CompoundForm.dc.html          create/edit a group
+
+CHARTS (3):  (thin renderers over finance-lib.js aggregation fns)
+  PieChart.dc.html              VAR per GROUP (donut)
+  BarChart.dc.html              VAR per DIVIDER over TIMEFRAME (stacked bars)
+  LineChart.dc.html             VAR over TIMEFRAME (line)
+
+NAV / FILTERS / SELECTORS (4):
+  NavbarV1.dc.html              top nav, treatment 1
+  NavbarV2.dc.html              top nav, treatment 2 (inline selectors)
+  FiltersModal.dc.html          full filter builder
+  MultiEntitySelector.dc.html   reusable multi-select dropdown
+
+PRIMITIVES (1):
+  TagChip.dc.html               tag pill
+
+SHARED (1):
+  finance-lib.js                data layer / API contract / formatters / charts
+
+
+IF WE CONTINUE WORK LATER (avoid re-downloading)
+------------------------------------------------
+Already handed off (above) = 22 .dc.html + finance-lib.js + 3 docs.
+Next time, only re-download files that CHANGED or were ADDED since 2026-07-15:
+  - Check each .dc.html's line count / content against the versions in your
+    Angular repo's design_refs snapshot.
+  - finance-lib.js changes are the highest-impact: re-read it if the data
+    shapes, API annotations, or formatters moved.
+  - New components will appear as new *.dc.html files at the project root.
+support.js never needs downloading. mockups/ and uploads/ are optional.
